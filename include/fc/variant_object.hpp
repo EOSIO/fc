@@ -92,6 +92,11 @@ namespace fc
       variant_object& operator=( mutable_variant_object&& );
       variant_object& operator=( const mutable_variant_object& );
 
+      friend bool operator ==( const variant_object& obj1, const variant_object& obj2 );
+      friend bool operator !=( const variant_object& obj1, const variant_object& obj2 ) {
+         return !( obj1 == obj2 );
+      }
+
    private:
       std::shared_ptr< std::vector< entry > > _key_value;
       friend class mutable_variant_object;
