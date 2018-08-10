@@ -16,6 +16,14 @@ namespace ssl = boost::asio::ssl;       // from <boost/asio/ssl.hpp>
 
 namespace fc {
 
+/**
+ * mapping of protocols to their standard ports
+ */
+static const std::map<string,uint16_t> default_proto_ports = {
+   {"http", 80},
+   {"https", 443}
+};
+
 class http_client_impl {
 public:
    using host_key = std::tuple<std::string, std::string, uint16_t>;
@@ -272,8 +280,17 @@ public:
          path = path + "?" + *dest.query();
       }
 
+      string host_str = *dest.host();
+      if (dest.port()) {
+         auto port = *dest.port();
+         auto proto_iter = default_proto_ports.find(dest.proto());
+         if (proto_iter != default_proto_ports.end() && proto_iter->second != port) {
+            host_str = host_str + ":" + std::to_string(port);
+         }
+      }
+
       http::request<http::string_body> req{http::verb::post, path, 11};
-      req.set(http::field::host, *dest.host());
+      req.set(http::field::host, host_str);
       req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
       req.set(http::field::content_type, "application/json");
       req.keep_alive(true);
