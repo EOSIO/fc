@@ -1326,8 +1326,6 @@ void connection<config>::write_http_response(lib::error_code const & ec) {
         }
     }
 
-    m_response.replace_header("Connection", "close");
-
     // have the processor generate the raw bytes for the wire (if it exists)
     if (m_processor) {
         m_handshake_buffer = m_processor->get_raw(m_response);
