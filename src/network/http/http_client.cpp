@@ -9,10 +9,12 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
+#include <boost/asio/local/stream_protocol.hpp>
 
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 namespace http = boost::beast::http;    // from <boost/beast/http.hpp>
 namespace ssl = boost::asio::ssl;       // from <boost/asio/ssl.hpp>
+namespace local = boost::asio::local;
 
 namespace fc {
 
@@ -29,7 +31,8 @@ public:
    using host_key = std::tuple<std::string, std::string, uint16_t>;
    using raw_socket_ptr = std::unique_ptr<tcp::socket>;
    using ssl_socket_ptr = std::unique_ptr<ssl::stream<tcp::socket>>;
-   using connection = static_variant<raw_socket_ptr, ssl_socket_ptr>;
+   using unix_socket_ptr = std::unique_ptr<local::stream_protocol::socket>;
+   using connection = static_variant<raw_socket_ptr, ssl_socket_ptr, unix_socket_ptr>;
    using connection_map = std::map<host_key, connection>;
    using error_code = boost::system::error_code;
    using deadline_type = boost::posix_time::ptime;
@@ -153,6 +156,21 @@ public:
       return std::make_tuple(dest.proto(), *dest.host(), port);
    }
 
+   connection_map::iterator create_unix_connection( const url& dest, const deadline_type& deadline) {
+      auto key = url_to_host_key(dest);
+      auto socket = std::make_unique<local::stream_protocol::socket>(_ioc);
+
+      error_code ec;
+      socket->connect(local::stream_protocol::endpoint(*dest.host()), ec);
+      FC_ASSERT(!ec, "Failed to connect: ${message}", ("message",ec.message()));
+
+      auto res = _connections.emplace(std::piecewise_construct,
+                                      std::forward_as_tuple(key),
+                                      std::forward_as_tuple(std::move(socket)));
+
+      return res.first;
+   }
+
    connection_map::iterator create_raw_connection( const url& dest, const deadline_type& deadline ) {
       auto key = url_to_host_key(dest);
       auto socket = std::make_unique<tcp::socket>(_ioc);
@@ -200,6 +218,8 @@ public:
          return create_raw_connection(dest, deadline);
       } else if (dest.proto() == "https") {
          return create_ssl_connection(dest, deadline);
+      } else if (dest.proto() == "unix") {
+         return create_unix_connection(dest, deadline);
       } else {
          FC_THROW("Unknown protocol ${proto}", ("proto", dest.proto()));
       }
@@ -212,6 +232,10 @@ public:
 
       bool operator() ( const ssl_socket_ptr& ptr ) const {
          return !ptr->lowest_layer().is_open();
+      }
+
+      bool operator() ( const unix_socket_ptr& ptr) const {
+         return !ptr->is_open();
       }
    };
 
