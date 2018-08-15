@@ -10,6 +10,7 @@
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
+#include <boost/filesystem.hpp>
 
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 namespace http = boost::beast::http;    // from <boost/beast/http.hpp>
@@ -34,6 +35,7 @@ public:
    using unix_socket_ptr = std::unique_ptr<local::stream_protocol::socket>;
    using connection = static_variant<raw_socket_ptr, ssl_socket_ptr, unix_socket_ptr>;
    using connection_map = std::map<host_key, connection>;
+   using unix_url_split_map = std::map<string, fc::url>;
    using error_code = boost::system::error_code;
    using deadline_type = boost::posix_time::ptime;
 
@@ -374,10 +376,45 @@ public:
       return result;
    }
 
+   /*
+      Unix URLs work a little special here. They'll originally be in the format of
+      unix:///home/spoonincode/eosio-wallet/keosd.sock/v1/wallet/sign_digest
+      for example. When the fc::url is given to http_client in post_sync(), this will
+      have proto=unix and host=/home/spoonincode/eosio-wallet/keosd.sock/v1/wallet/sign_digest
+
+      At this point we still don't know what part of the above string is the unix socket path
+      and which part is the path to access on the server. This function discovers that
+      host=/home/spoonincode/eosio-wallet/keosd.sock and path=/v1/wallet/sign_digest
+      and create another fc::url that will be used downstream of the http_client::post_sync()
+      call.
+   */
+   const fc::url& get_unix_url(const std::string& full_url) {
+      unix_url_split_map::const_iterator found = _unix_url_paths.find(full_url);
+      if(found != _unix_url_paths.end())
+         return found->second;
+
+      boost::filesystem::path socket_file(full_url);
+      if(socket_file.is_relative())
+         FC_THROW_EXCEPTION( parse_error_exception, "socket url cannot be relative (${url})", ("url", socket_file.string()));
+      if(socket_file.empty())
+         FC_THROW_EXCEPTION( parse_error_exception, "missing socket url");
+      boost::filesystem::path url_path;
+      do {
+         if(boost::filesystem::status(socket_file).type() == boost::filesystem::socket_file)
+            break;
+         url_path = socket_file.filename() / url_path;
+         socket_file = socket_file.remove_filename();
+      } while(!socket_file.empty());
+      if(socket_file.empty())
+         FC_THROW_EXCEPTION( parse_error_exception, "couldn't discover socket path");
+      url_path = "/" / url_path;
+      return _unix_url_paths.emplace(full_url, fc::url("unix", socket_file.string(), ostring(), ostring(), url_path.string(), ostring(), ovariant_object(), fc::optional<uint16_t>())).first->second;
+   }
 
    boost::asio::io_context  _ioc;
    ssl::context             _sslc;
    connection_map           _connections;
+   unix_url_split_map       _unix_url_paths;
 };
 
 
@@ -388,7 +425,10 @@ http_client::http_client()
 }
 
 variant http_client::post_sync(const url& dest, const variant& payload, const fc::time_point& deadline) {
-   return _my->post_sync(dest, payload, deadline);
+   if(dest.proto() == "unix")
+      return _my->post_sync(_my->get_unix_url(*dest.host()), payload, deadline);
+   else
+      return _my->post_sync(dest, payload, deadline);
 }
 
 void http_client::add_cert(const std::string& cert_pem_string) {
