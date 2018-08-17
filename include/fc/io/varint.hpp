@@ -9,11 +9,8 @@ struct unsigned_int {
     template<typename T>
     unsigned_int( T v ):value(v){}
 
-    //operator uint32_t()const { return value; }
+    operator uint32_t()const { return value; }
     //operator uint64_t()const { return value; }
-
-    template<typename T>
-    operator T()const { return static_cast<T>(value); }
 
     unsigned_int& operator=( int32_t v ) { value = v; return *this; }
     
