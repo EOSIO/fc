@@ -378,14 +378,14 @@ public:
 
    /*
       Unix URLs work a little special here. They'll originally be in the format of
-      unix:///home/spoonincode/eosio-wallet/keosd.sock/v1/wallet/sign_digest
+      unix:///home/username/eosio-wallet/keosd.sock/v1/wallet/sign_digest
       for example. When the fc::url is given to http_client in post_sync(), this will
-      have proto=unix and host=/home/spoonincode/eosio-wallet/keosd.sock/v1/wallet/sign_digest
+      have proto=unix and host=/home/username/eosio-wallet/keosd.sock/v1/wallet/sign_digest
 
       At this point we still don't know what part of the above string is the unix socket path
       and which part is the path to access on the server. This function discovers that
-      host=/home/spoonincode/eosio-wallet/keosd.sock and path=/v1/wallet/sign_digest
-      and create another fc::url that will be used downstream of the http_client::post_sync()
+      host=/home/username/eosio-wallet/keosd.sock and path=/v1/wallet/sign_digest
+      and creates another fc::url that will be used downstream of the http_client::post_sync()
       call.
    */
    const fc::url& get_unix_url(const std::string& full_url) {
