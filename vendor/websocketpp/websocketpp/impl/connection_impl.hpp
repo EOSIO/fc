@@ -1423,7 +1423,7 @@ void connection<config>::handle_write_http_response(lib::error_code const & ec) 
             m_elog.write(log::elevel::rerror, s.str());
         }
 
-        if (m_response.get_status_code() >= http::status_code::bad_request || is_close_request()) {
+        if (m_response.get_status_code() >= http::status_code::bad_request || is_close_response()) {
             this->terminate(m_ec);
         } else {
             // clear HTTP states to the initial ones and call HTTP handler
@@ -2394,6 +2394,12 @@ bool connection<config>::is_close_request() {
     }
 
     std::string const & con_header = get_request_header("Connection");
+    return !(utility::ci_find_substr(con_header, "close", 4) == con_header.end());
+}
+
+template<typename config>
+bool connection<config>::is_close_response() {
+    std::string const & con_header = get_response_header("Connection");
     return !(utility::ci_find_substr(con_header, "close", 4) == con_header.end());
 }
 
