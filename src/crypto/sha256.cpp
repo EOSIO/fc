@@ -93,10 +93,16 @@ namespace fc {
       return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) < 0;
     }
     bool operator != ( const sha256& h1, const sha256& h2 ) {
-      return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) != 0;
+       return !(h1 == h2);
     }
     bool operator == ( const sha256& h1, const sha256& h2 ) {
-      return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) == 0;
+       // idea to not use memcmp, from:
+       //   https://lemire.me/blog/2018/08/22/avoid-lexicographical-comparisons-when-testing-for-string-equality/
+       return
+             h1._hash[0] == h2._hash[0] &&
+             h1._hash[1] == h2._hash[1] &&
+             h1._hash[2] == h2._hash[2] &&
+             h1._hash[3] == h2._hash[3];
     }
 
    uint32_t sha256::approx_log_32()const
