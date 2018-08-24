@@ -12,6 +12,7 @@
 #include <fc/exception/exception.hpp>
 #include <fc/safe.hpp>
 #include <fc/io/raw_fwd.hpp>
+#include <array>
 #include <map>
 #include <deque>
 
@@ -603,7 +604,19 @@ namespace fc {
       }
     }
 
+    template<typename Stream, typename T, std::size_t S>
+    inline void pack( Stream& s, const std::array<T, S>& value ) {
+       for( std::size_t i = 0; i < S; ++i ) {
+          fc::raw::pack( s, value[i] );
+       }
+    }
 
+    template<typename Stream, typename T, std::size_t S>
+    inline void unpack( Stream& s, std::array<T, S>& value  ) {
+      for( std::size_t i = 0; i < S; ++i ) {
+        fc::raw::unpack( s, value[i] );
+      }
+    }
 
     template<typename Stream, typename T>
     inline void pack( Stream& s, const T& v ) {

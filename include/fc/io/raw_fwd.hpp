@@ -68,6 +68,9 @@ namespace fc {
     template<typename Stream, typename K, typename V> inline void pack( Stream& s, const std::pair<K,V>& value );
     template<typename Stream, typename K, typename V> inline void unpack( Stream& s, std::pair<K,V>& value );
 
+    template<typename Stream, typename T, std::size_t S> inline void pack( Stream& s, const std::array<T,S>& value );
+    template<typename Stream, typename T, std::size_t S> inline void unpack( Stream& s, std::array<T,S>& value );
+
     template<typename Stream> inline void pack( Stream& s, const variant_object& v );
     template<typename Stream> inline void unpack( Stream& s, variant_object& v );
     template<typename Stream> inline void pack( Stream& s, const variant& v );
