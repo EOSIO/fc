@@ -10,12 +10,14 @@
 #include <vector>
 #include "_digest_common.hpp"
 
-namespace fc 
+namespace fc
 {
-  
+
 ripemd160::ripemd160() { memset( _hash, 0, sizeof(_hash) ); }
 ripemd160::ripemd160( const string& hex_str ) {
-  fc::from_hex( hex_str, (char*)_hash, sizeof(_hash) );  
+   auto bytes_written = fc::from_hex( hex_str, (char*)_hash, sizeof(_hash) );
+   if( bytes_written < sizeof(_hash) )
+      memset( (char*)_hash + bytes_written, 0, (sizeof(_hash) - bytes_written) );
 }
 
 string ripemd160::str()const {
@@ -57,7 +59,7 @@ ripemd160 ripemd160::hash( const string& s ) {
 }
 
 void ripemd160::encoder::write( const char* d, uint32_t dlen ) {
-  RIPEMD160_Update( &my->ctx, d, dlen); 
+  RIPEMD160_Update( &my->ctx, d, dlen);
 }
 ripemd160 ripemd160::encoder::result() {
   ripemd160 h;
@@ -65,7 +67,7 @@ ripemd160 ripemd160::encoder::result() {
   return h;
 }
 void ripemd160::encoder::reset() {
-  RIPEMD160_Init( &my->ctx);  
+  RIPEMD160_Init( &my->ctx);
 }
 
 ripemd160 operator << ( const ripemd160& h1, uint32_t i ) {
@@ -97,7 +99,7 @@ bool operator != ( const ripemd160& h1, const ripemd160& h2 ) {
 bool operator == ( const ripemd160& h1, const ripemd160& h2 ) {
   return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) == 0;
 }
-  
+
   void to_variant( const ripemd160& bi, variant& v )
   {
      v = std::vector<char>( (const char*)&bi, ((const char*)&bi) + sizeof(bi) );
@@ -112,5 +114,5 @@ bool operator == ( const ripemd160& h1, const ripemd160& h2 ) {
     else
         memset( &bi, char(0), sizeof(bi) );
   }
-  
+
 } // fc
