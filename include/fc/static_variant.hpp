@@ -218,6 +218,7 @@ public:
        );
        static const int value = impl::position<X, Types...>::pos;
     };
+
     static_variant()
     {
        _tag = 0;
@@ -229,10 +230,15 @@ public:
     {
        cpy.visit( impl::copy_construct<static_variant>(*this) );
     }
+
     static_variant( const static_variant& cpy )
     {
        cpy.visit( impl::copy_construct<static_variant>(*this) );
     }
+
+    static_variant( static_variant& cpy )
+    : static_variant( const_cast<const static_variant&>(cpy) )
+    {}
 
     static_variant( static_variant&& mv )
     {
@@ -341,10 +347,10 @@ public:
       try {
          _tag = w;
          impl::storage_ops<0, Types...>::con(_tag, storage);
-      } catch ( ... ) { 
+      } catch ( ... ) {
          _tag = 0;
          impl::storage_ops<0, Types...>::con(_tag, storage);
-      } 
+      }
     }
 
     int which() const {return _tag;}
@@ -364,7 +370,7 @@ struct visitor {
     typedef Result result_type;
 };
 
-   struct from_static_variant 
+   struct from_static_variant
    {
       variant& var;
       from_static_variant( variant& dv ):var(dv){}
@@ -384,7 +390,7 @@ struct visitor {
       typedef void result_type;
       template<typename T> void operator()( T& v )const
       {
-         from_variant( var, v ); 
+         from_variant( var, v );
       }
    };
 
