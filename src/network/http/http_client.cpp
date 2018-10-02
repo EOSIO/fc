@@ -1,4 +1,5 @@
 #include <fc/network/http/http_client.hpp>
+#include <fc/network/platform_root_ca.hpp>
 #include <fc/io/json.hpp>
 #include <fc/scoped_exit.hpp>
 
@@ -43,6 +44,7 @@ public:
    :_ioc()
    ,_sslc(ssl::context::sslv23_client)
    {
+      add_platform_root_cas_to_context(_sslc);
       set_verify_peers(true);
    }
 
