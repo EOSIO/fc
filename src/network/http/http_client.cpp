@@ -199,7 +199,7 @@ public:
          FC_THROW("Unable to set SNI Host Name: ${msg}", ("msg", ec.message()));
       }
 
-      ssl_socket->set_verify_callback(boost::asio::ssl::rfc2818_verification(dest.host()));
+      ssl_socket->set_verify_callback(boost::asio::ssl::rfc2818_verification(*dest.host()));
 
       error_code ec = sync_connect_with_timeout(ssl_socket->next_layer(), *dest.host(), dest.port() ? std::to_string(*dest.port()) : "443", deadline);
       if (!ec) {
