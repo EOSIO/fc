@@ -10,6 +10,7 @@
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
+#include <boost/asio/ssl/rfc2818_verification.hpp>
 #include <boost/filesystem.hpp>
 
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
@@ -197,6 +198,8 @@ public:
          error_code ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
          FC_THROW("Unable to set SNI Host Name: ${msg}", ("msg", ec.message()));
       }
+
+      ssl_socket->set_verify_callback(boost::asio::ssl::rfc2818_verification(*dest.host()));
 
       error_code ec = sync_connect_with_timeout(ssl_socket->next_layer(), *dest.host(), dest.port() ? std::to_string(*dest.port()) : "443", deadline);
       if (!ec) {
