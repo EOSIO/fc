@@ -326,9 +326,10 @@ namespace fc {
 
     template<typename Stream> inline void unpack( Stream& s, shared_string& v )  {
       std::vector<char> tmp; fc::raw::unpack(s,tmp);
-      if( tmp.size() )
-         v = shared_string(tmp.data(),tmp.data()+tmp.size());
-      else v = shared_string();
+      FC_ASSERT(v.size() == 0);
+      if( tmp.size() ) {
+         v.append(tmp.begin(), tmp.end());
+      }
     }
 
     // bool
