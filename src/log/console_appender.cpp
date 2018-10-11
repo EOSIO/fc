@@ -99,8 +99,7 @@ namespace fc {
 
       //fc::string fmt_str = fc::format_string( cfg.format, mutable_variant_object(m.get_context())( "message", message)  );
       
-      std::string file_line = m.get_context().get_file();
-      file_line = m.get_context().get_file().substr( 0, 22 );
+      std::string file_line = m.get_context().get_file().substr( 0, 22 );
       file_line += ':';
       file_line += fixed_size(  6, fc::to_string( m.get_context().get_line_number() ) );
 
