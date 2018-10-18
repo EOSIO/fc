@@ -3,6 +3,7 @@
  *  @copyright defined in LICENSE.txt; Parts of this file Copyright (c) 2009 The Go Authors
  */
 #include <fc/network/platform_root_ca.hpp>
+#include <fc/exception/exception.hpp>
 
 #include <string>
 
