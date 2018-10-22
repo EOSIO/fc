@@ -651,7 +651,7 @@ namespace fc
          c.insert( item.as<T>() );
    }
    template<typename T> void to_variant( const boost::multiprecision::number<T>& n, variant& v ) {
-      v = std::string(n);
+      v = n.str();
    }
    template<typename T> void from_variant( const variant& v, boost::multiprecision::number<T>& n ) {
       n = boost::multiprecision::number<T>(v.get_string());
