@@ -16,7 +16,9 @@
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 namespace http = boost::beast::http;    // from <boost/beast/http.hpp>
 namespace ssl = boost::asio::ssl;       // from <boost/asio/ssl.hpp>
+#ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
 namespace local = boost::asio::local;
+#endif
 
 namespace fc {
 
@@ -33,8 +35,14 @@ public:
    using host_key = std::tuple<std::string, std::string, uint16_t>;
    using raw_socket_ptr = std::unique_ptr<tcp::socket>;
    using ssl_socket_ptr = std::unique_ptr<ssl::stream<tcp::socket>>;
+#ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
    using unix_socket_ptr = std::unique_ptr<local::stream_protocol::socket>;
-   using connection = static_variant<raw_socket_ptr, ssl_socket_ptr, unix_socket_ptr>;
+#endif
+   using connection = static_variant<raw_socket_ptr, ssl_socket_ptr
+#ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
+                                     , unix_socket_ptr
+#endif
+                                    >;
    using connection_map = std::map<host_key, connection>;
    using unix_url_split_map = std::map<string, fc::url>;
    using error_code = boost::system::error_code;
@@ -159,6 +167,7 @@ public:
       return std::make_tuple(dest.proto(), *dest.host(), port);
    }
 
+#ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
    connection_map::iterator create_unix_connection( const url& dest, const deadline_type& deadline) {
       auto key = url_to_host_key(dest);
       auto socket = std::make_unique<local::stream_protocol::socket>(_ioc);
@@ -173,6 +182,7 @@ public:
 
       return res.first;
    }
+#endif
 
    connection_map::iterator create_raw_connection( const url& dest, const deadline_type& deadline ) {
       auto key = url_to_host_key(dest);
@@ -223,8 +233,10 @@ public:
          return create_raw_connection(dest, deadline);
       } else if (dest.proto() == "https") {
          return create_ssl_connection(dest, deadline);
+#ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
       } else if (dest.proto() == "unix") {
          return create_unix_connection(dest, deadline);
+#endif
       } else {
          FC_THROW("Unknown protocol ${proto}", ("proto", dest.proto()));
       }
@@ -239,9 +251,11 @@ public:
          return !ptr->lowest_layer().is_open();
       }
 
+#ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
       bool operator() ( const unix_socket_ptr& ptr) const {
          return !ptr->is_open();
       }
+#endif
    };
 
    bool check_closed( const connection_map::iterator& conn_itr ) {
@@ -379,6 +393,7 @@ public:
       return result;
    }
 
+#ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
    /*
       Unix URLs work a little special here. They'll originally be in the format of
       unix:///home/username/eosio-wallet/keosd.sock/v1/wallet/sign_digest
@@ -413,6 +428,7 @@ public:
       url_path = "/" / url_path;
       return _unix_url_paths.emplace(full_url, fc::url("unix", socket_file.string(), ostring(), ostring(), url_path.string(), ostring(), ovariant_object(), fc::optional<uint16_t>())).first->second;
    }
+#endif
 
    boost::asio::io_context  _ioc;
    ssl::context             _sslc;
@@ -428,9 +444,11 @@ http_client::http_client()
 }
 
 variant http_client::post_sync(const url& dest, const variant& payload, const fc::time_point& deadline) {
+#ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
    if(dest.proto() == "unix")
       return _my->post_sync(_my->get_unix_url(*dest.host()), payload, deadline);
    else
+#endif
       return _my->post_sync(dest, payload, deadline);
 }
 
