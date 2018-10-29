@@ -45,20 +45,20 @@ namespace fc {
 
    time_point::operator fc::string()const
    {
-      auto padded_ms = [](auto ms) {
-         return to_string(ms + 1000).substr(1);
+      auto padded_ms = [](uint64_t ms) {
+         return to_string(ms + 1000ULL).substr(1);
       };
 
       auto count = elapsed.count();
       if (count >= 0) {
-         auto secs = count / 1000000LL;
-         auto msec = (count % 1000000LL) / 1000;
+         uint64_t secs = (uint64_t)count / 1000000ULL;
+         uint64_t msec = ((uint64_t)count % 1000000ULL) / 1000ULL;
          const auto ptime = boost::posix_time::from_time_t(time_t(secs));
          return boost::posix_time::to_iso_extended_string(ptime) + "." + padded_ms(msec);
       } else {
          // negative time_points are non-sensical but expressible with the current constraints
-         auto secs = -count / 1000000LL;
-         auto msec = (-count % 1000000LL) / 1000;
+         uint64_t secs = (uint64_t)(-count) / 1000000ULL;
+         uint64_t msec = ((uint64_t)(-count) % 1000000ULL) / 1000ULL;
          return string("-") + to_string(secs) + "." + padded_ms(msec) + "s";
       }
    }
