@@ -46,7 +46,8 @@ namespace fc {
    time_point::operator fc::string()const
    {
       auto padded_ms = [](uint64_t ms) {
-         return to_string(ms + 1000ULL).substr(1);
+         uint64_t offset_ms = ms + 1000ULL;
+         return to_string(offset_ms).substr(1);
       };
 
       auto count = elapsed.count();
