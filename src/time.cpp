@@ -45,22 +45,18 @@ namespace fc {
 
    time_point::operator fc::string()const
    {
-      auto padded_ms = [](uint64_t ms) {
-         uint64_t offset_ms = ms + 1000ULL;
-         return to_string(offset_ms).substr(1);
-      };
-
       auto count = elapsed.count();
       if (count >= 0) {
          uint64_t secs = (uint64_t)count / 1000000ULL;
          uint64_t msec = ((uint64_t)count % 1000000ULL) / 1000ULL;
+         string padded_ms = to_string((uint64_t)(msec + 1000ULL)).substr(1);
          const auto ptime = boost::posix_time::from_time_t(time_t(secs));
-         return boost::posix_time::to_iso_extended_string(ptime) + "." + padded_ms(msec);
+         return boost::posix_time::to_iso_extended_string(ptime) + "." + padded_ms;
       } else {
-         // negative time_points are non-sensical but expressible with the current constraints
-         uint64_t secs = (uint64_t)(-count) / 1000000ULL;
-         uint64_t msec = ((uint64_t)(-count) % 1000000ULL) / 1000ULL;
-         return string("-") + to_string(secs) + "." + padded_ms(msec) + "s";
+         // negative time_points serialized as "durations" in the ISO form with boost
+         // this is not very human readable but fits the precedent set by the above
+         auto as_duration = boost::posix_time::microseconds(count);
+         return boost::posix_time::to_iso_string(as_duration);
       }
    }
 
