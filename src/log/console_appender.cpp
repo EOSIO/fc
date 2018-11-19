@@ -22,6 +22,7 @@ namespace fc {
      config                      cfg;
      boost::mutex                log_mutex;
      color::type                 lc[log_level::off+1];
+     bool                        use_syslog_header{getenv("JOURNAL_STREAM")};
 #ifdef WIN32
      HANDLE                      console_handle;
 #endif
@@ -106,6 +107,22 @@ namespace fc {
 
       std::string line;
       line.reserve( 256 );
+      if(my->use_syslog_header) {
+         switch(m.get_context().get_log_level()) {
+            case log_level::error:
+               line += "<3>";
+               break;
+            case log_level::warn:
+               line += "<4>";
+               break;
+            case log_level::info:
+               line += "<6>";
+               break;
+            case log_level::debug:
+               line += "<7>";
+               break;
+         }
+      }
       line += fixed_size(  5, context.get_log_level().to_string() ); line += ' ';
       // use now() instead of context.get_timestamp() because log_message construction can include user provided long running calls
       line += string( time_point::now() ); line += ' ';
