@@ -741,7 +741,7 @@ namespace fc
               }
               break;
             case 'n':
-              //If we're in quotes and see a \n, just print it literally but unset the escape flag.
+              //If we're in quotes and see a \n, \b, \f, \r, \t, or \u, just print it literally but unset the escape flag.
             case 'b':
             case 'f':
             case 'r':
