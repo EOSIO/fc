@@ -44,6 +44,8 @@ namespace fc { namespace crypto {
          friend class public_key;
    }; // public_key
 
+   size_t hash_value(const signature& b);
+
 } }  // fc::crypto
 
 namespace fc {
@@ -51,5 +53,13 @@ namespace fc {
 
    void from_variant(const variant& var, crypto::signature& vo);
 } // namespace fc
+
+namespace std {
+   template <> struct hash<fc::crypto::signature> {
+      std::size_t operator()(const fc::crypto::signature& k) const {
+         return fc::crypto::hash_value(k);
+      }
+   };
+} // std
 
 FC_REFLECT(fc::crypto::signature, (_storage) )
