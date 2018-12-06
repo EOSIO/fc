@@ -1,9 +1,6 @@
-cmake_minimum_required(VERSION 3.5)
-project(fc)
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
-include(GNUInstallDirs)
-include(SetupTargetMacros)
+# Setup module path to make visible used CMake extensions
+#INCLUDE(GetPrerequisites)
+#INCLUDE(VersionMacros)
 
 SET( DEFAULT_HEADER_INSTALL_DIR usr/include/${target} )
 SET( DEFAULT_LIBRARY_INSTALL_DIR usr/lib )
@@ -18,9 +15,6 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif()
 
 SET (ORIGINAL_LIB_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.67 REQUIRED COMPONENTS date_time filesystem system chrono unit_test_framework)
 
 add_subdirectory( secp256k1 )
 
