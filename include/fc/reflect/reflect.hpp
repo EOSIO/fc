@@ -94,16 +94,16 @@ struct reflector_verifier_visitor {
 
    // int matches 0 if reflector_verify exists SFINAE
    template<class T>
-   auto verify_imp(const T& t, int) -> decltype(t.reflector_verify(), void()) {
+   auto verify_imp(T& t, int) -> decltype(t.reflector_verify(), void()) {
       t.reflector_verify();
    }
 
    // if no reflector_verify method exists (SFINAE), 0 matches long
    template<class T>
-   auto verify_imp(const T& t, long) -> decltype(t, void()) {}
+   auto verify_imp(T& t, long) -> decltype(t, void()) {}
 
    template<typename T>
-   auto reflect_verify(const T& t) -> decltype(verify_imp(t, 0), void()) {
+   auto reflect_verify(T& t) -> decltype(verify_imp(t, 0), void()) {
       verify_imp(t, 0);
    }
 
@@ -153,6 +153,7 @@ template<typename Visitor>\
 void fc::reflector<TYPE>::visit( const Visitor& v ) { \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_BASE, v, INHERITS ) \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
+    verify( v ); \
 }
 
 #endif // DOXYGEN

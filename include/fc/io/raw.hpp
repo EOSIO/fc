@@ -436,6 +436,8 @@ namespace fc {
         template<typename Stream, typename T>
         static inline void unpack( Stream& s, T& v ) {
           if_enum< typename fc::reflector<T>::is_enum >::unpack(s,v);
+           reflector_verifier_visitor<T> verifier(v);
+           verifier.reflector_verify();
         }
       };
 
