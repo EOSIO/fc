@@ -436,12 +436,16 @@ namespace fc {
         template<typename Stream, typename T>
         static inline void unpack( Stream& s, T& v ) {
           if_enum< typename fc::reflector<T>::is_enum >::unpack(s,v);
-           reflector_verifier_visitor<T> verifier(v);
-           verifier.reflector_verify();
+          // has_feature_reflector_verify_on_unpacked_reflected_types defined below to indicate reflector_verify called
+          reflector_verifier_visitor<T> verifier(v);
+          verifier.reflector_verify();
         }
       };
 
     } // namesapce detail
+
+    // allow users to verify version of fc calls reflector_verify on unpacked reflected types
+    constexpr bool has_feature_reflector_verify_on_unpacked_reflected_types = true;
 
     template<typename Stream, typename T>
     inline void pack( Stream& s, const std::unordered_set<T>& value ) {
