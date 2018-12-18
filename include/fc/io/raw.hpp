@@ -357,9 +357,9 @@ namespace fc {
       };
 
       template<typename Stream, typename Class>
-      struct unpack_object_visitor : fc::reflector_verifier_visitor<Class> {
+      struct unpack_object_visitor : fc::reflector_init_visitor<Class> {
         unpack_object_visitor(Class& _c, Stream& _s)
-        : fc::reflector_verifier_visitor<Class>(_c), s(_s){}
+        : fc::reflector_init_visitor<Class>(_c), s(_s){}
 
         template<typename T, typename C, T(C::*p)>
         inline void operator()( const char* name )const
@@ -436,10 +436,16 @@ namespace fc {
         template<typename Stream, typename T>
         static inline void unpack( Stream& s, T& v ) {
           if_enum< typename fc::reflector<T>::is_enum >::unpack(s,v);
+          // has_feature_reflector_init_on_unpacked_reflected_types defined below to indicate reflector_init called
+          reflector_init_visitor<T> visitor(v);
+           visitor.reflector_init();
         }
       };
 
     } // namesapce detail
+
+    // allow users to verify version of fc calls reflector_init on unpacked reflected types
+    constexpr bool has_feature_reflector_init_on_unpacked_reflected_types = true;
 
     template<typename Stream, typename T>
     inline void pack( Stream& s, const std::unordered_set<T>& value ) {
