@@ -177,6 +177,9 @@ void variant::clear()
      case string_type:
         delete *reinterpret_cast<string**>(this);
         break;
+     case blob_type:
+        delete *reinterpret_cast<blob**>(this);
+        break;
      default:
         break;
    }
@@ -201,6 +204,11 @@ variant::variant( const variant& v )
           *reinterpret_cast<string**>(this)  =
              new string(**reinterpret_cast<const const_string_ptr*>(&v) );
           set_variant_type( this, string_type );
+          return;
+       case blob_type:
+          *reinterpret_cast<blob**>(this)  =
+             new blob(**reinterpret_cast<const const_blob_ptr*>(&v) );
+          set_variant_type( this, blob_type );
           return;
        default:
           memcpy( this, &v, sizeof(v) );
@@ -246,7 +254,9 @@ variant& variant::operator=( const variant& v )
       case string_type:
          *reinterpret_cast<string**>(this)  = new string((**reinterpret_cast<const const_string_ptr*>(&v)) );
          break;
-
+      case blob_type:
+         *reinterpret_cast<blob**>(this)  = new blob((**reinterpret_cast<const const_blob_ptr*>(&v)) );
+         break;
       default:
          memcpy( this, &v, sizeof(v) );
    }
