@@ -8,6 +8,9 @@
 #include <fc/log/gelf_appender.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/exception/exception.hpp>
+#ifdef __linux__ 
+#include <sys/syscall.h>
+#endif
 
 namespace fc {
    extern std::unordered_map<std::string,logger>& get_logger_map();
@@ -94,5 +97,20 @@ namespace fc {
       if( thread_name.empty() )
          thread_name = string("thread-")+fc::to_string(thread_count++);
       return thread_name;
+   }
+
+   static thread_local pid_t thread_pid = 0;
+   void set_thread_pid( const pid_t& pid ) {
+      thread_pid = pid;
+   }
+   const pid_t& get_thread_pid() {
+      if( thread_pid == 0 ) {
+#ifdef __linux__
+         thread_pid = syscall(SYS_gettid);
+#else
+         thread_pid = -ENOSYS;
+#endif
+      }
+      return thread_pid;
    }
 }

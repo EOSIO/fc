@@ -8,6 +8,7 @@
 namespace fc
 {
    const string& get_thread_name();
+   const pid_t& get_thread_pid();
    namespace detail
    {
       class log_context_impl
@@ -18,6 +19,7 @@ namespace fc
             uint64_t     line;
             string       method;
             string       thread_name;
+            pid_t        thread_pid;
             string       task_name;
             string       hostname;
             string       context;
@@ -52,6 +54,7 @@ namespace fc
       my->method      = method;
       my->timestamp   = time_point::now();
       my->thread_name = fc::get_thread_name();
+      my->thread_pid  = fc::get_thread_pid();
    }
 
    log_context::log_context( const variant& v )
@@ -64,6 +67,7 @@ namespace fc
        my->method       = obj["method"].as_string();
        my->hostname     = obj["hostname"].as_string();
        my->thread_name  = obj["thread_name"].as_string();
+       my->thread_pid   = obj["thread_pid"].as_int64();
        if (obj.contains("task_name"))
          my->task_name    = obj["task_name"].as_string();
        my->timestamp    = obj["timestamp"].as<time_point>();
@@ -168,6 +172,7 @@ namespace fc
    uint64_t   log_context::get_line_number()const { return my->line; }
    string     log_context::get_method()const     { return my->method; }
    string     log_context::get_thread_name()const { return my->thread_name; }
+   pid_t      log_context::get_thread_pid()const   { return my->thread_pid; }
    string     log_context::get_task_name()const { return my->task_name; }
    string     log_context::get_host_name()const   { return my->hostname; }
    time_point  log_context::get_timestamp()const  { return my->timestamp; }
@@ -184,6 +189,7 @@ namespace fc
                ( "method",       my->method              )
                ( "hostname",     my->hostname            )
                ( "thread_name",  my->thread_name         )
+               ( "thread_pid",   my->thread_pid          )
                ( "timestamp",    variant(my->timestamp)  );
 
       if( my->context.size() ) 

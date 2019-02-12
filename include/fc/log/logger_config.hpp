@@ -44,6 +44,9 @@ namespace fc {
 
    void set_thread_name( const string& name );
    const string& get_thread_name();
+
+   void set_thread_pid( const pid_t& pid );
+   const pid_t& get_thread_pid();
 }
 
 #include <fc/reflect/reflect.hpp>

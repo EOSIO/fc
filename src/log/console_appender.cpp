@@ -127,6 +127,9 @@ namespace fc {
       // use now() instead of context.get_timestamp() because log_message construction can include user provided long running calls
       line += string( time_point::now() ); line += ' ';
       line += fixed_size(  9, context.get_thread_name() ); line += ' ';
+#ifdef __linux__
+      line += fixed_size(  9, fc::to_string( context.get_thread_pid() ) ); line += ' ';
+#endif
       line += fixed_size( 29, file_line ); line += ' ';
 
       auto me = context.get_method();

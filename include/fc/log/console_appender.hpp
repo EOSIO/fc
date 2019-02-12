@@ -37,7 +37,7 @@ namespace fc
             struct config 
             {
                config()
-               :format( "${timestamp} ${thread_name} ${context} ${file}:${line} ${method} ${level}]  ${message}" ),
+               :format( "${timestamp} ${thread_name} ${thread_pid} ${context} ${file}:${line} ${method} ${level}]  ${message}" ),
                 stream(console_appender::stream::std_error),flush(true){}
 
                fc::string                         format;
