@@ -77,7 +77,11 @@ namespace fc
 
    fc::string log_context::to_string()const
    {
+#ifdef __linux__
+      return my->thread_name + " " + fc::to_string(my->thread_pid) + "  " + my->file + ":" + fc::to_string(my->line) + " " + my->method;
+#else
       return my->thread_name + "  " + my->file + ":" + fc::to_string(my->line) + " " + my->method;
+#endif
 
    }
 

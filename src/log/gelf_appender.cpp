@@ -148,6 +148,9 @@ namespace fc
     gelf_message["_file"] = context.get_file();
     gelf_message["_method_name"] = context.get_method();
     gelf_message["_thread_name"] = context.get_thread_name();
+#ifdef __linux__
+    gelf_message["_thread_pid"] = context.get_thread_pid();
+#endif
     if (!context.get_task_name().empty())
       gelf_message["_task_name"] = context.get_task_name();
 
