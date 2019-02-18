@@ -6,6 +6,8 @@
 #include <fc/time.hpp>
 #include <fc/variant_object.hpp>
 #include <fc/shared_ptr.hpp>
+#include <fmt/format.h>
+#include <boost/preprocessor.hpp>
 #include <memory>
 
 namespace fc
@@ -148,7 +150,22 @@ FC_REFLECT_TYPENAME( fc::log_message );
  */
 #define FC_LOG_CONTEXT(LOG_LEVEL) \
    fc::log_context( fc::log_level::LOG_LEVEL, __FILE__, __LINE__, __func__ )
-   
+
+#define FC_NARGS(...) __FC_NARGS(0, ## __VA_ARGS__, 9,8,7,6,5,4,3,2,1,0)
+#define __FC_NARGS(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,N,...) N
+
+#define FC_FMT( FORMAT, ... ) \
+   fmt::format( FORMAT BOOST_PP_IF(FC_NARGS(__VA_ARGS__), BOOST_PP_COMMA, BOOST_PP_EMPTY)() FC_ADD_FMT_ARGS( __VA_ARGS__ ) )
+
+#define FC_ADD_FMT_ARGS(SEQ)           \
+   BOOST_PP_SEQ_FOR_EACH_I(            \
+     FC_ADD_FMT_ARG, _,                \
+     BOOST_PP_VARIADIC_SEQ_TO_SEQ(SEQ) \
+   )
+
+#define FC_ADD_FMT_ARG( r, data, index, elem )      \
+   BOOST_PP_COMMA_IF(index) fmt::arg(BOOST_PP_TUPLE_ENUM(elem))
+
 /**
  * @def FC_LOG_MESSAGE(LOG_LEVEL,FORMAT,...)
  *
@@ -159,5 +176,5 @@ FC_REFLECT_TYPENAME( fc::log_message );
  * @param ...  A set of key/value pairs denoted as ("key",val)("key2",val2)...
  */
 #define FC_LOG_MESSAGE( LOG_LEVEL, FORMAT, ... ) \
-   fc::log_message( FC_LOG_CONTEXT(LOG_LEVEL), FORMAT, fc::mutable_variant_object()__VA_ARGS__ )
+   fc::log_message( FC_LOG_CONTEXT(LOG_LEVEL), FC_FMT( FORMAT,  __VA_ARGS__ ) )
 

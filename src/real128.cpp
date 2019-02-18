@@ -37,7 +37,7 @@ namespace fc
       fixed = self;
 
       return *this;
-   } FC_CAPTURE_AND_RETHROW( (*this)(o) ) }
+   } FC_RETHROW_EXCEPTIONS(warn, "this: {this}, o: {o}", ("this", (std::string)*this)("o", (std::string)o)) }
 
    real128& real128::operator *= ( const real128& o )
    { try {
@@ -47,7 +47,7 @@ namespace fc
       self /= FC_REAL128_PRECISION;
       fixed = self;
       return *this;
-   } FC_CAPTURE_AND_RETHROW( (*this)(o) ) }
+   } FC_RETHROW_EXCEPTIONS(warn, "this: {this}, o: {o}", ("this", (std::string)*this)("o", (std::string)o)) }
 
 
    real128::real128( const std::string& ratio_str )

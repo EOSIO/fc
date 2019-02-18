@@ -357,7 +357,7 @@ void              aes_save( const fc::path& file, const fc::sha512& key, std::ve
    std::ofstream out(file.generic_string().c_str());
    fc::raw::pack( out, check );
    fc::raw::pack( out, cipher );
-} FC_RETHROW_EXCEPTIONS( warn, "", ("file",file) ) }
+} FC_RETHROW_EXCEPTIONS( warn, "{file}", ("file",file.string()) ) }
 
 /**
  *  recovers the plain_text saved via aes_save()
@@ -380,7 +380,7 @@ std::vector<char> aes_load( const fc::path& file, const fc::sha512& key )
    FC_ASSERT( check_enc.result() == check );
 
    return aes_decrypt( key, cipher );
-} FC_RETHROW_EXCEPTIONS( warn, "", ("file",file) ) }
+} FC_RETHROW_EXCEPTIONS( warn, "{file}", ("file",file.string()) ) }
 
 /* This stuff has to go somewhere, I guess this is as good a place as any...
   OpenSSL isn't thread-safe unless you give it access to some mutexes,

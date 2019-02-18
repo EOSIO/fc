@@ -60,7 +60,7 @@ namespace fc {
             my->lc[i] = color::console_default;
          for( auto itr = my->cfg.level_colors.begin(); itr != my->cfg.level_colors.end(); ++itr )
             my->lc[itr->level] = itr->color;
-   } FC_CAPTURE_AND_RETHROW( (console_appender_config) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "console_appender_config" ) }
 
    console_appender::~console_appender() {}
 

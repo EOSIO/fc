@@ -429,45 +429,26 @@ namespace fc
       throw e; \
    }
 
-#define FC_CAPTURE_AND_LOG( ... )  \
+#define FC_LOG_AND_DROP( FORMAT, ... )  \
    catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
    } catch( fc::exception& er ) { \
-      wlog( "${details}", ("details",er.to_detail_string()) ); \
-      wdump( __VA_ARGS__ ); \
+      wlog( "{details}", ("details",er.to_detail_string()) ); \
+      wlog( FORMAT, __VA_ARGS__); \
    } catch( const std::exception& e ) {  \
       fc::exception fce( \
-                FC_LOG_MESSAGE( warn, "rethrow ${what}: ",FC_FORMAT_ARG_PARAMS( __VA_ARGS__  )("what",e.what()) ), \
+                FC_LOG_MESSAGE( warn, "{what}", ("what",e.what()) ), \
                 fc::std_exception_code,\
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ) ; \
-      wlog( "${details}", ("details",fce.to_detail_string()) ); \
-      wdump( __VA_ARGS__ ); \
+      wlog( "{details}", ("details",fce.to_detail_string()) ); \
+      wlog( FORMAT, __VA_ARGS__); \
    } catch( ... ) {  \
       fc::unhandled_exception e( \
-                FC_LOG_MESSAGE( warn, "rethrow", FC_FORMAT_ARG_PARAMS( __VA_ARGS__) ), \
+                FC_LOG_MESSAGE( warn, "unknown exception " FORMAT, __VA_ARGS__ ), \
                 std::current_exception() ); \
-      wlog( "${details}", ("details",e.to_detail_string()) ); \
-      wdump( __VA_ARGS__ ); \
-   }
-
-#define FC_LOG_AND_DROP( ... )  \
-   catch( const boost::interprocess::bad_alloc& ) {\
-      throw;\
-   } catch( fc::exception& er ) { \
-      wlog( "${details}", ("details",er.to_detail_string()) ); \
-   } catch( const std::exception& e ) {  \
-      fc::exception fce( \
-                FC_LOG_MESSAGE( warn, "rethrow ${what}: ",FC_FORMAT_ARG_PARAMS( __VA_ARGS__  )("what",e.what()) ), \
-                fc::std_exception_code,\
-                BOOST_CORE_TYPEID(e).name(), \
-                e.what() ) ; \
-      wlog( "${details}", ("details",fce.to_detail_string()) ); \
-   } catch( ... ) {  \
-      fc::unhandled_exception e( \
-                FC_LOG_MESSAGE( warn, "rethrow", FC_FORMAT_ARG_PARAMS( __VA_ARGS__) ), \
-                std::current_exception() ); \
-      wlog( "${details}", ("details",e.to_detail_string()) ); \
+      wlog( "{details}", ("details",e.to_detail_string()) ); \
+      wlog( FORMAT, __VA_ARGS__); \
    }
 
 
