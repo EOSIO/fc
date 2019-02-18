@@ -229,6 +229,12 @@ namespace fc
       return format_string( my->format, my->args );
    }
 
+   string        log_message::get_limited_message()const
+   {
+      const bool minimize = true;
+      return format_string( my->format, my->args, minimize );
+   }
+
 
 } // fc
 
