@@ -142,10 +142,10 @@ struct reflector_init_visitor {
 
 #define FC_REFLECT_DERIVED_IMPL_INLINE( TYPE, INHERITS, MEMBERS ) \
 template<typename Visitor>\
-static inline void visit( const Visitor& v ) { \
+static inline void visit( Visitor&& v ) { \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_BASE, v, INHERITS ) \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
-    init( v ); \
+    init( std::forward<Visitor>(v) ); \
 }
 
 #endif // DOXYGEN
@@ -247,14 +247,14 @@ template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct reflector<TYPE> {\
     typedef fc::true_type  is_defined; \
     typedef fc::false_type is_enum; \
     template<typename Visitor> \
-    static auto init_imp(const Visitor& v, int) -> decltype(v.reflector_init(), void()) { \
-       v.reflector_init(); \
+    static auto init_imp(Visitor&& v, int) -> decltype(std::forward<Visitor>(v).reflector_init(), void()) { \
+       std::forward<Visitor>(v).reflector_init(); \
     } \
     template<typename Visitor> \
-    static auto init_imp(const Visitor& v, long) -> decltype(v, void()) {} \
+    static auto init_imp(Visitor&& v, long) -> decltype(v, void()) {} \
     template<typename Visitor> \
-    static auto init(const Visitor& v) -> decltype(init_imp(v, 0), void()) { \
-       init_imp(v, 0); \
+    static auto init(Visitor&& v) -> decltype(init_imp(std::forward<Visitor>(v), 0), void()) { \
+       init_imp(std::forward<Visitor>(v), 0); \
     } \
     enum  member_count_enum {  \
       local_member_count = 0  BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_MEMBER_COUNT, +, MEMBERS ),\
