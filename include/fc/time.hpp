@@ -157,6 +157,16 @@ struct formatter<fc::time_point> {
    }
 };
 template<>
+struct formatter<fc::time_point_sec> {
+   template<typename ParseContext>
+   constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+   template<typename FormatContext>
+   auto format( const fc::time_point_sec& p, FormatContext& ctx ) {
+      return format_to( ctx.out(), "{}", (std::string)p );
+   }
+};
+template<>
 struct formatter<fc::microseconds> {
    template<typename ParseContext>
    constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
