@@ -47,7 +47,7 @@ namespace fc { namespace crypto {
 
          // serialize to/from string
          explicit private_key(const string& base58str);
-         explicit operator string() const;
+         std::string str()const;
 
       private:
          storage_type _storage;

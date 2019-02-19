@@ -16,8 +16,8 @@ BOOST_AUTO_TEST_CASE(test_k1) try {
    auto test_private_key = private_key(private_key_string);
    auto test_public_key = test_private_key.get_public_key();
 
-   BOOST_CHECK_EQUAL(private_key_string, std::string(test_private_key));
-   BOOST_CHECK_EQUAL(expected_public_key, std::string(test_public_key));
+   BOOST_CHECK_EQUAL(private_key_string, test_private_key.str());
+   BOOST_CHECK_EQUAL(expected_public_key, test_public_key.str());
 } FC_LOG_AND_RETHROW();
 
 BOOST_AUTO_TEST_CASE(test_r1) try {
@@ -26,8 +26,8 @@ BOOST_AUTO_TEST_CASE(test_r1) try {
    auto test_private_key = private_key(private_key_string);
    auto test_public_key = test_private_key.get_public_key();
 
-   BOOST_CHECK_EQUAL(private_key_string, std::string(test_private_key));
-   BOOST_CHECK_EQUAL(expected_public_key, std::string(test_public_key));
+   BOOST_CHECK_EQUAL(private_key_string, test_private_key.str());
+   BOOST_CHECK_EQUAL(expected_public_key, test_public_key.str());
 } FC_LOG_AND_RETHROW();
 
 BOOST_AUTO_TEST_CASE(test_k1_recovery) try {
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(test_k1_recovery) try {
    auto recovered_pub = public_key(sig, digest);
    std::cout << recovered_pub << std::endl;
 
-   BOOST_CHECK_EQUAL(std::string(recovered_pub), std::string(pub));
+   BOOST_CHECK_EQUAL(recovered_pub.str(), pub.str());
 } FC_LOG_AND_RETHROW();
 
 BOOST_AUTO_TEST_CASE(test_r1_recovery) try {
@@ -53,29 +53,29 @@ BOOST_AUTO_TEST_CASE(test_r1_recovery) try {
    auto recovered_pub = public_key(sig, digest);
    std::cout << recovered_pub << std::endl;
 
-   BOOST_CHECK_EQUAL(std::string(recovered_pub), std::string(pub));
+   BOOST_CHECK_EQUAL(recovered_pub.str(), pub.str());
 } FC_LOG_AND_RETHROW();
 
 BOOST_AUTO_TEST_CASE(test_k1_recyle) try {
    auto key = private_key::generate<ecc::private_key_shim>();
    auto pub = key.get_public_key();
-   auto pub_str = std::string(pub);
+   auto pub_str = pub.str();
    auto recycled_pub = public_key(pub_str);
 
    std::cout << pub << " -> " << recycled_pub << std::endl;
 
-   BOOST_CHECK_EQUAL(std::string(pub), std::string(recycled_pub));
+   BOOST_CHECK_EQUAL(pub.str(), recycled_pub.str());
 } FC_LOG_AND_RETHROW();
 
 BOOST_AUTO_TEST_CASE(test_r1_recyle) try {
    auto key = private_key::generate<r1::private_key_shim>();
    auto pub = key.get_public_key();
-   auto pub_str = std::string(pub);
+   auto pub_str = pub.str();
    auto recycled_pub = public_key(pub_str);
 
    std::cout << pub << " -> " << recycled_pub << std::endl;
 
-   BOOST_CHECK_EQUAL(std::string(pub), std::string(recycled_pub));
+   BOOST_CHECK_EQUAL(pub.str(), recycled_pub.str());
 } FC_LOG_AND_RETHROW();
 
 

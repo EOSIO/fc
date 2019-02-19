@@ -111,7 +111,7 @@ namespace fc { namespace crypto {
    :_storage(parse_base58(base58str))
    {}
 
-   private_key::operator std::string() const
+   std::string private_key::str()const
    {
       auto which = _storage.which();
 
@@ -125,7 +125,7 @@ namespace fc { namespace crypto {
    }
 
    std::ostream& operator<<(std::ostream& s, const private_key& k) {
-      s << "private_key(" << std::string(k) << ')';
+      s << "private_key(" << k.str() << ')';
       return s;
    }
 
@@ -143,7 +143,7 @@ namespace fc
 {
    void to_variant(const fc::crypto::private_key& var, variant& vo)
    {
-      vo = string(var);
+      vo = var.str();
    }
 
    void from_variant(const variant& var, fc::crypto::private_key& vo)

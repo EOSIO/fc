@@ -142,10 +142,10 @@ namespace fc
 
 
 #define FC_FORMAT_ARG(r, unused, base) \
-  BOOST_PP_STRINGIZE(base) ": ${" BOOST_PP_STRINGIZE( base ) "} "
+  BOOST_PP_STRINGIZE(base) ": {" BOOST_PP_STRINGIZE( base ) "} "
 
 #define FC_FORMAT_ARGS(r, unused, base) \
-  BOOST_PP_LPAREN() BOOST_PP_STRINGIZE(base),fc::variant(base) BOOST_PP_RPAREN()
+  BOOST_PP_LPAREN() BOOST_PP_STRINGIZE(base),base BOOST_PP_RPAREN()
 
 #define FC_FORMAT( SEQ )\
     BOOST_PP_SEQ_FOR_EACH( FC_FORMAT_ARG, v, SEQ ) 

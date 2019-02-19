@@ -659,7 +659,7 @@ namespace fc { namespace json_relaxed
        if( strict && !(result.is_int64() || result.is_uint64() || result.is_double()) )
            FC_THROW_EXCEPTION( parse_error_exception, "expected: number" );
        return result;
-   } FC_CAPTURE_AND_RETHROW() }
+   } FC_RETHROW_EXCEPTIONS(warn, "") }
    
    template<typename T, bool strict>
    variant wordFromStream( T& in )
