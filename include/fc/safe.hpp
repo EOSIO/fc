@@ -228,3 +228,18 @@ namespace fc {
 }
 
 FC_REFLECT_TEMPLATE( (typename T), safe<T>, (value) )
+
+#include <fmt/format.h>
+
+namespace fmt {
+template<typename T>
+struct formatter<fc::safe<T>> {
+   template<typename ParseContext>
+   constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+   template<typename FormatContext>
+   auto format( const fc::safe<T>& v, FormatContext& ctx ) {
+      return format_to( ctx.out(), "{}", v.value );
+   }
+};
+}
