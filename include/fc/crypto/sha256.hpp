@@ -132,5 +132,21 @@ namespace boost
        }
     };
 }
+
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT_TYPENAME( fc::sha256 )
+
+#include <fmt/format.h>
+
+namespace fmt {
+template<>
+struct formatter<fc::sha256> {
+   template<typename ParseContext>
+   constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+   template<typename FormatContext>
+   auto format( const fc::sha256& v, FormatContext& ctx ) {
+      return format_to( ctx.out(), "{}", v.str() );
+   }
+};
+}
