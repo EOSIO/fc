@@ -178,3 +178,17 @@ FC_REFLECT_TYPENAME( fc::log_message );
 #define FC_LOG_MESSAGE( LOG_LEVEL, FORMAT, ... ) \
    fc::log_message( FC_LOG_CONTEXT(LOG_LEVEL), FC_FMT( FORMAT,  __VA_ARGS__ ) )
 
+#include <fmt/format.h>
+
+namespace fmt {
+template<typename F, typename S>
+struct formatter<std::pair<F, S>> {
+   template<typename ParseContext>
+   constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+   template<typename FormatContext>
+   auto format( const std::pair<F, S>& p, FormatContext& ctx ) {
+      return format_to( ctx.out(), "[{},{}]", p.first, p.second );
+   }
+};
+}
