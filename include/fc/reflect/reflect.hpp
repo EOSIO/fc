@@ -46,8 +46,11 @@ struct reflector{
      *    @endcode
      *
      *  If reflection requires an init (what a constructor might normally do) then
-     *  derive your Visitor publicly from reflector_init_visitor and implement a reflector_init()
-     *  on your reflected type.
+     *  derive your Visitor publicly from reflector_init_visitor, derive your reflected
+     *  type from fc::reflect_init and implement a reflector_init() method
+     *  on your reflected type. reflector_init() needs to be public or you can friend:
+     *     friend struct fc::reflector_init_visitor<your_reflected_class>;
+     *     friend struct fc::has_reflector_init<your_reflected_class>;
      *
      *    @code
      *     template<typename Class>
@@ -81,6 +84,19 @@ struct reflector{
 void throw_bad_enum_cast( int64_t i, const char* e );
 void throw_bad_enum_cast( const char* k, const char* e );
 
+template<typename C>
+struct has_reflector_init {
+private:
+   template<typename T>
+   static auto test( int ) -> decltype( std::declval<T>().reflector_init(), std::true_type() ) {}
+   template<typename>
+   static std::false_type test( long ) {}
+public:
+   static constexpr bool value = std::is_same<decltype( test<C>( 0 ) ), std::true_type>::value;
+};
+
+struct reflect_init {};
+
 template <typename Class>
 struct reflector_init_visitor {
    explicit reflector_init_visitor( Class& c )
@@ -95,15 +111,17 @@ struct reflector_init_visitor {
 
  private:
 
-   // int matches 0 if reflector_init exists SFINAE
+   // 0 matches int if Class derived from reflect_init (SFINAE)
    template<class T>
-   auto init_imp(T& t, int) -> decltype(t.reflector_init(), void()) {
+   typename std::enable_if<std::is_base_of<fc::reflect_init, T>::value>::type
+   init_imp(T& t, int) {
       t.reflector_init();
    }
 
-   // if no reflector_init method exists (SFINAE), 0 matches long
+   // 0 matches long if Class not derived from reflect_init (SFINAE)
    template<class T>
-   auto init_imp(T& t, long) -> decltype(t, void()) {}
+   typename std::enable_if<not std::is_base_of<fc::reflect_init, T>::value>::type
+   init_imp(T& t, long) {}
 
    template<typename T>
    auto reflect_init(T& t) -> decltype(init_imp(t, 0), void()) {
@@ -269,6 +287,10 @@ template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct reflector<TYPE> {\
       total_member_count = local_member_count BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_BASE_MEMBER_COUNT, +, INHERITS )\
     }; \
     FC_REFLECT_DERIVED_IMPL_INLINE( TYPE, INHERITS, MEMBERS ) \
+    static_assert( not fc::has_reflector_init<TYPE>::value || \
+                   std::is_base_of<fc::reflect_init, TYPE>::value, "must derive from fc::reflect_init" ); \
+    static_assert( not std::is_base_of<fc::reflect_init, TYPE>::value || \
+                   fc::has_reflector_init<TYPE>::value, "must provide reflector_init() method" ); \
 }; }
 
 #define FC_REFLECT_DERIVED( TYPE, INHERITS, MEMBERS ) \
