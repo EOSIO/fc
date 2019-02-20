@@ -120,7 +120,7 @@ struct reflector_init_visitor {
 #ifndef DOXYGEN
 
 #define FC_REFLECT_VISIT_BASE(r, visitor, base) \
-  fc::reflector<base>::visit( visitor );
+  fc::reflector<base>::visit_base( visitor );
 
 
 #ifndef _MSC_VER
@@ -145,9 +145,13 @@ struct reflector_init_visitor {
 
 #define FC_REFLECT_DERIVED_IMPL_INLINE( TYPE, INHERITS, MEMBERS ) \
 template<typename Visitor>\
+static inline void visit_base( Visitor&& v ) { \
+    BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
+} \
+template<typename Visitor>\
 static inline void visit( Visitor&& v ) { \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_BASE, v, INHERITS ) \
-    BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
+    visit_base( v ); \
     init( std::forward<Visitor>(v) ); \
 }
 
