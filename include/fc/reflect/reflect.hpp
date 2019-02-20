@@ -114,18 +114,18 @@ struct reflector_init_visitor {
    // 0 matches int if Class derived from reflect_init (SFINAE)
    template<class T>
    typename std::enable_if<std::is_base_of<fc::reflect_init, T>::value>::type
-   init_imp(T& t, int) {
+   init_imp(T& t) {
       t.reflector_init();
    }
 
-   // 0 matches long if Class not derived from reflect_init (SFINAE)
+   // SFINAE if Class not derived from reflect_init
    template<class T>
    typename std::enable_if<not std::is_base_of<fc::reflect_init, T>::value>::type
-   init_imp(T& t, long) {}
+   init_imp(T& t) {}
 
    template<typename T>
-   auto reflect_init(T& t) -> decltype(init_imp(t, 0), void()) {
-      init_imp(t, 0);
+   auto reflect_init(T& t) -> decltype(init_imp(t), void()) {
+      init_imp(t);
    }
 
  protected:
