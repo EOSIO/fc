@@ -46,15 +46,17 @@ struct reflector{
      *    @endcode
      *
      *  If reflection requires an init (what a constructor might normally do) then
-     *  derive your Visitor publicly from reflector_init_visitor, derive your reflected
+     *  derive your Visitor publicly from fc::reflector_init_visitor, derive your reflected
      *  type from fc::reflect_init and implement a reflector_init() method
      *  on your reflected type. reflector_init() needs to be public or you can friend:
      *     friend struct fc::reflector_init_visitor<your_reflected_class>;
      *     friend struct fc::has_reflector_init<your_reflected_class>;
+     *  Note that if your attributes are also protected/private then you also need:
+     *     friend struct fc::reflector<your_reflected_class>;
      *
      *    @code
      *     template<typename Class>
-     *     struct functor : public reflector_init_visitor<Class>  {
+     *     struct functor : public fc::reflector_init_visitor<Class>  {
      *        functor(Class& _c)
      *        : fc::reflector_init_visitor<Class>(_c) {}
      *
