@@ -146,12 +146,13 @@ struct reflector_init_visitor {
 #define FC_REFLECT_DERIVED_IMPL_INLINE( TYPE, INHERITS, MEMBERS ) \
 template<typename Visitor>\
 static inline void visit_base( Visitor&& v ) { \
+    BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_BASE, v, INHERITS ) \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
 } \
 template<typename Visitor>\
 static inline void visit( Visitor&& v ) { \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_BASE, v, INHERITS ) \
-    visit_base( v ); \
+    BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
     init( std::forward<Visitor>(v) ); \
 }
 
