@@ -766,7 +766,8 @@ constexpr size_t minimize_sub_max_size = minimize_max_size / 4;
 string format_string( const string& frmt, const variant_object& args, bool minimize )
 {
    std::string result;
-   const string& format = frmt.size() > minimize_max_size ? frmt.substr( 0, minimize_max_size ) + "..." : frmt;
+   const string& format = ( minimize && frmt.size() > minimize_max_size ) ?
+         frmt.substr( 0, minimize_max_size ) + "..." : frmt;
    result.reserve( minimize_sub_max_size );
    size_t prev = 0;
    size_t next = format.find( '$' );
@@ -813,7 +814,8 @@ string format_string( const string& frmt, const variant_object& args, bool minim
                   }
                } else if( val->value().is_string() ) {
                   if( minimize && val->value().get_string().size() > minimize_sub_max_size ) {
-                     result += val->value().get_string().substr( 0, minimize_sub_max_size );
+                     auto sz = std::min( minimize_sub_max_size, minimize_max_size - result.size() );
+                     result += val->value().get_string().substr( 0, sz );
                      result += "...";
                   } else {
                      result += val->value().get_string();
