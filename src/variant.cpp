@@ -760,19 +760,30 @@ void from_variant( const variant& v, UInt<32>& n ) { n = static_cast<uint32_t>(v
 void to_variant( const UInt<64>& n, variant& v ) { v = uint64_t(n); }
 void from_variant( const variant& v, UInt<64>& n ) { n = v.as_uint64(); }
 
-constexpr size_t minimize_max_size = 256;
+constexpr size_t minimize_max_size = 1024;
+constexpr size_t minimize_sub_max_size = minimize_max_size / 4;
 
-string      format_string( const string& format, const variant_object& args, bool minimize )
+string format_string( const string& frmt, const variant_object& args, bool minimize )
 {
    std::string result;
+   const string& format = frmt.size() > minimize_max_size ? frmt.substr( 0, minimize_max_size ) + "..." : frmt;
+   result.reserve( minimize_sub_max_size );
    size_t prev = 0;
-   auto next = format.find( '$' );
-   while( prev != size_t( string::npos ) && prev < size_t( format.size() ) ) {
-      result += format.substr( prev, size_t( next - prev ) );
+   size_t next = format.find( '$' );
+   while( prev != string::npos && prev < format.size() ) {
+      if( next != string::npos ) {
+         result += format.substr( prev, next - prev );
+      } else {
+         result += format.substr( prev );
+      }
 
       // if we got to the end, return it.
-      if( next == size_t( string::npos ) )
+      if( next == string::npos ) {
          return result;
+      } else if( minimize && result.size() > minimize_max_size ) {
+         result += "...";
+         return result;
+      }
 
       // if we are not at the end, then update the start
       prev = next + 1;
@@ -781,7 +792,7 @@ string      format_string( const string& format, const variant_object& args, boo
          // if the next char is a open, then find close
          next = format.find( '}', prev );
          // if we found close...
-         if( next != size_t( string::npos ) ) {
+         if( next != string::npos ) {
             // the key is between prev and next
             string key = format.substr( prev + 1, (next - prev - 1) );
 
@@ -795,14 +806,14 @@ string      format_string( const string& format, const variant_object& args, boo
                      result += json::to_string( val->value() );
                   }
                } else if( val->value().is_blob() ) {
-                  if( minimize && val->value().get_blob().data.size() > minimize_max_size ) {
+                  if( minimize && val->value().get_blob().data.size() > minimize_sub_max_size ) {
                      replaced = false;
                   } else {
                      result += val->value().as_string();
                   }
                } else if( val->value().is_string() ) {
-                  if( minimize && val->value().get_string().size() > minimize_max_size ) {
-                     result += val->value().get_string().substr( 0, minimize_max_size );
+                  if( minimize && val->value().get_string().size() > minimize_sub_max_size ) {
+                     result += val->value().get_string().substr( 0, minimize_sub_max_size );
                      result += "...";
                   } else {
                      result += val->value().get_string();
