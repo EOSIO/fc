@@ -90,9 +90,9 @@ template<typename C>
 struct has_reflector_init {
 private:
    template<typename T>
-   static auto test( int ) -> decltype( std::declval<T>().reflector_init(), std::true_type() ) {}
+   static auto test( int ) -> decltype( std::declval<T>().reflector_init(), std::true_type() ) { return {}; }
    template<typename>
-   static std::false_type test( long ) {}
+   static std::false_type test( long ) { return {}; }
 public:
    static constexpr bool value = std::is_same<decltype( test<C>( 0 ) ), std::true_type>::value;
 };
