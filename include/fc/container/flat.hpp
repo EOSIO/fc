@@ -57,36 +57,6 @@ namespace fc {
          }
        }
 
-       template<typename Stream, typename T, typename A>
-       void pack( Stream& s, const bip::vector<T,A>& value ) {
-         FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
-         pack( s, unsigned_int((uint32_t)value.size()) );
-         if( !std::is_fundamental<T>::value ) {
-            auto itr = value.begin();
-            auto end = value.end();
-            while( itr != end ) {
-              fc::raw::pack( s, *itr );
-              ++itr;
-            }
-         } else {
-             s.write( (const char*)value.data(), value.size() );
-         }
-       }
-
-       template<typename Stream, typename T, typename A>
-       void unpack( Stream& s, bip::vector<T,A>& value ) {
-          unsigned_int size;
-          unpack( s, size );
-          FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
-          value.resize( size );
-          if( !std::is_fundamental<T>::value ) {
-             for( auto& item : value )
-                unpack( s, item );
-          } else {
-             s.read( (char*)value.data(), value.size() );
-          }
-       }
-
    } // namespace raw
 
 
