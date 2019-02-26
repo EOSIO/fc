@@ -118,48 +118,78 @@ namespace fc {
     }
 
    namespace raw {
-       namespace bip = boost::interprocess;
+      namespace bip = boost::interprocess;
 
-       template<typename Stream, typename T, typename... A>
-       inline void pack( Stream& s, const bip::vector<T,A...>& value ) {
+      template<typename Stream, typename T, typename A>
+      void pack( Stream& s, const bip::vector<T,A>& value ) {
+         FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
          pack( s, unsigned_int((uint32_t)value.size()) );
-         auto itr = value.begin();
-         auto end = value.end();
-         while( itr != end ) {
-           fc::raw::pack( s, *itr );
-           ++itr;
+         if( !std::is_fundamental<T>::value ) {
+            for( const auto& item : value ) {
+               pack( s, item );
+            }
+         } else {
+            s.write( (const char*)value.data(), value.size() );
          }
-       }
-       template<typename Stream, typename T, typename... A>
-       inline void unpack( Stream& s, bip::vector<T,A...>& value ) {
+      }
+
+      template<typename Stream, typename T, typename A>
+      void unpack( Stream& s, bip::vector<T,A>& value ) {
          unsigned_int size;
          unpack( s, size );
-         value.clear(); value.resize(size);
-         for( auto& item : value )
-             fc::raw::unpack( s, item );
-       }
-
-       template<typename Stream, typename T, typename... A>
-       inline void pack( Stream& s, const bip::set<T,A...>& value ) {
-         pack( s, unsigned_int((uint32_t)value.size()) );
-         auto itr = value.begin();
-         auto end = value.end();
-         while( itr != end ) {
-           fc::raw::pack( s, *itr );
-           ++itr;
-         }
-       }
-       template<typename Stream, typename T, typename... A>
-       inline void unpack( Stream& s, bip::set<T,A...>& value ) {
-         unsigned_int size;
-         unpack( s, size );
+         FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
          value.clear();
-         for( uint32_t i = 0; i < size.value; ++i )
-         {
-             T tmp;
-             fc::raw::unpack( s, tmp );
-             value.insert( tmp ); // Avoid moving since it needs to use the allocator of bip::set.
+         value.resize( size );
+         if( !std::is_fundamental<T>::value ) {
+            for( auto& item : value ) {
+               unpack( s, item );
+            }
+         } else {
+            s.read( (char*)value.data(), value.size() );
          }
-       }
+      }
+
+      template<typename Stream, typename T, typename... U>
+      void pack( Stream& s, const bip::set<T, U...>& value ) {
+         FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
+         pack( s, unsigned_int((uint32_t)value.size()) );
+         for( const auto& item : value ) {
+            pack( s, item );
+         }
+      }
+
+      template<typename Stream, typename T, typename... U>
+      void unpack( Stream& s, bip::set<T, U...>& value ) {
+         unsigned_int size; unpack( s, size );
+         FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
+         value.clear();
+         for( uint32_t i = 0; i < size.value; ++i ) {
+            T tmp;
+            unpack( s, tmp );
+            value.insert( tmp ); // Avoid moving since it needs to use the allocator of bip::set.
+         }
+      }
+
+      template<typename Stream, typename K, typename V, typename... U>
+      void pack( Stream& s, const bip::map<K, V, U...>& value ) {
+         FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
+         pack( s, unsigned_int((uint32_t)value.size()) );
+         for( const auto& item : value ) {
+            pack( s, item );
+         }
+      }
+
+      template<typename Stream, typename K, typename V, typename... U>
+      void unpack( Stream& s, bip::map<K, V, U...>& value ) {
+         unsigned_int size; unpack( s, size );
+         FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
+         value.clear();
+         for( uint32_t i = 0; i < size.value; ++i ) {
+            std::pair<K,V> tmp;
+            unpack( s, tmp );
+            value.insert( tmp ); // Avoid moving since it needs to use the allocator of bip::map.
+         }
+      }
+
    }
 }
