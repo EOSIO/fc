@@ -43,16 +43,15 @@ namespace fc {
           vars[i] = fc::variant(*itr);
        vo = vars;
     }
-/*
+
     template<typename K, typename V, typename... A>
     void from_variant( const variant& var,  bip::map<K, V, A...>& vo )
     {
        const variants& vars = var.get_array();
        vo.clear();
        for( auto itr = vars.begin(); itr != vars.end(); ++itr )
-          vo.insert( itr->as< std::pair<K,V> >() ); Not safe for interprocess. Needs allocator
+          vo.insert( itr->as< std::pair<K,V> >() );
     }
-*/
 
     template<typename... T >
     void to_variant( const bip::vector< T... >& t, fc::variant& v ) {
@@ -83,17 +82,14 @@ namespace fc {
       v = std::move(vars);
     }
 
-/*
     template<typename T, typename... A>
     void from_variant( const fc::variant& v, bip::set< T, A... >& d ) {
       const variants& vars = v.get_array();
       d.clear();
-      d.reserve( vars.size() );
-      for( uint32_t i = 0; i < vars.size(); ++i ) {
-         from_variant( vars[i], d[i] ); Not safe for interprocess. Needs allocator
+      for( const auto& var : vars ) {
+         d.insert( var.as<T>() );
       }
     }
-*/
 
     template<typename... A>
     void to_variant( const bip::vector<char, A...>& t, fc::variant& v )
@@ -138,6 +134,29 @@ namespace fc {
          value.clear(); value.resize(size);
          for( auto& item : value )
              fc::raw::unpack( s, item );
+       }
+
+       template<typename Stream, typename T, typename... A>
+       inline void pack( Stream& s, const bip::set<T,A...>& value ) {
+         pack( s, unsigned_int((uint32_t)value.size()) );
+         auto itr = value.begin();
+         auto end = value.end();
+         while( itr != end ) {
+           fc::raw::pack( s, *itr );
+           ++itr;
+         }
+       }
+       template<typename Stream, typename T, typename... A>
+       inline void unpack( Stream& s, bip::set<T,A...>& value ) {
+         unsigned_int size;
+         unpack( s, size );
+         value.clear();
+         for( uint32_t i = 0; i < size.value; ++i )
+         {
+             T tmp;
+             fc::raw::unpack( s, tmp );
+             value.insert( std::move(tmp) );
+         }
        }
    }
 }
