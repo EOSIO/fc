@@ -49,8 +49,10 @@ namespace fc {
     {
        const variants& vars = var.get_array();
        vo.clear();
-       for( auto itr = vars.begin(); itr != vars.end(); ++itr )
-          vo.insert( itr->as< std::pair<K,V> >() );
+       for( auto itr = vars.begin(); itr != vars.end(); ++itr ) {
+          const auto& e = itr->as< std::pair<K,V> >();
+          vo.insert( e ); // Avoid moving since it needs to use the allocator of bip::map.
+       }
     }
 
     template<typename... T >
@@ -87,7 +89,8 @@ namespace fc {
       const variants& vars = v.get_array();
       d.clear();
       for( const auto& var : vars ) {
-         d.insert( var.as<T>() );
+         const auto& e = var.as<T>();
+         d.insert( e ); // Avoid moving since it needs to use the allocator of bip::set.
       }
     }
 
@@ -155,7 +158,7 @@ namespace fc {
          {
              T tmp;
              fc::raw::unpack( s, tmp );
-             value.insert( std::move(tmp) );
+             value.insert( tmp ); // Avoid moving since it needs to use the allocator of bip::set.
          }
        }
    }
