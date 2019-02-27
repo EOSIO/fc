@@ -116,11 +116,6 @@ namespace fc
    template<typename K, typename T>
    void from_variant( const variant& var,  std::unordered_map<K,T>& vo );
 
-   template<typename K, typename... T>
-   void to_variant( const fc::flat_map<K,T...>& var,  variant& vo );
-   template<typename K, typename... T>
-   void from_variant( const variant& var, fc::flat_map<K,T...>& vo );
-
    template<typename K, typename T>
    void to_variant( const std::map<K,T>& var,  variant& vo );
    template<typename K, typename T>
@@ -140,11 +135,6 @@ namespace fc
    void to_variant( const std::deque<T>& var,  variant& vo );
    template<typename T>
    void from_variant( const variant& var,  std::deque<T>& vo );
-
-   template<typename T>
-   void to_variant( const fc::flat_set<T>& var,  variant& vo );
-   template<typename T>
-   void from_variant( const variant& var, fc::flat_set<T>& vo );
 
    template<typename T>
    void to_variant( const std::set<T>& var,  variant& vo );

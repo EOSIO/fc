@@ -38,7 +38,8 @@ namespace fc { namespace crypto { namespace r1 {
           private_key_impl()
           :_key(nullptr)
           {
-          static int init = init_openssl();
+            static int init = init_openssl();
+            (void)init; // silence warning about not using init
           }
           ~private_key_impl()
           {
