@@ -1,195 +1,99 @@
 #pragma once
 
-#include <fc/variant.hpp>
-#include <boost/interprocess/allocators/allocator.hpp>
-#include <boost/interprocess/containers/string.hpp>
+#include <fc/container/container_detail.hpp>
+#include <fc/container/flat.hpp>
 #include <boost/interprocess/containers/vector.hpp>
-#include <boost/interprocess/containers/map.hpp>
-#include <boost/interprocess/containers/flat_map.hpp>
 #include <boost/interprocess/containers/set.hpp>
-#include <boost/interprocess/containers/deque.hpp>
-#include <fc/crypto/hex.hpp>
-#include <fc/io/raw_fwd.hpp>
+#include <boost/interprocess/containers/map.hpp>
+#include <boost/interprocess/containers/flat_set.hpp>
+#include <boost/interprocess/containers/flat_map.hpp>
 
 namespace fc {
 
    namespace bip = boost::interprocess;
 
-    template<typename... T >
-    void to_variant( const bip::deque< T... >& t, fc::variant& v ) {
-      std::vector<variant> vars(t.size());
-      for( size_t i = 0; i < t.size(); ++i ) {
-         vars[i] = t[i];
-      }
-      v = std::move(vars);
-    }
-
-    template<typename T, typename... A>
-    void from_variant( const fc::variant& v, bip::deque< T, A... >& d ) {
-      const variants& vars = v.get_array();
-      d.clear();
-      d.resize( vars.size() );
-      for( uint32_t i = 0; i < vars.size(); ++i ) {
-         from_variant( vars[i], d[i] );
-      }
-    }
-
-    //bip::map == boost::map
-    template<typename K, typename V, typename... T >
-    void to_variant( const bip::map< K, V, T... >& var, fc::variant& vo ) {
-       std::vector< variant > vars(var.size());
-       size_t i = 0;
-       for( auto itr = var.begin(); itr != var.end(); ++itr, ++i )
-          vars[i] = fc::variant(*itr);
-       vo = vars;
-    }
-
-    template<typename K, typename V, typename... A>
-    void from_variant( const variant& var,  bip::map<K, V, A...>& vo )
-    {
-       const variants& vars = var.get_array();
-       vo.clear();
-       for( auto itr = vars.begin(); itr != vars.end(); ++itr ) {
-          const auto& e = itr->as< std::pair<K,V> >();
-          vo.insert( e ); // Avoid moving since it needs to use the allocator of bip::map.
-       }
-    }
-
-    template<typename... T >
-    void to_variant( const bip::vector< T... >& t, fc::variant& v ) {
-      std::vector<variant> vars(t.size());
-      for( size_t i = 0; i < t.size(); ++i ) {
-         vars[i] = t[i];
-      }
-      v = std::move(vars);
-    }
-
-    template<typename T, typename... A>
-    void from_variant( const fc::variant& v, bip::vector< T, A... >& d ) {
-      const variants& vars = v.get_array();
-      d.clear();
-      d.resize( vars.size() );
-      for( uint32_t i = 0; i < vars.size(); ++i ) {
-         from_variant( vars[i], d[i] );
-      }
-    }
-
-    template<typename... T >
-    void to_variant( const bip::set< T... >& t, fc::variant& v ) {
-      std::vector<variant> vars;
-      vars.reserve(t.size());
-      for( const auto& item : t ) {
-         vars.emplace_back( item );
-      }
-      v = std::move(vars);
-    }
-
-    template<typename T, typename... A>
-    void from_variant( const fc::variant& v, bip::set< T, A... >& d ) {
-      const variants& vars = v.get_array();
-      d.clear();
-      for( const auto& var : vars ) {
-         const auto& e = var.as<T>();
-         d.insert( e ); // Avoid moving since it needs to use the allocator of bip::set.
-      }
-    }
-
-    template<typename... A>
-    void to_variant( const bip::vector<char, A...>& t, fc::variant& v )
-    {
-        if( t.size() )
-            v = variant(fc::to_hex(t.data(), t.size()));
-        else
-            v = "";
-    }
-
-    template<typename... A>
-    void from_variant( const fc::variant& v, bip::vector<char, A...>& d )
-    {
-         auto str = v.as_string();
-         d.resize( str.size() / 2 );
-         if( d.size() )
-         {
-            size_t r = fc::from_hex( str, d.data(), d.size() );
-            FC_ASSERT( r == d.size() );
-         }
-    //   std::string b64 = base64_decode( var.as_string() );
-    //   vo = std::vector<char>( b64.c_str(), b64.c_str() + b64.size() );
-    }
-
    namespace raw {
-      namespace bip = boost::interprocess;
-
-      template<typename Stream, typename T, typename A>
-      void pack( Stream& s, const bip::vector<T,A>& value ) {
-         FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
-         pack( s, unsigned_int((uint32_t)value.size()) );
-         if( !std::is_fundamental<T>::value ) {
-            for( const auto& item : value ) {
-               pack( s, item );
-            }
-         } else {
-            s.write( (const char*)value.data(), value.size() );
-         }
-      }
-
-      template<typename Stream, typename T, typename A>
-      void unpack( Stream& s, bip::vector<T,A>& value ) {
-         unsigned_int size;
-         unpack( s, size );
-         FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
-         value.clear();
-         value.resize( size );
-         if( !std::is_fundamental<T>::value ) {
-            for( auto& item : value ) {
-               unpack( s, item );
-            }
-         } else {
-            s.read( (char*)value.data(), value.size() );
-         }
-      }
 
       template<typename Stream, typename T, typename... U>
       void pack( Stream& s, const bip::set<T, U...>& value ) {
-         FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
-         pack( s, unsigned_int((uint32_t)value.size()) );
-         for( const auto& item : value ) {
-            pack( s, item );
-         }
+         detail::pack_set( s, value );
       }
 
       template<typename Stream, typename T, typename... U>
       void unpack( Stream& s, bip::set<T, U...>& value ) {
-         unsigned_int size; unpack( s, size );
-         FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
-         value.clear();
-         for( uint32_t i = 0; i < size.value; ++i ) {
-            T tmp;
-            unpack( s, tmp );
-            value.insert( tmp ); // Avoid moving since it needs to use the allocator of bip::set.
-         }
+         detail::unpack_set( s, value );
+      }
+
+      template<typename Stream, typename T, typename... U>
+      void pack( Stream& s, const bip::multiset<T, U...>& value ) {
+         detail::pack_set( s, value );
+      }
+
+      template<typename Stream, typename T, typename... U>
+      void unpack( Stream& s, bip::multiset<T, U...>& value ) {
+         detail::unpack_set( s, value );
       }
 
       template<typename Stream, typename K, typename V, typename... U>
       void pack( Stream& s, const bip::map<K, V, U...>& value ) {
-         FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
-         pack( s, unsigned_int((uint32_t)value.size()) );
-         for( const auto& item : value ) {
-            pack( s, item );
-         }
+         detail::pack_map( s, value );
       }
 
       template<typename Stream, typename K, typename V, typename... U>
       void unpack( Stream& s, bip::map<K, V, U...>& value ) {
-         unsigned_int size; unpack( s, size );
-         FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
-         value.clear();
-         for( uint32_t i = 0; i < size.value; ++i ) {
-            std::pair<K,V> tmp;
-            unpack( s, tmp );
-            value.insert( tmp ); // Avoid moving since it needs to use the allocator of bip::map.
-         }
+         detail::unpack_map( s, value );
+      }
+
+      template<typename Stream, typename K, typename V, typename... U>
+      void pack( Stream& s, const bip::multimap<K, V, U...>& value ) {
+         detail::pack_map( s, value );
+      }
+
+      template<typename Stream, typename K, typename V, typename... U>
+      void unpack( Stream& s, bip::multimap<K, V, U...>& value ) {
+         detail::unpack_map( s, value );
       }
 
    }
+
+   template<typename T, typename... U>
+   void to_variant( const bip::set< T, U... >& s, fc::variant& vo ) {
+      detail::to_variant_from_set( s, vo );
+   }
+
+   template<typename T, typename... U>
+   void from_variant( const fc::variant& v, bip::set< T, U... >& s ) {
+      detail::from_variant_to_set( v, s );
+   }
+
+   template<typename T, typename... U>
+   void to_variant( const bip::multiset< T, U... >& s, fc::variant& vo ) {
+      detail::to_variant_from_set( s, vo );
+   }
+
+   template<typename T, typename... U>
+   void from_variant( const fc::variant& v, bip::multiset< T, U... >& s ) {
+      detail::from_variant_to_set( v, s );
+   }
+
+   template<typename K, typename V, typename... U >
+   void to_variant( const bip::map< K, V, U... >& m, fc::variant& vo ) {
+      detail::to_variant_from_map( m, vo );
+   }
+
+   template<typename K, typename V, typename... U>
+   void from_variant( const variant& v,  bip::map<K, V, U...>& m ) {
+      detail::from_variant_to_map( v, m );
+   }
+
+   template<typename K, typename V, typename... U >
+   void to_variant( const bip::multimap< K, V, U... >& m, fc::variant& vo ) {
+      detail::to_variant_from_map( m, vo );
+   }
+
+   template<typename K, typename V, typename... U>
+   void from_variant( const variant& v,  bip::multimap<K, V, U...>& m ) {
+      detail::from_variant_to_map( v, m );
+   }
+
 }

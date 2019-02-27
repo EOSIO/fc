@@ -1,29 +1,45 @@
-#pragma once 
+#pragma once
+
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
-#include <boost/interprocess/containers/vector.hpp>
+#include <boost/container/vector.hpp>
+
+#include <boost/interprocess/containers/vector.hpp> // only added to maintain backwards compatibility with existing consumers of fc (can eventually remove)
 
 namespace fc {
 
-   using boost::container::flat_map;
    using boost::container::flat_set;
-   namespace bip = boost::interprocess;
+   using boost::container::flat_multiset;
+   using boost::container::flat_map;
+   using boost::container::flat_multimap;
 
    namespace raw {
-       template<typename Stream, typename T>
-       void pack( Stream& s, const flat_set<T>& value );
-       template<typename Stream, typename T>
-       void unpack( Stream& s, flat_set<T>& value );
-       template<typename Stream, typename K, typename... V>
-       void pack( Stream& s, const flat_map<K,V...>& value );
-       template<typename Stream, typename K, typename... V>
-       void unpack( Stream& s, flat_map<K,V...>& value ) ;
 
+      template<typename Stream, typename T, typename... U>
+      void pack( Stream& s, const boost::container::vector<T, U...>& value );
+      template<typename Stream, typename T, typename... U>
+      void unpack( Stream& s, boost::container::vector<T, U...>& value );
 
-       template<typename Stream, typename T, typename A>
-       void pack( Stream& s, const bip::vector<T,A>& value );
-       template<typename Stream, typename T, typename A>
-       void unpack( Stream& s, bip::vector<T,A>& value );
+      template<typename Stream, typename T, typename... U>
+      void pack( Stream& s, const flat_set<T, U...>& value );
+      template<typename Stream, typename T, typename... U>
+      void unpack( Stream& s, flat_set<T, U...>& value );
+
+      template<typename Stream, typename T, typename... U>
+      void pack( Stream& s, const flat_multiset<T, U...>& value );
+      template<typename Stream, typename T, typename... U>
+      void unpack( Stream& s, flat_multiset<T, U...>& value );
+
+      template<typename Stream, typename K, typename V, typename... U>
+      void pack( Stream& s, const flat_map<K, V, U...>& value );
+      template<typename Stream, typename K, typename V, typename... U>
+      void unpack( Stream& s, flat_map<K, V, U...>& value ) ;
+
+      template<typename Stream, typename K, typename V, typename... U>
+      void pack( Stream& s, const flat_multimap<K, V, U...>& value );
+      template<typename Stream, typename K, typename V, typename... U>
+      void unpack( Stream& s, flat_multimap<K, V, U...>& value ) ;
+
    } // namespace raw
 
 } // fc
