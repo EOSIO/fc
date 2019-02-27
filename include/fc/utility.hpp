@@ -11,6 +11,8 @@
 #define NO_RETURN __attribute__((noreturn))
 #endif
 
+#define MAX_NUM_ARRAY_ELEMENTS (1024*1024)
+#define MAX_SIZE_OF_BYTE_ARRAYS (20*1024*1024)
 
 //namespace std {
 //  typedef decltype(sizeof(int)) size_t;
@@ -45,7 +47,7 @@ namespace fc {
 
   template<typename T>
   struct is_class { typedef decltype(detail::is_class_helper<T>(0)) type; enum value_enum { value = type::value }; };
-#ifdef min 
+#ifdef min
 #undef min
 #endif
   template<typename T>
@@ -55,7 +57,7 @@ namespace fc {
      int i = 0;
      while(*(str+i) != '\0')
         i++;
-     return i; 
+     return i;
   }
 
 
@@ -91,7 +93,7 @@ namespace fc {
 
   // outside of namespace fc becuase of VC++ conflict with std::swap
   template<typename T>
-  void fc_swap( T& a, T& b ) {     
+  void fc_swap( T& a, T& b ) {
     T tmp = fc::move(a);
     a = fc::move(b);
     b = fc::move(tmp);
@@ -99,4 +101,3 @@ namespace fc {
 
 #define LLCONST(constant)   static_cast<int64_t>(constant##ll)
 #define ULLCONST(constant)  static_cast<uint64_t>(constant##ull)
-

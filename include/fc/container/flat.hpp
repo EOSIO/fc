@@ -18,7 +18,7 @@ namespace fc {
             for( const auto& item : value ) {
                pack( s, item );
             }
-         } else {
+         } else if( value.size() ) {
             s.write( (const char*)value.data(), value.size() );
          }
       }
@@ -29,14 +29,33 @@ namespace fc {
          unpack( s, size );
          FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
          value.clear();
-         value.resize( size );
+         value.resize( size.value );
          if( !std::is_fundamental<T>::value ) {
             for( auto& item : value ) {
                unpack( s, item );
             }
-         } else {
+         } else if( value.size() ) {
             s.read( (char*)value.data(), value.size() );
          }
+      }
+
+      template<typename Stream, typename A>
+      void pack( Stream& s, const boost::container::vector<char, A>& value ) {
+         FC_ASSERT( value.size() <= MAX_SIZE_OF_BYTE_ARRAYS );
+         pack( s, unsigned_int((uint32_t)value.size()) );
+         if( value.size() )
+            s.write( (const char*)value.data(), value.size() );
+      }
+
+      template<typename Stream, typename A>
+      void unpack( Stream& s, boost::container::vector<char, A>& value ) {
+         unsigned_int size;
+         unpack( s, size );
+         FC_ASSERT( size.value <= MAX_SIZE_OF_BYTE_ARRAYS );
+         value.clear();
+         value.resize( size.value );
+         if( value.size() )
+            s.read( (char*)value.data(), value.size() );
       }
 
       template<typename Stream, typename T, typename... U>
@@ -83,6 +102,7 @@ namespace fc {
 
    template<typename T, typename... U>
    void to_variant( const boost::container::vector<T, U...>& vec, fc::variant& vo ) {
+      FC_ASSERT( vec.size() <= MAX_NUM_ARRAY_ELEMENTS );
       variants vars;
       vars.reserve( vec.size() );
       for( const auto& item : vec ) {
@@ -94,6 +114,7 @@ namespace fc {
    template<typename T, typename... U>
    void from_variant( const fc::variant& v, boost::container::vector<T, U...>& vec ) {
       const variants& vars = v.get_array();
+      FC_ASSERT( vars.size() <= MAX_NUM_ARRAY_ELEMENTS );
       vec.clear();
       vec.resize( vars.size() );
       for( uint32_t i = 0; i < vars.size(); ++i ) {
@@ -102,8 +123,8 @@ namespace fc {
    }
 
    template<typename... U>
-   void to_variant( const boost::container::vector<char, U...>& vec, fc::variant& vo )
-   {
+   void to_variant( const boost::container::vector<char, U...>& vec, fc::variant& vo ) {
+      FC_ASSERT( vec.size() <= MAX_SIZE_OF_BYTE_ARRAYS );
       if( vec.size() )
          vo = variant( fc::to_hex( vec.data(), vec.size() ) );
       else
@@ -113,7 +134,8 @@ namespace fc {
    template<typename... U>
    void from_variant( const fc::variant& v, boost::container::vector<char, U...>& vec )
    {
-      auto str = v.as_string();
+      const auto& str = v.get_string();
+      FC_ASSERT( str.size() <= 2*MAX_SIZE_OF_BYTE_ARRAYS ); // Doubled because hex strings needs two characters per byte
       vec.resize( str.size() / 2 );
       if( vec.size() ) {
          size_t r = fc::from_hex( str, vec.data(), vec.size() );

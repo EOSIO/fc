@@ -9,6 +9,7 @@ namespace fc {
 
       template<template<typename...> class Set, typename T, typename... U>
       void to_variant_from_set( const Set<T, U...>& s, fc::variant& vo ) {
+         FC_ASSERT( s.size() <= MAX_NUM_ARRAY_ELEMENTS );
          variants vars;
          vars.reserve( s.size() );
          for( const auto& item : s ) {
@@ -20,6 +21,7 @@ namespace fc {
       template<template<typename...> class Set, typename T, typename... U>
       void from_variant_to_set( const fc::variant& v, Set< T, U... >& s ) {
          const variants& vars = v.get_array();
+         FC_ASSERT( vars.size() <= MAX_NUM_ARRAY_ELEMENTS );
          s.clear();
          for( const auto& var : vars ) {
             const auto& item = var.as<T>();
@@ -30,6 +32,7 @@ namespace fc {
       template<template<typename...> class Set, typename T, typename... U>
       void from_variant_to_flat_set( const fc::variant& v, Set< T, U... >& s ) {
          const variants& vars = v.get_array();
+         FC_ASSERT( vars.size() <= MAX_NUM_ARRAY_ELEMENTS );
          s.clear();
          s.reserve( vars.size() );
          for( const auto& var : vars ) {
@@ -40,6 +43,7 @@ namespace fc {
 
       template<template<typename...> class Map, typename K, typename V, typename... U >
       void to_variant_from_map( const Map< K, V, U... >& m, fc::variant& vo ) {
+         FC_ASSERT( m.size() <= MAX_NUM_ARRAY_ELEMENTS );
          variants vars;
          vars.reserve( m.size() );
          for( const auto& item : m ) {
@@ -51,6 +55,7 @@ namespace fc {
       template<template<typename...> class Map, typename K, typename V, typename... U>
       void from_variant_to_map( const variant& v, Map<K, V, U...>& m ) {
          const variants& vars = v.get_array();
+         FC_ASSERT( vars.size() <= MAX_NUM_ARRAY_ELEMENTS );
          m.clear();
          for( const auto& var : vars ) {
           const auto& item = var.as< std::pair<K,V> >();
@@ -61,6 +66,7 @@ namespace fc {
       template<template<typename...> class Map, typename K, typename V, typename... U>
       void from_variant_to_flat_map( const variant& v, Map<K, V, U...>& m ) {
          const variants& vars = v.get_array();
+         FC_ASSERT( vars.size() <= MAX_NUM_ARRAY_ELEMENTS );
          m.clear();
          m.reserve( vars.size() );
          for( const auto& var : vars ) {
@@ -146,5 +152,5 @@ namespace fc {
       }
 
    }
-   
+
 }

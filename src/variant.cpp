@@ -718,7 +718,7 @@ void from_variant( const variant& var,  float& vo )
 
 void to_variant( const std::string& s, variant& v )
 {
-    v = variant( fc::string(s) );
+   v = variant( fc::string(s) );
 }
 
 void from_variant( const variant& var,  string& vo )
@@ -728,21 +728,19 @@ void from_variant( const variant& var,  string& vo )
 
 void to_variant( const std::vector<char>& var,  variant& vo )
 {
-  if( var.size() )
+   FC_ASSERT( var.size() <= MAX_SIZE_OF_BYTE_ARRAYS );
+   if( var.size() )
       vo = variant(to_hex(var.data(),var.size()));
-  else vo = "";
+   else vo = "";
 }
 void from_variant( const variant& var,  std::vector<char>& vo )
 {
-     auto str = var.as_string();
-     vo.resize( str.size() / 2 );
-     if( vo.size() )
-     {
-        size_t r = from_hex( str, vo.data(), vo.size() );
-        FC_ASSERT( r == vo.size() );
-     }
-//   std::string b64 = base64_decode( var.as_string() );
-//   vo = std::vector<char>( b64.c_str(), b64.c_str() + b64.size() );
+   const auto& str = var.get_string();
+   FC_ASSERT( str.size() <= 2*MAX_SIZE_OF_BYTE_ARRAYS ); // Doubled because hex strings needs two characters per byte
+   vo.resize( str.size() / 2 ); {
+      size_t r = from_hex( str, vo.data(), vo.size() );
+      FC_ASSERT( r == vo.size() );
+   }
 }
 
 void to_variant( const UInt<8>& n, variant& v ) { v = uint64_t(n); }
