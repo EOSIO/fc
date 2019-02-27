@@ -6,8 +6,6 @@
 #include <boost/container/flat_set.hpp>
 #include <fc/crypto/hex.hpp>
 
-#include <boost/interprocess/containers/vector.hpp> // only added to maintain backwards compatibility with existing consumers of fc (can eventually remove)
-
 namespace fc {
 
    namespace raw {

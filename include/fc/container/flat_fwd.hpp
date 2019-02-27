@@ -4,6 +4,8 @@
 #include <boost/container/flat_set.hpp>
 #include <boost/container/vector.hpp>
 
+#include <boost/interprocess/containers/vector.hpp> // only added to maintain backwards compatibility with existing consumers of fc (can eventually remove)
+
 namespace fc {
 
    using boost::container::flat_set;
