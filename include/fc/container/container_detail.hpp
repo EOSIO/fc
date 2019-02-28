@@ -26,7 +26,7 @@ namespace fc {
             for( uint32_t i = 0; i < size.value; ++i ) {
                auto tmp = ::fc::detail::default_construct_maybe_with_allocator<T>( value.get_allocator() );
                unpack( s, tmp );
-               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
+               value.insert( value.end(), std::move(tmp) );
             }
          }
 
@@ -39,7 +39,7 @@ namespace fc {
             for( uint32_t i = 0; i < size.value; ++i ) {
                auto tmp = ::fc::detail::default_construct_maybe_with_allocator<T>( value.get_allocator() );
                unpack( s, tmp );
-               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
+               value.insert( value.end(), std::move(tmp) );
             }
          }
 
@@ -60,7 +60,7 @@ namespace fc {
             for( uint32_t i = 0; i < size.value; ++i ) {
                auto tmp = ::fc::detail::default_construct_pair_maybe_with_allocator<K, V>( value.get_allocator() );
                unpack( s, tmp );
-               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
+               value.insert( value.end(), std::move(tmp) );
             }
          }
 
@@ -73,13 +73,11 @@ namespace fc {
             for( uint32_t i = 0; i < size.value; ++i ) {
                auto tmp = ::fc::detail::default_construct_pair_maybe_with_allocator<K, V>( value.get_allocator() );
                unpack( s, tmp );
-               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
+               value.insert( value.end(), std::move(tmp) );
             }
          }
 
       }
-
-      // TODO: Add support for maps that have a key which takes an allocator.
 
    }
 
@@ -104,7 +102,7 @@ namespace fc {
          for( const auto& var : vars ) {
             auto item = default_construct_maybe_with_allocator<T>( s.get_allocator() );
             var.as<T>( item );
-            s.insert( s.end(), item ); // Avoid moving since it needs to use the allocator of s.
+            s.insert( s.end(), std::move(item) );
          }
       }
 
@@ -117,7 +115,7 @@ namespace fc {
          for( const auto& var : vars ) {
             auto item = default_construct_maybe_with_allocator<T>( s.get_allocator() );
             var.as<T>( item );
-            s.insert( s.end(), item ); // Avoid moving since it needs to use the allocator of s.
+            s.insert( s.end(), std::move(item) );
          }
       }
 
@@ -140,7 +138,7 @@ namespace fc {
          for( const auto& var : vars ) {
             auto item = default_construct_pair_maybe_with_allocator<K, V>( m.get_allocator() );
             var.as< std::pair<K,V> >( item );
-            m.insert( m.end(), item ); // Avoid moving since it needs to use the allocator of m.
+            m.insert( m.end(), std::move(item) );
          }
       }
 
@@ -153,7 +151,7 @@ namespace fc {
          for( const auto& var : vars ) {
             auto item = default_construct_pair_maybe_with_allocator<K, V>( m.get_allocator() );
             var.as< std::pair<K,V> >( item );
-            m.insert( m.end(), item ); // Avoid moving since it needs to use the allocator of m.
+            m.insert( m.end(), std::move(item) );
          }
       }
 
