@@ -5,6 +5,84 @@
 
 namespace fc {
 
+   namespace raw {
+
+      namespace detail {
+
+         template<template<typename...> class Set, typename Stream, typename T, typename... U>
+         inline void pack_set( Stream& s, const Set<T, U...>& value ) {
+            FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
+            pack( s, unsigned_int((uint32_t)value.size()) );
+            for( const auto& item : value ) {
+               pack( s, item );
+            }
+         }
+
+         template<template<typename...> class Set, typename Stream, typename T, typename... U>
+         inline void unpack_set( Stream& s, Set<T, U...>& value ) {
+            unsigned_int size; unpack( s, size );
+            FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
+            value.clear();
+            for( uint32_t i = 0; i < size.value; ++i ) {
+               auto tmp = ::fc::detail::default_construct_maybe_with_allocator<T>( value.get_allocator() );
+               unpack( s, tmp );
+               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
+            }
+         }
+
+         template<template<typename...> class Set, typename Stream, typename T, typename... U>
+         inline void unpack_flat_set( Stream& s, Set<T, U...>& value ) {
+            unsigned_int size; unpack( s, size );
+            FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
+            value.clear();
+            value.reserve( size.value );
+            for( uint32_t i = 0; i < size.value; ++i ) {
+               auto tmp = ::fc::detail::default_construct_maybe_with_allocator<T>( value.get_allocator() );
+               unpack( s, tmp );
+               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
+            }
+         }
+
+         template<template<typename...> class Map, typename Stream, typename K, typename V, typename... U>
+         inline void pack_map( Stream& s, const Map<K, V, U...>& value ) {
+            FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
+            pack( s, unsigned_int((uint32_t)value.size()) );
+            for( const auto& item : value ) {
+               pack( s, item );
+            }
+         }
+
+         template<template<typename...> class Map, typename Stream, typename K, typename V, typename... U>
+         inline void unpack_map( Stream& s, Map<K, V, U...>& value ) {
+            unsigned_int size; unpack( s, size );
+            FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
+            value.clear();
+            for( uint32_t i = 0; i < size.value; ++i ) {
+               auto tmp = ::fc::detail::default_construct_pair_maybe_with_allocator<K, V>( value.get_allocator() );
+               unpack( s, tmp );
+               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
+            }
+         }
+
+         template<template<typename...> class Map, typename Stream, typename K, typename V, typename... U>
+         inline void unpack_flat_map( Stream& s, Map<K, V, U...>& value ) {
+            unsigned_int size; unpack( s, size );
+            FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
+            value.clear();
+            value.reserve( size.value );
+            for( uint32_t i = 0; i < size.value; ++i ) {
+               auto tmp = ::fc::detail::default_construct_pair_maybe_with_allocator<K, V>( value.get_allocator() );
+               unpack( s, tmp );
+               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
+            }
+         }
+
+      }
+
+      // TODO: Add support for maps that have a key which takes an allocator.
+
+   }
+
    namespace detail {
 
       template<template<typename...> class Set, typename T, typename... U>
@@ -24,7 +102,8 @@ namespace fc {
          FC_ASSERT( vars.size() <= MAX_NUM_ARRAY_ELEMENTS );
          s.clear();
          for( const auto& var : vars ) {
-            const auto& item = var.as<T>();
+            auto item = default_construct_maybe_with_allocator<T>( s.get_allocator() );
+            var.as<T>( item );
             s.insert( s.end(), item ); // Avoid moving since it needs to use the allocator of s.
          }
       }
@@ -36,7 +115,8 @@ namespace fc {
          s.clear();
          s.reserve( vars.size() );
          for( const auto& var : vars ) {
-            const auto& item = var.as<T>();
+            auto item = default_construct_maybe_with_allocator<T>( s.get_allocator() );
+            var.as<T>( item );
             s.insert( s.end(), item ); // Avoid moving since it needs to use the allocator of s.
          }
       }
@@ -58,8 +138,9 @@ namespace fc {
          FC_ASSERT( vars.size() <= MAX_NUM_ARRAY_ELEMENTS );
          m.clear();
          for( const auto& var : vars ) {
-          const auto& item = var.as< std::pair<K,V> >();
-          m.insert( m.end(), item ); // Avoid moving since it needs to use the allocator of m.
+            auto item = default_construct_pair_maybe_with_allocator<K, V>( m.get_allocator() );
+            var.as< std::pair<K,V> >( item );
+            m.insert( m.end(), item ); // Avoid moving since it needs to use the allocator of m.
          }
       }
 
@@ -70,85 +151,10 @@ namespace fc {
          m.clear();
          m.reserve( vars.size() );
          for( const auto& var : vars ) {
-          const auto& item = var.as< std::pair<K,V> >();
-          m.insert( m.end(), item ); // Avoid moving since it needs to use the allocator of m.
+            auto item = default_construct_pair_maybe_with_allocator<K, V>( m.get_allocator() );
+            var.as< std::pair<K,V> >( item );
+            m.insert( m.end(), item ); // Avoid moving since it needs to use the allocator of m.
          }
-      }
-
-   }
-
-   namespace raw {
-
-      namespace detail {
-
-         template<template<typename...> class Set, typename Stream, typename T, typename... U>
-         inline void pack_set( Stream& s, const Set<T, U...>& value ) {
-            FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
-            pack( s, unsigned_int((uint32_t)value.size()) );
-            for( const auto& item : value ) {
-               pack( s, item );
-            }
-         }
-
-         template<template<typename...> class Set, typename Stream, typename T, typename... U>
-         inline void unpack_set( Stream& s, Set<T, U...>& value ) {
-            unsigned_int size; unpack( s, size );
-            FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
-            value.clear();
-            for( uint32_t i = 0; i < size.value; ++i ) {
-               T tmp;
-               unpack( s, tmp );
-               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
-            }
-         }
-
-         template<template<typename...> class Set, typename Stream, typename T, typename... U>
-         inline void unpack_flat_set( Stream& s, Set<T, U...>& value ) {
-            unsigned_int size; unpack( s, size );
-            FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
-            value.clear();
-            value.reserve( size.value );
-            for( uint32_t i = 0; i < size.value; ++i ) {
-               T tmp;
-               unpack( s, tmp );
-               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
-            }
-         }
-
-         template<template<typename...> class Map, typename Stream, typename K, typename V, typename... U>
-         inline void pack_map( Stream& s, const Map<K, V, U...>& value ) {
-            FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
-            pack( s, unsigned_int((uint32_t)value.size()) );
-            for( const auto& item : value ) {
-               pack( s, item );
-            }
-         }
-
-         template<template<typename...> class Map, typename Stream, typename K, typename V, typename... U>
-         inline void unpack_map( Stream& s, Map<K, V, U...>& value ) {
-            unsigned_int size; unpack( s, size );
-            FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
-            value.clear();
-            for( uint32_t i = 0; i < size.value; ++i ) {
-               std::pair<K,V> tmp;
-               unpack( s, tmp );
-               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
-            }
-         }
-
-         template<template<typename...> class Map, typename Stream, typename K, typename V, typename... U>
-         inline void unpack_flat_map( Stream& s, Map<K, V, U...>& value ) {
-            unsigned_int size; unpack( s, size );
-            FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
-            value.clear();
-            value.reserve( size.value );
-            for( uint32_t i = 0; i < size.value; ++i ) {
-               std::pair<K,V> tmp;
-               unpack( s, tmp );
-               value.insert( value.end(), tmp ); // Avoid moving since it needs to use the allocator of value.
-            }
-         }
-
       }
 
    }

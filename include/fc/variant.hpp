@@ -570,16 +570,17 @@ namespace fc
       vars[1] = variant(t.second);
        v = vars;
    }
+
+   /** @ingroup Serializable */
    template<typename A, typename B>
    void from_variant( const variant& v, std::pair<A,B>& p )
    {
       const variants& vars = v.get_array();
       if( vars.size() > 0 )
-      p.first  = vars[0].as<A>();
+         vars[0].as<A>( p.first );
       if( vars.size() > 1 )
-      p.second = vars[1].as<B>();
+         vars[1].as<B>( p.second );
    }
-
 
    template<typename T>
    variant::variant( const T& val )
