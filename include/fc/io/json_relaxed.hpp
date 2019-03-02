@@ -310,7 +310,7 @@ namespace fc { namespace json_relaxed
            char c = token[i];
            uint8_t vc = ctbl[c];
            if( vc == 0xFF )
-               FC_THROW_EXCEPTION( parse_error_exception, "illegal character {c} in integer of base {b}", ("c", c)("b", base) );
+               FC_THROW_EXCEPTION( parse_error_exception, "illegal character ${c} in integer of base ${b}", ("c", c)("b", base) );
            if( val > maxb4mul )
                FC_THROW_EXCEPTION( parse_error_exception, "integer literal overflow" );
            val *= base;
@@ -403,7 +403,7 @@ namespace fc { namespace json_relaxed
                    default:
                        // since this is a lookahead, other cases will be treated later
                        if( strict )
-                           FC_THROW_EXCEPTION( parse_error_exception, "expected '.'|'e'|'E' parsing number, got '{c}'",
+                           FC_THROW_EXCEPTION( parse_error_exception, "expected '.'|'e'|'E' parsing number, got '${c}'",
                                ( "c", c ) );
                }
                break;
@@ -420,10 +420,10 @@ namespace fc { namespace json_relaxed
            case 'Y': case 'Z':
            case '_': case '-': case '.': case '+': case '/':
                if( strict )
-                   FC_THROW_EXCEPTION( parse_error_exception, "illegal character '{c}' parsing number", ( "c", c ) );
+                   FC_THROW_EXCEPTION( parse_error_exception, "illegal character '${c}' parsing number", ( "c", c ) );
                return fc::variant( token );
            default:
-               FC_THROW_EXCEPTION( parse_error_exception, "illegal character '{c}' in token", ( "c", c ) );
+               FC_THROW_EXCEPTION( parse_error_exception, "illegal character '${c}' in token", ( "c", c ) );
        }
        size_t start = i-1;
 
@@ -479,7 +479,7 @@ namespace fc { namespace json_relaxed
                                    FC_THROW_EXCEPTION( parse_error_exception, "expected digit after '.'" );
                                return fc::variant( token );
                            default:
-                               FC_THROW_EXCEPTION( parse_error_exception, "illegal character '{c}' in token", ( "c", c )("i",int(c)) );
+                               FC_THROW_EXCEPTION( parse_error_exception, "illegal character '${c}' in token", ( "c", c )("i",int(c)) );
                        }
                    }
                    else
@@ -521,10 +521,10 @@ namespace fc { namespace json_relaxed
                        case 'Y': case 'Z':
                        case '_':           case '.':           case '/':
                            if( strict )
-                               FC_THROW_EXCEPTION( parse_error_exception, "illegal character '{c}' in number", ( "c", c ) );
+                               FC_THROW_EXCEPTION( parse_error_exception, "illegal character '${c}' in number", ( "c", c ) );
                            return fc::variant( token );
                        default:
-                           FC_THROW_EXCEPTION( parse_error_exception, "illegal character '{c}' in token", ( "c", c ) );
+                           FC_THROW_EXCEPTION( parse_error_exception, "illegal character '${c}' in token", ( "c", c ) );
                    }
                    while( true )
                    {
@@ -546,7 +546,7 @@ namespace fc { namespace json_relaxed
                            case 'Y': case 'Z':
                            case '_': case '-': case '.': case '+': case '/':
                                if( strict )
-                                   FC_THROW_EXCEPTION( parse_error_exception, "illegal character '{c}' in number", ( "c", c ) );
+                                   FC_THROW_EXCEPTION( parse_error_exception, "illegal character '${c}' in number", ( "c", c ) );
                                return fc::variant( token );
                        }
                    }
@@ -561,10 +561,10 @@ namespace fc { namespace json_relaxed
                case 'Y': case 'Z':
                case '_': case '-':           case '+': case '/':
                    if( strict )
-                       FC_THROW_EXCEPTION( parse_error_exception, "illegal character '{c}' parsing number", ( "c", c ) );
+                       FC_THROW_EXCEPTION( parse_error_exception, "illegal character '${c}' parsing number", ( "c", c ) );
                    return fc::variant( token );
                default:
-                   FC_THROW_EXCEPTION( parse_error_exception, "illegal character '{c}' in number", ( "c", c ) );
+                   FC_THROW_EXCEPTION( parse_error_exception, "illegal character '${c}' in number", ( "c", c ) );
            }
        }
    } FC_CAPTURE_AND_RETHROW( (token) ) }
