@@ -737,7 +737,9 @@ void from_variant( const variant& var,  std::vector<char>& vo )
 {
    const auto& str = var.get_string();
    FC_ASSERT( str.size() <= 2*MAX_SIZE_OF_BYTE_ARRAYS ); // Doubled because hex strings needs two characters per byte
-   vo.resize( str.size() / 2 ); {
+   FC_ASSERT( str.size() % 2 == 0, "the length of hex string should be even number" );
+   vo.resize( str.size() / 2 );
+   if( vo.size() ) {
       size_t r = from_hex( str, vo.data(), vo.size() );
       FC_ASSERT( r == vo.size() );
    }
