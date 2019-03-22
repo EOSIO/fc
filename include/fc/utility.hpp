@@ -5,6 +5,7 @@
 #include <vector>
 #include <type_traits>
 #include <tuple>
+#include <memory>
 
 #ifdef _MSC_VER
 #pragma warning(disable: 4482) // nonstandard extension used enum Name::Val, standard in C++11
@@ -46,82 +47,87 @@ namespace fc {
       template<typename T> fc::true_type is_class_helper(void(T::*)());
       template<typename T> fc::false_type is_class_helper(...);
 
-      template<typename T, typename A>
+      template<typename T, typename A, typename... Args>
       struct supports_allocator {
-      private:
-         template<typename TT, typename AA>
-         static auto test( int ) -> decltype( TT(std::declval<AA>()).get_allocator(), std::true_type() ) { return {}; }
-
-         template<typename, typename>
-         static std::false_type test( long ) { return {}; }
-
       public:
-         static constexpr bool value = std::is_same<decltype( test<T,A>( 0 ) ), std::true_type>::value;
+         static constexpr bool value = std::uses_allocator<T, A>::value;
+         static constexpr bool leading_allocator = std::is_constructible< T, std::allocator_arg_t, A, Args... >::value;
+         static constexpr bool trailing_allocator = std::is_constructible< T, Args..., A>::value;
       };
 
-      template<typename T, typename A>
-      auto default_construct_maybe_with_allocator( A&& allocator )
-      -> std::enable_if_t<supports_allocator<T, A>::value , T>
+      template<typename T, typename A, typename... Args>
+      auto construct_maybe_with_allocator( A&& allocator, Args&&... args )
+      -> std::enable_if_t<supports_allocator<T, A>::value && supports_allocator<T, A>::leading_allocator, T>
       {
-         return T( std::forward<A>(allocator) );
+         return T( std::allocator_arg, std::forward<A>(allocator), std::forward<Args>(args)... );
       }
 
-      template<typename T, typename A>
-      auto default_construct_maybe_with_allocator( A&& )
+      template<typename T, typename A, typename... Args>
+      auto construct_maybe_with_allocator( A&& allocator, Args&&... args )
+      -> std::enable_if_t<supports_allocator<T, A>::value && !supports_allocator<T, A>::leading_allocator, T>
+      {
+         static_assert( supports_allocator<T, A>::trailing_allocator, "type supposedly supports allocators but cannot be constructed by either the leading- or trailing-allocator convention" );
+         return T( std::forward<Args>(args)..., std::forward<A>(allocator) );
+      }
+
+      template<typename T, typename A, typename... Args>
+      auto construct_maybe_with_allocator( A&&, Args&&... args )
       -> std::enable_if_t<!supports_allocator<T, A>::value , T>
       {
-         return T();
+         return T( std::forward<Args>(args)... );
+      }
+
+      template<typename T, typename A, typename... Args>
+      auto maybe_augment_constructor_arguments_with_allocator(
+               A&& allocator, std::tuple<Args&&...> args,
+               std::enable_if_t<supports_allocator<T, A>::value && supports_allocator<T, A>::leading_allocator, int> = 0
+      ) {
+         return std::tuple_cat( std::forward_as_tuple<std::allocator_arg_t, A>( std::allocator_arg, allocator ), args );
+      }
+
+      template<typename T, typename A, typename... Args>
+      auto maybe_augment_constructor_arguments_with_allocator(
+               A&& allocator, std::tuple<>,
+               std::enable_if_t<supports_allocator<T, A>::value && supports_allocator<T, A>::leading_allocator, int> = 0
+      ) {
+         return std::forward_as_tuple<std::allocator_arg_t, A>( std::allocator_arg, allocator );
+      }
+
+      template<typename T, typename A, typename... Args>
+      auto maybe_augment_constructor_arguments_with_allocator(
+               A&& allocator, std::tuple<Args&&...> args,
+               std::enable_if_t<supports_allocator<T, A>::value && !supports_allocator<T, A>::leading_allocator, int> = 0
+      ) {
+         static_assert( supports_allocator<T, A>::trailing_allocator, "type supposedly supports allocators but cannot be constructed by either the leading- or trailing-allocator convention" );
+         return std::tuple_cat( args, std::forward_as_tuple<A>( allocator ) );
+      }
+
+      template<typename T, typename A, typename... Args>
+      auto maybe_augment_constructor_arguments_with_allocator(
+               A&& allocator, std::tuple<>,
+               std::enable_if_t<supports_allocator<T, A>::value && !supports_allocator<T, A>::leading_allocator, int> = 0
+      ) {
+         static_assert( supports_allocator<T, A>::trailing_allocator, "type supposedly supports allocators but cannot be constructed by either the leading- or trailing-allocator convention" );
+         return std::forward_as_tuple<A>( allocator );
+      }
+
+      template<typename T, typename A, typename... Args>
+      auto maybe_augment_constructor_arguments_with_allocator(
+               A&&, std::tuple<Args&&...> args,
+               std::enable_if_t<!supports_allocator<T, A>::value, int> = 0
+      ) {
+         return args;
       }
 
       template<typename T1, typename T2, typename A>
-      auto default_construct_pair_maybe_with_allocator( A&& allocator )
-      -> std::enable_if_t<
-            supports_allocator<T1, A>::value
-            && supports_allocator<T2, A>::value
-         , std::pair<T1,T2>>
+      std::pair<T1,T2> default_construct_pair_maybe_with_allocator( A&& allocator )
       {
-         return std::pair<T1,T2>( std::piecewise_construct,
-                                  std::forward_as_tuple( allocator ),
-                                  std::forward_as_tuple( allocator )
+         return std::pair<T1,T2>(
+            std::piecewise_construct,
+            maybe_augment_constructor_arguments_with_allocator<T1>( allocator, std::make_tuple() ),
+            maybe_augment_constructor_arguments_with_allocator<T2>( allocator, std::make_tuple() )
          );
       }
-
-      template<typename T1, typename T2, typename A>
-      auto default_construct_pair_maybe_with_allocator( A&& allocator )
-      -> std::enable_if_t<
-            supports_allocator<T1, A>::value
-            && !supports_allocator<T2, A>::value
-         , std::pair<T1,T2>>
-      {
-         return std::pair<T1,T2>( std::piecewise_construct,
-                                  std::forward_as_tuple( std::forward<A>(allocator) ),
-                                  std::forward_as_tuple()
-         );
-      }
-
-      template<typename T1, typename T2, typename A>
-      auto default_construct_pair_maybe_with_allocator( A&& allocator )
-      -> std::enable_if_t<
-            !supports_allocator<T1, A>::value
-            && supports_allocator<T2, A>::value
-         , std::pair<T1,T2>>
-      {
-         return std::pair<T1,T2>( std::piecewise_construct,
-                                  std::forward_as_tuple(),
-                                  std::forward_as_tuple( std::forward<A>(allocator) )
-         );
-      }
-
-      template<typename T1, typename T2, typename A>
-      auto default_construct_pair_maybe_with_allocator( A&& allocator )
-      -> std::enable_if_t<
-            !supports_allocator<T1, A>::value
-            && !supports_allocator<T2, A>::value
-         , std::pair<T1,T2>>
-      {
-         return std::pair<T1,T2>();
-      }
-
    }
 
   template<typename T>

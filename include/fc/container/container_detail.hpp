@@ -24,7 +24,7 @@ namespace fc {
             FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
             value.clear();
             for( uint32_t i = 0; i < size.value; ++i ) {
-               auto tmp = ::fc::detail::default_construct_maybe_with_allocator<T>( value.get_allocator() );
+               auto tmp = ::fc::detail::construct_maybe_with_allocator<T>( value.get_allocator() );
                unpack( s, tmp );
                value.insert( value.end(), std::move(tmp) );
             }
@@ -37,7 +37,7 @@ namespace fc {
             value.clear();
             value.reserve( size.value );
             for( uint32_t i = 0; i < size.value; ++i ) {
-               auto tmp = ::fc::detail::default_construct_maybe_with_allocator<T>( value.get_allocator() );
+               auto tmp = ::fc::detail::construct_maybe_with_allocator<T>( value.get_allocator() );
                unpack( s, tmp );
                value.insert( value.end(), std::move(tmp) );
             }
@@ -100,7 +100,7 @@ namespace fc {
          FC_ASSERT( vars.size() <= MAX_NUM_ARRAY_ELEMENTS );
          s.clear();
          for( const auto& var : vars ) {
-            auto item = default_construct_maybe_with_allocator<T>( s.get_allocator() );
+            auto item = construct_maybe_with_allocator<T>( s.get_allocator() );
             var.as<T>( item );
             s.insert( s.end(), std::move(item) );
          }
@@ -113,7 +113,7 @@ namespace fc {
          s.clear();
          s.reserve( vars.size() );
          for( const auto& var : vars ) {
-            auto item = default_construct_maybe_with_allocator<T>( s.get_allocator() );
+            auto item = construct_maybe_with_allocator<T>( s.get_allocator() );
             var.as<T>( item );
             s.insert( s.end(), std::move(item) );
          }
