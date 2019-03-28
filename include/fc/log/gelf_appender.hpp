@@ -8,7 +8,7 @@ namespace fc
 {
   // Log appender that sends log messages in JSON format over UDP
   // https://www.graylog2.org/resources/gelf/specification
-  class gelf_appender : public appender 
+  class gelf_appender final : public appender 
   {
   public:
     struct config 
@@ -31,7 +31,7 @@ namespace fc
 
   private:
     class impl;
-    fc::shared_ptr<impl> my;
+    std::shared_ptr<impl> my;
   };
 } // namespace fc
 
