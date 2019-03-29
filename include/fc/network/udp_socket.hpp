@@ -1,6 +1,5 @@
 #pragma once
 #include <fc/utility.hpp>
-#include <fc/shared_ptr.hpp>
 #include <memory>
 
 #include <boost/asio.hpp>
@@ -34,7 +33,7 @@ namespace fc {
 
     private:
       class                impl;
-      fc::shared_ptr<impl> my;
+      std::shared_ptr<impl> my;
   };
 
 }
