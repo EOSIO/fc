@@ -6,7 +6,6 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif
-#include <boost/thread/mutex.hpp>
 #define COLOR_CONSOLE 1
 #include "console_defines.h"
 #include <fc/exception/exception.hpp>
@@ -20,7 +19,7 @@ namespace fc {
    class console_appender::impl {
    public:
      config                      cfg;
-     boost::mutex                log_mutex;
+     std::mutex                  log_mutex;
      color::type                 lc[log_level::off+1];
      bool                        use_syslog_header{getenv("JOURNAL_STREAM")};
 #ifdef WIN32
@@ -143,7 +142,7 @@ namespace fc {
       line += "] ";
       line += fc::format_string( m.get_format(), m.get_data() );
 
-      std::unique_lock<boost::mutex> lock(my->log_mutex);
+      std::unique_lock<std::mutex> lock(my->log_mutex);
 
       print( line, my->lc[context.get_log_level()] );
 
