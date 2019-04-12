@@ -5,7 +5,6 @@
 #include <fc/thread/scoped_lock.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/variant.hpp>
-#include <boost/thread/mutex.hpp>
 #include <iomanip>
 #include <queue>
 #include <sstream>
@@ -17,7 +16,7 @@ namespace fc {
       public:
          config                     cfg;
          ofstream                   out;
-         boost::mutex               slock;
+         std::mutex                 slock;
 
       private:
          future<void>               _rotation_task;
@@ -66,7 +65,7 @@ namespace fc {
              fc::path log_filename = link_filename.parent_path() / (link_filename.filename().string() + "." + timestamp_string);
 
              {
-               fc::scoped_lock<boost::mutex> lock( slock );
+               fc::scoped_lock<std::mutex> lock( slock );
 
                if( !initializing )
                {
@@ -188,7 +187,7 @@ namespace fc {
       // fc::string fmt_str = fc::format_string( my->cfg.format, mutable_variant_object(m.get_context())( "message", message)  );
 
       {
-        fc::scoped_lock<boost::mutex> lock( my->slock );
+        fc::scoped_lock<std::mutex> lock( my->slock );
         my->out << line.str() << "\t\t\t" << m.get_context().get_file() << ":" << m.get_context().get_line_number() << "\n";
         if( my->cfg.flush )
           my->out.flush();

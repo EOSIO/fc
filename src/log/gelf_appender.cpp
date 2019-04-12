@@ -16,7 +16,6 @@
 #include <queue>
 #include <sstream>
 #include <iostream>
-#include <boost/thread/mutex.hpp>
 
 namespace fc
 {
@@ -34,7 +33,7 @@ namespace fc
     config                                    cfg;
     optional<boost::asio::ip::udp::endpoint>  gelf_endpoint;
     udp_socket                                gelf_socket;
-    boost::mutex                              gelf_log_mutex;
+    std::mutex                                gelf_log_mutex;
 
     impl(const config& c) :
       cfg(c)
@@ -165,7 +164,7 @@ namespace fc
       gelf_message_as_string[1] = (char)0x9c;
     FC_ASSERT(gelf_message_as_string[1] == (char)0x9c);
 
-    std::unique_lock<boost::mutex> lock(my->gelf_log_mutex);
+    std::unique_lock<std::mutex> lock(my->gelf_log_mutex);
 
     // packets are sent by UDP, and they tend to disappear if they
     // get too large.  It's hard to find any solid numbers on how
