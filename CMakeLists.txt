@@ -56,7 +56,6 @@ set( fc_sources
      src/exception.cpp
      src/variant_object.cpp
      src/string.cpp
-     src/shared_ptr.cpp
      src/time.cpp
      src/utf8.cpp
      src/io/datastream.cpp
@@ -168,7 +167,10 @@ ELSE()
   SET (OPENSSL_CONF_TARGET ${CMAKE_CURRENT_BINARY_DIR})
 ENDIF()
 
-add_subdirectory( test )
+IF(NOT DEFINED SKIP_FC_TESTS)
+  add_subdirectory( test )
+ENDIF()
+
 install(TARGETS fc
    LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR})

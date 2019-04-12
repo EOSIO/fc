@@ -202,7 +202,7 @@ namespace fc {
     } FC_RETHROW_EXCEPTIONS( warn, "std::shared_ptr<T>", ("type",fc::get_typename<T>::name()) ) }
 
     template<typename Stream> inline void pack( Stream& s, const signed_int& v ) {
-      uint32_t val = (v.value<<1) ^ (v.value>>31);
+      uint32_t val = (v.value<<1) ^ (v.value>>31);              //apply zigzag encoding
       do {
         uint8_t b = uint8_t(val) & 0x7f;
         val >>= 7;
@@ -228,10 +228,9 @@ namespace fc {
         v |= uint32_t(uint8_t(b) & 0x7f) << by;
         by += 7;
       } while( uint8_t(b) & 0x80 );
-      vi.value = ((v>>1) ^ (v>>31)) + (v&0x01);
-      vi.value = v&0x01 ? vi.value : -vi.value;
-      vi.value = -vi.value;
+      vi.value= (v>>1) ^ (~(v&1)+1ull);                         //reverse zigzag encoding
     }
+
     template<typename Stream> inline void unpack( Stream& s, unsigned_int& vi ) {
       uint64_t v = 0; char b = 0; uint8_t by = 0;
       do {
@@ -357,7 +356,7 @@ namespace fc {
       };
 
       template<typename Stream, typename Class>
-      struct unpack_object_visitor : fc::reflector_init_visitor<Class> {
+      struct unpack_object_visitor : public fc::reflector_init_visitor<Class> {
         unpack_object_visitor(Class& _c, Stream& _s)
         : fc::reflector_init_visitor<Class>(_c), s(_s){}
 
@@ -436,9 +435,6 @@ namespace fc {
         template<typename Stream, typename T>
         static inline void unpack( Stream& s, T& v ) {
           if_enum< typename fc::reflector<T>::is_enum >::unpack(s,v);
-          // has_feature_reflector_init_on_unpacked_reflected_types defined below to indicate reflector_init called
-          reflector_init_visitor<T> visitor(v);
-           visitor.reflector_init();
         }
       };
 

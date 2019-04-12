@@ -718,7 +718,7 @@ void from_variant( const variant& var,  float& vo )
 
 void to_variant( const std::string& s, variant& v )
 {
-    v = variant( fc::string(s) );
+   v = variant( fc::string(s) );
 }
 
 void from_variant( const variant& var,  string& vo )
@@ -728,21 +728,21 @@ void from_variant( const variant& var,  string& vo )
 
 void to_variant( const std::vector<char>& var,  variant& vo )
 {
-  if( var.size() )
+   FC_ASSERT( var.size() <= MAX_SIZE_OF_BYTE_ARRAYS );
+   if( var.size() )
       vo = variant(to_hex(var.data(),var.size()));
-  else vo = "";
+   else vo = "";
 }
 void from_variant( const variant& var,  std::vector<char>& vo )
 {
-     auto str = var.as_string();
-     vo.resize( str.size() / 2 );
-     if( vo.size() )
-     {
-        size_t r = from_hex( str, vo.data(), vo.size() );
-        FC_ASSERT( r == vo.size() );
-     }
-//   std::string b64 = base64_decode( var.as_string() );
-//   vo = std::vector<char>( b64.c_str(), b64.c_str() + b64.size() );
+   const auto& str = var.get_string();
+   FC_ASSERT( str.size() <= 2*MAX_SIZE_OF_BYTE_ARRAYS ); // Doubled because hex strings needs two characters per byte
+   FC_ASSERT( str.size() % 2 == 0, "the length of hex string should be even number" );
+   vo.resize( str.size() / 2 );
+   if( vo.size() ) {
+      size_t r = from_hex( str, vo.data(), vo.size() );
+      FC_ASSERT( r == vo.size() );
+   }
 }
 
 void to_variant( const UInt<8>& n, variant& v ) { v = uint64_t(n); }
@@ -760,66 +760,92 @@ void from_variant( const variant& v, UInt<32>& n ) { n = static_cast<uint32_t>(v
 void to_variant( const UInt<64>& n, variant& v ) { v = uint64_t(n); }
 void from_variant( const variant& v, UInt<64>& n ) { n = v.as_uint64(); }
 
-string      format_string( const string& format, const variant_object& args )
+constexpr size_t minimize_max_size = 1024;
+constexpr size_t minimize_sub_max_size = minimize_max_size / 4;
+
+string format_string( const string& frmt, const variant_object& args, bool minimize )
 {
-   std::stringstream ss;
+   std::string result;
+   const string& format = ( minimize && frmt.size() > minimize_max_size ) ?
+         frmt.substr( 0, minimize_max_size ) + "..." : frmt;
+   result.reserve( minimize_sub_max_size );
    size_t prev = 0;
-   auto next = format.find( '$' );
-   while( prev != size_t(string::npos) && prev < size_t(format.size()) )
-   {
-     ss << format.substr( prev, size_t(next-prev) );
+   size_t next = format.find( '$' );
+   while( prev != string::npos && prev < format.size() ) {
+      if( next != string::npos ) {
+         result += format.substr( prev, next - prev );
+      } else {
+         result += format.substr( prev );
+      }
 
-     // if we got to the end, return it.
-     if( next == size_t(string::npos) )
-        return ss.str();
+      // if we got to the end, return it.
+      if( next == string::npos ) {
+         return result;
+      } else if( minimize && result.size() > minimize_max_size ) {
+         result += "...";
+         return result;
+      }
 
-     // if we are not at the end, then update the start
-     prev = next + 1;
+      // if we are not at the end, then update the start
+      prev = next + 1;
 
-     if( format[prev] == '{' )
-     {
-        // if the next char is a open, then find close
+      if( format[prev] == '{' ) {
+         // if the next char is a open, then find close
          next = format.find( '}', prev );
          // if we found close...
-         if( next != size_t(string::npos) )
-         {
-           // the key is between prev and next
-           string key = format.substr( prev+1, (next-prev-1) );
+         if( next != string::npos ) {
+            // the key is between prev and next
+            string key = format.substr( prev + 1, (next - prev - 1) );
 
-           auto val = args.find( key );
-           if( val != args.end() )
-           {
-              if( val->value().is_object() || val->value().is_array() )
-              {
-                ss << json::to_string( val->value() );
-              }
-              else
-              {
-                ss << val->value().as_string();
-              }
-           }
-           else
-           {
-              ss << "${"<<key<<"}";
-           }
-           prev = next + 1;
-           // find the next $
-           next = format.find( '$', prev );
+            auto val = args.find( key );
+            bool replaced = true;
+            if( val != args.end() ) {
+               if( val->value().is_object() || val->value().is_array() ) {
+                  if( minimize ) {
+                     replaced = false;
+                  } else {
+                     result += json::to_string( val->value() );
+                  }
+               } else if( val->value().is_blob() ) {
+                  if( minimize && val->value().get_blob().data.size() > minimize_sub_max_size ) {
+                     replaced = false;
+                  } else {
+                     result += val->value().as_string();
+                  }
+               } else if( val->value().is_string() ) {
+                  if( minimize && val->value().get_string().size() > minimize_sub_max_size ) {
+                     auto sz = std::min( minimize_sub_max_size, minimize_max_size - result.size() );
+                     result += val->value().get_string().substr( 0, sz );
+                     result += "...";
+                  } else {
+                     result += val->value().get_string();
+                  }
+               } else {
+                  result += val->value().as_string();
+               }
+            } else {
+               replaced = false;
+            }
+            if( !replaced ) {
+               result += "${";
+               result += key;
+               result += "}";
+            }
+            prev = next + 1;
+            // find the next $
+            next = format.find( '$', prev );
+         } else {
+            // we didn't find it.. continue to while...
          }
-         else
-         {
-           // we didn't find it.. continue to while...
-         }
-     }
-     else
-     {
-        ss << format[prev];
-        ++prev;
-        next = format.find( '$', prev );
-     }
+      } else {
+         result += format[prev];
+         ++prev;
+         next = format.find( '$', prev );
+      }
    }
-   return ss.str();
+   return result;
 }
+
    #ifdef __APPLE__
    #elif !defined(_MSC_VER)
    void to_variant( long long int s, variant& v ) { v = variant( int64_t(s) ); }

@@ -86,13 +86,27 @@ namespace fc {
    }
 
    static thread_local std::string thread_name;
+   void set_os_thread_name( const string& name ) {
+#ifdef __linux__
+      pthread_setname_np( pthread_self(), name.c_str() );
+#endif
+   }
    void set_thread_name( const string& name ) {
       thread_name = name;
    }
    const string& get_thread_name() {
-      static int thread_count = 0;
-      if( thread_name.empty() )
-         thread_name = string("thread-")+fc::to_string(thread_count++);
+      if( thread_name.empty() ) {
+#ifdef __linux__
+         char thr_name[64];
+         int rc = pthread_getname_np( pthread_self(), thr_name, 64 );
+         if( rc == 0 ) {
+            thread_name = thr_name;
+         }
+#else
+         static int thread_count = 0;
+         thread_name = string( "thread-" ) + fc::to_string( thread_count++ );
+#endif
+      }
       return thread_name;
    }
 }
