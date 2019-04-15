@@ -19,6 +19,7 @@
 #endif
 
 #include <thread>
+#include <mutex>
 #include <fstream>
 #include <functional>
 
