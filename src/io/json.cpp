@@ -769,18 +769,17 @@ namespace fc
       return pretty_print(to_string(v, format), 2);
    }
 
-   void json::save_to_file( const variant& v, const fc::path& fi, bool pretty, output_formatting format )
+   bool json::save_to_file( const variant& v, const fc::path& fi, bool pretty, output_formatting format )
    {
-      if( pretty )
-      {
+      if( pretty ) {
          auto str = json::to_pretty_string( v, format );
-        std::ofstream o(fi.generic_string().c_str());
-        o.write( str.c_str(), str.size() );
-      }
-      else
-      {
-       std::ofstream o(fi.generic_string().c_str());
-       fc::to_stream( o, v, format );
+         std::ofstream o(fi.generic_string().c_str());
+         o.write( str.c_str(), str.size() );
+         return o.good();
+      } else {
+         std::ofstream o(fi.generic_string().c_str());
+         fc::to_stream( o, v, format );
+         return o.good();
       }
    }
    variant json::from_file( const fc::path& p, parse_type ptype, uint32_t max_depth )

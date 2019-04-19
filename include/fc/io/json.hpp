@@ -42,12 +42,12 @@ namespace fc
          static bool     is_valid( const std::string& json_str, parse_type ptype = legacy_parser, uint32_t max_depth = DEFAULT_MAX_RECURSION_DEPTH );
 
          template<typename T>
-         static void     save_to_file( const T& v, const fc::path& fi, bool pretty = true, output_formatting format = stringify_large_ints_and_doubles )
+         static bool     save_to_file( const T& v, const fc::path& fi, bool pretty = true, output_formatting format = stringify_large_ints_and_doubles )
          {
-            save_to_file( variant(v), fi, pretty, format );
+            return save_to_file( variant(v), fi, pretty, format );
          }
 
-         static void     save_to_file( const variant& v, const fc::path& fi, bool pretty = true, output_formatting format = stringify_large_ints_and_doubles );
+         static bool     save_to_file( const variant& v, const fc::path& fi, bool pretty = true, output_formatting format = stringify_large_ints_and_doubles );
          static variant  from_file( const fc::path& p, parse_type ptype = legacy_parser, uint32_t max_depth = DEFAULT_MAX_RECURSION_DEPTH );
 
          template<typename T>
@@ -63,16 +63,16 @@ namespace fc
          }
 
          template<typename T>
-         static string   to_pretty_string( const T& v, output_formatting format = stringify_large_ints_and_doubles ) 
+         static string   to_pretty_string( const T& v, output_formatting format = stringify_large_ints_and_doubles )
          {
             return to_pretty_string( variant(v), format );
          }
 
          template<typename T>
-         static void save_to_file( const T& v, const std::string& p, bool pretty = true, output_formatting format = stringify_large_ints_and_doubles ) 
+         static bool save_to_file( const T& v, const std::string& p, bool pretty = true, output_formatting format = stringify_large_ints_and_doubles )
          {
-            save_to_file( variant(v), fc::path(p), pretty, format );
-         } 
+            return save_to_file( variant(v), fc::path(p), pretty, format );
+         }
    };
 
 } // fc
