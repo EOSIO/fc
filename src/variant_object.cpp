@@ -341,7 +341,7 @@ namespace fc
       return *this;
    }
 
-   mutable_variant_object&& mutable_variant_object::set( string key, variant var ) &&
+   mutable_variant_object mutable_variant_object::set( string key, variant var ) &&
    {
       auto itr = find( key.c_str() );
       if( itr != end() )
@@ -364,7 +364,7 @@ namespace fc
       return *this;
    }
 
-   mutable_variant_object&& mutable_variant_object::operator()( string key, variant var ) &&
+   mutable_variant_object mutable_variant_object::operator()( string key, variant var ) &&
    {
       _key_value->push_back( entry( fc::move(key), fc::move(var) ) );
       return std::move(*this);
@@ -377,7 +377,7 @@ namespace fc
       return *this;
    }
 
-   mutable_variant_object&& mutable_variant_object::operator()( const variant_object& vo ) &&
+   mutable_variant_object mutable_variant_object::operator()( const variant_object& vo ) &&
    {
       for( const variant_object::entry& e : vo )
          set( e.key(), e.value() );
@@ -393,7 +393,7 @@ namespace fc
       return *this;
    }
 
-   mutable_variant_object&& mutable_variant_object::operator()( const mutable_variant_object& mvo ) &&
+   mutable_variant_object mutable_variant_object::operator()( const mutable_variant_object& mvo ) &&
    {
       for( const mutable_variant_object::entry& e : mvo )
          set( e.key(), e.value() );

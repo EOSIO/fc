@@ -160,7 +160,7 @@ namespace fc
 
       /** replaces the value at \a key with \a var or inserts \a key if not found */
       mutable_variant_object& set( string key, variant var ) &;
-      mutable_variant_object&& set( string key, variant var ) &&;
+      mutable_variant_object set( string key, variant var ) &&;
 
      /** Appends \a key and \a var without checking for duplicates, designed to
          *  simplify construction of dictionaries using (key,val)(key2,val2) syntax
@@ -178,7 +178,7 @@ namespace fc
       *  @return *this;
       */
       mutable_variant_object& operator()( string key, variant var ) &;
-      mutable_variant_object&& operator()( string key, variant var ) &&;
+      mutable_variant_object operator()( string key, variant var ) &&;
       template<typename T>
       mutable_variant_object& operator()( string key, T&& var ) &
       {
@@ -186,7 +186,7 @@ namespace fc
          return *this;
       }
       template<typename T>
-      mutable_variant_object&& operator()( string key, T&& var ) &&
+      mutable_variant_object operator()( string key, T&& var ) &&
       {
          set(std::move(key), variant( fc::forward<T>(var) ) );
          return std::move(*this);
@@ -194,13 +194,13 @@ namespace fc
       /**
        * Copy a variant_object into this mutable_variant_object.
        */
-      mutable_variant_object& operator()( const variant_object& vo )&;
-      mutable_variant_object&& operator()( const variant_object& vo )&&;
+      mutable_variant_object& operator()( const variant_object& vo ) &;
+      mutable_variant_object operator()( const variant_object& vo ) &&;
       /**
        * Copy another mutable_variant_object into this mutable_variant_object.
        */
       mutable_variant_object& operator()( const mutable_variant_object& mvo ) &;
-      mutable_variant_object&& operator()( const mutable_variant_object& mvo ) &&;
+      mutable_variant_object operator()( const mutable_variant_object& mvo ) &&;
       ///@}
 
 
