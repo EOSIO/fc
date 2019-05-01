@@ -79,7 +79,7 @@ namespace fc {
 
       logger_config dlc;
       dlc.name = "default";
-      dlc.level = log_level::debug;
+      dlc.level = log_level::info;
       dlc.appenders.push_back("stderr");
       cfg.loggers.push_back( dlc );
       return cfg;
