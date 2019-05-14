@@ -72,7 +72,7 @@ public:
    template<typename SyncReadStream, typename Fn, typename CancelFn>
    error_code sync_do_with_deadline( SyncReadStream& s, deadline_type deadline, Fn f, CancelFn cf ) {
       bool timer_expired = false;
-      boost::asio::deadline_timer timer(s.get_io_service());
+      boost::asio::deadline_timer timer(_ioc);
 
       timer.expires_at(deadline);
       bool timer_cancelled = false;
@@ -88,8 +88,8 @@ public:
       optional<error_code> f_result;
       f(f_result);
 
-      s.get_io_service().restart();
-      while (s.get_io_service().run_one())
+      _ioc.restart();
+      while (_ioc.run_one())
       {
          if (f_result) {
             timer_cancelled = true;
@@ -115,7 +115,7 @@ public:
 
    template<typename SyncReadStream>
    error_code sync_connect_with_timeout( SyncReadStream& s, const std::string& host, const std::string& port,  const deadline_type& deadline ) {
-      tcp::resolver local_resolver(s.get_io_service());
+      tcp::resolver local_resolver(_ioc);
       bool cancelled = false;
 
       auto res = sync_do_with_deadline(s, deadline, [&local_resolver, &cancelled, &s, &host, &port](optional<error_code>& final_ec){
