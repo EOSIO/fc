@@ -20,7 +20,7 @@ namespace fc {
 // Implementation details, the user should not import this:
 namespace impl {
 
-template<int N, typename... Ts>
+template<typename R, int N, typename... Ts>
 struct storage_ops;
 
 template<typename X, typename... Ts>
@@ -62,65 +62,68 @@ struct move_construct
    }
 };
 
-template<int N, typename T, typename... Ts>
-struct storage_ops<N, T&, Ts...> {
+template<typename R, int N, typename T, typename... Ts>
+struct storage_ops<R, N, T&, Ts...> {
     static void del(int n, void *data) {}
     static void con(int n, void *data) {}
 
     template<typename visitor>
-    static typename result_type_info<visitor, T, Ts...>::result_type apply(int n, void *data, visitor&& v) {}
+    static R apply(int n, void *data, visitor&& v) {}
 
     template<typename visitor>
-    static typename const_result_type_info<visitor, T, Ts...>::result_type apply(int n, const void *data, visitor&& v) {}
+    static R apply(int n, const void *data, visitor&& v) {}
 };
 
-template<int N, typename T, typename... Ts>
-struct storage_ops<N, T, Ts...> {
+template<typename R, int N, typename T, typename... Ts>
+struct storage_ops<R, N, T, Ts...> {
     static void del(int n, void *data) {
         if(n == N) reinterpret_cast<T*>(data)->~T();
-        else storage_ops<N + 1, Ts...>::del(n, data);
+        else storage_ops<R, N + 1, Ts...>::del(n, data);
     }
     static void con(int n, void *data) {
         if(n == N) new(reinterpret_cast<T*>(data)) T();
-        else storage_ops<N + 1, Ts...>::con(n, data);
+        else storage_ops<R, N + 1, Ts...>::con(n, data);
     }
 
     template<typename visitor>
-    static typename result_type_info<visitor, T, Ts...>::result_type apply(int n, void *data, visitor&& v) {
+    static R apply(int n, void *data, visitor&& v) {
         if(n == N) return v(*reinterpret_cast<T*>(data));
-        else return storage_ops<N + 1, Ts...>::apply(n, data, std::forward<visitor>(v));
+        else return storage_ops<R, N + 1, Ts...>::apply(n, data, std::forward<visitor>(v));
     }
 
     template<typename visitor>
-    static typename const_result_type_info<visitor, T, Ts...>::result_type apply(int n, const void *data, visitor&& v) {
+    static R apply(int n, const void *data, visitor&& v) {
         if(n == N) return v(*reinterpret_cast<const T*>(data));
-        else return storage_ops<N + 1, Ts...>::apply(n, data, std::forward<visitor>(v));
+        else return storage_ops<R, N + 1, Ts...>::apply(n, data, std::forward<visitor>(v));
     }
 
 };
 
-template<int N, typename T>
-struct storage_ops<N, T> {
+template<typename R, int N>
+struct storage_ops<R, N> {
     static void del(int n, void *data) {
-       if(n == N) reinterpret_cast<T*>(data)->~T();
-       else FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid.");
+       FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid.");
     }
     static void con(int n, void *data) {
-       if(n == N) new(reinterpret_cast<T*>(data)) T();
-       else FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
+       FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
     }
 
     template<typename visitor>
-    static typename result_type_info<visitor, T>::result_type apply(int n, void *data, visitor&& v) {
-       if(n == N) return v(*reinterpret_cast<T*>(data));
-       else FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
+    static R apply(int n, void *data, visitor&& v) {
+       FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
     }
     template<typename visitor>
-    static typename const_result_type_info<visitor, T>::result_type apply(int n, const void *data, visitor&& v) {
-       if(n == N) return v(*reinterpret_cast<const T*>(data));
+    static R apply(int n, const void *data, visitor&& v) {
        FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
     }
 };
+
+template<typename visitor, int N, typename... Ts>
+using storage_ops_auto = storage_ops<typename result_type_info<visitor, Ts...>::result_type, N, Ts...>;
+
+template<typename visitor, int N, typename... Ts>
+using storage_ops_const_auto = storage_ops<typename const_result_type_info<visitor, Ts...>::result_type, N, Ts...>;
+
 
 template<typename X>
 struct position<X> {
@@ -236,7 +239,7 @@ public:
     static_variant()
     {
        _tag = 0;
-       impl::storage_ops<0, Types...>::con(0, storage);
+       impl::storage_ops<void, 0, Types...>::con(0, storage);
     }
 
     template<typename... Other>
@@ -269,7 +272,7 @@ public:
     }
 
    ~static_variant() {
-       impl::storage_ops<0, Types...>::del(_tag, storage);
+       impl::storage_ops<void, 0, Types...>::del(_tag, storage);
     }
 
 
@@ -336,13 +339,24 @@ public:
     }
     template<typename visitor>
     auto visit(visitor&& v) {
-        return impl::storage_ops<0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
+        return impl::storage_ops_auto<visitor, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
     }
 
 
     template<typename visitor>
     auto visit(visitor&& v)const {
-        return impl::storage_ops<0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
+        return impl::storage_ops_const_auto<visitor, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
+    }
+
+    template<typename R, typename visitor>
+    auto visit(visitor&& v) {
+        return impl::storage_ops<R, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
+    }
+
+
+    template<typename R, typename visitor>
+    auto visit(visitor&& v)const {
+        return impl::storage_ops<R, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
     }
 
     static uint32_t count() { return impl::type_info<Types...>::count; }
@@ -351,10 +365,10 @@ public:
       this->~static_variant();
       try {
          _tag = w;
-         impl::storage_ops<0, Types...>::con(_tag, storage);
+         impl::storage_ops<void, 0, Types...>::con(_tag, storage);
       } catch ( ... ) {
          _tag = 0;
-         impl::storage_ops<0, Types...>::con(_tag, storage);
+         impl::storage_ops<void, 0, Types...>::con(_tag, storage);
       }
     }
 
