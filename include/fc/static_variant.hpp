@@ -377,8 +377,12 @@ public:
     template <typename Bool = bool>
     friend std::enable_if_t<type_info::has_less, Bool> operator < ( const static_variant& a, const static_variant& b )
     {
-       if (a.which() >= b.which()) {
+       if (a.which() > b.which()) {
           return false;
+       }
+
+       if (a.which() < b.which()) {
+          return true;
        }
 
        return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::less>(a._tag, a.storage, b.storage);
@@ -391,14 +395,22 @@ public:
           return false;
        }
 
+       if (a.which() < b.which()) {
+          return true;
+       }
+
        return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::less_equal>(a._tag, a.storage, b.storage);
     }
 
     template <typename Bool = bool>
     friend std::enable_if_t<type_info::has_greater, Bool> operator > ( const static_variant& a, const static_variant& b )
     {
-       if (a.which() <= b.which()) {
+       if (a.which() < b.which()) {
           return false;
+       }
+
+       if (a.which() > b.which()) {
+          return true;
        }
 
        return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::greater>(a._tag, a.storage, b.storage);
@@ -411,6 +423,10 @@ public:
           return false;
        }
 
+       if (a.which() > b.which()) {
+          return true;
+       }
+       
        return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::greater_equal>(a._tag, a.storage, b.storage);
     }
 
