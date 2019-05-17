@@ -102,7 +102,7 @@ struct storage_ops<R, N, T, Ts...> {
 
     template<template<typename> class Op>
     static R apply_binary_operator(int n, const void *lhs, const void *rhs) {
-       if (n == N) return Op<T>()(*reinterpret_cast<const T*>(lhs), *reinterpret_cast<const T*>(rhs));
+       if (n == N) return Op<void>()(*reinterpret_cast<const T*>(lhs), *reinterpret_cast<const T*>(rhs));
        else return storage_ops<R, N + 1, Ts...>::template apply_binary_operator<Op>(n, lhs, rhs);
     }
 };
@@ -164,23 +164,13 @@ struct type_at<Pos, T, Ts...> {
 };
 
 template<template<typename> class Op, typename T>
-std::is_convertible<std::invoke_result_t<Op<T>, const T&, const T&>, bool> can_invoke_operator_test(int);
+std::is_convertible<std::invoke_result_t<Op<void>, const T&, const T&>, bool> can_invoke_operator_test(int);
 
 template<template<typename> class Op, typename T>
 std::false_type can_invoke_operator_test(...);
 
 template<template<typename> class Op, typename T>
 using can_invoke_operator = decltype(can_invoke_operator_test<Op, T>(0));
-
-template<class T>
-using has_equal_to_v = typename can_invoke_operator<std::equal_to, T>::value;
-
-template<class T>
-using has_equal_to_v = typename can_invoke_operator<std::equal_to, T>::value;
-
-template<class T>
-using has_equal_to_v = typename can_invoke_operator<std::equal_to, T>::value;
-
 
 template<typename T, typename... Ts>
 struct type_info<T&, Ts...> {
@@ -367,8 +357,8 @@ public:
     template <typename Bool = bool>
     friend std::enable_if_t<type_info::has_not_equal_to, Bool> operator != ( const static_variant& a, const static_variant& b )
     {
-       if (a.which() == b.which()) {
-          return false;
+       if (a.which() != b.which()) {
+          return true;
        }
 
        return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::not_equal_to>(a._tag, a.storage, b.storage);
