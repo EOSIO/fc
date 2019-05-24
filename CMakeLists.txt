@@ -88,6 +88,7 @@ set( fc_sources
      ${ECC_REST}
      src/crypto/elliptic_${ECC_IMPL}.cpp
      src/crypto/elliptic_r1.cpp
+     src/crypto/elliptic_webauthn.cpp
      src/crypto/rand.cpp
      src/crypto/public_key.cpp
      src/crypto/private_key.cpp
@@ -142,6 +143,13 @@ target_include_directories(fc
     ${OPENSSL_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
   )
+
+# try and make this very clear that this json parser is intended only for webauthn parsing..
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.11.0)
+   set_source_files_properties(src/crypto/elliptic_webauthn.cpp PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/include/fc/crypto/webauthn_json/include)
+else()
+   target_include_directories(fc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/fc/crypto/webauthn_json/include)
+endif()
 
 IF(NOT WIN32)
   set(LINK_USR_LOCAL_LIB -L/usr/local/lib)

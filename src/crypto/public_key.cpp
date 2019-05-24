@@ -24,6 +24,10 @@ namespace fc { namespace crypto {
    {
    }
 
+   int public_key::which() const {
+      return _storage.which();
+   }
+
    static public_key::storage_type parse_base58(const std::string& base58str)
    {
       constexpr auto legacy_prefix = config::public_key_legacy_prefix;

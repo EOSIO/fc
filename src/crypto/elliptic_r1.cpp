@@ -66,7 +66,7 @@ namespace fc { namespace crypto { namespace r1 {
     // Perform ECDSA key recovery (see SEC1 4.1.6) for curves over (mod p)-fields
     // recid selects which key is recovered
     // if check is non-zero, additional checks are performed
-    static int ECDSA_SIG_recover_key_GFp(EC_KEY *eckey, ECDSA_SIG *ecsig, const unsigned char *msg, int msglen, int recid, int check)
+    int ECDSA_SIG_recover_key_GFp(EC_KEY *eckey, ECDSA_SIG *ecsig, const unsigned char *msg, int msglen, int recid, int check)
     {
         if (!eckey) FC_THROW_EXCEPTION( exception, "null key" );
 

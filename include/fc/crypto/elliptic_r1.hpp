@@ -23,6 +23,8 @@ namespace fc {
     typedef fc::array<char,72>          signature;
     typedef fc::array<unsigned char,65> compact_signature;
 
+    int ECDSA_SIG_recover_key_GFp(EC_KEY *eckey, ECDSA_SIG *ecsig, const unsigned char *msg, int msglen, int recid, int check);
+
     /**
      *  @class public_key
      *  @brief contains only the public point of an elliptic curve key.
