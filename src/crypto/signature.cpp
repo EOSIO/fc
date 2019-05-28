@@ -11,7 +11,6 @@ namespace fc { namespace crypto {
          return *(size_t*)&sig._data.data[32-sizeof(size_t)] + *(size_t*)&sig._data.data[64-sizeof(size_t)];
       }
 
-      template<>
       size_t operator()(const webauthn::signature& sig) const {
          return sig.get_hash();
       }
