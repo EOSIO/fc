@@ -1,5 +1,5 @@
 add_executable( test_cypher_suites test_cypher_suites.cpp )
-target_link_libraries( test_cypher_suites fc ${Boost_LIBRARIES})
+target_link_libraries( test_cypher_suites fc )
 
 add_executable( test_webauthn test_webauthn.cpp )
 target_link_libraries( test_webauthn fc ${Boost_LIBRARIES})
