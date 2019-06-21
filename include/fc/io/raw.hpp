@@ -226,6 +226,12 @@ namespace fc {
       do {
         s.get(b);
         v |= uint32_t(uint8_t(b) & 0x7f) << by;
+        if (by == 28) {
+          if ( UNLIKELY(uint8_t(b) > 0x0f) ) {
+            FC_THROW_EXCEPTION(overflow_exception, "signed_int out of bounds"); // upper 4 bits should be zero
+          }
+          break;
+        }
         by += 7;
       } while( uint8_t(b) & 0x80 );
       vi.value= (v>>1) ^ (~(v&1)+1ull);                         //reverse zigzag encoding
@@ -236,8 +242,14 @@ namespace fc {
       do {
           s.get(b);
           v |= uint32_t(uint8_t(b) & 0x7f) << by;
+          if (by == 28) {
+            if ( UNLIKELY(uint8_t(b) > 0x0f) ) {
+              FC_THROW_EXCEPTION(overflow_exception, "unsigned_int out of bounds"); // upper 4 bits should be zero
+            }
+            break;
+          }
           by += 7;
-      } while( uint8_t(b) & 0x80 && by < 32 );
+      } while( uint8_t(b) & 0x80 );
       vi.value = static_cast<uint32_t>(v);
     }
 
