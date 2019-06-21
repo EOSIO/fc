@@ -227,7 +227,9 @@ namespace fc {
         s.get(b);
         v |= uint32_t(uint8_t(b) & 0x7f) << by;
         if (by == 28) {
-          FC_ASSERT( uint8_t(b) <= 0x0f, "signed_int out of bounds"); // upper 4 bits should be zero
+          if ( UNLIKELY(uint8_t(b) > 0x0f) ) {
+            FC_THROW_EXCEPTION(overflow_exception, "signed_int out of bounds"); // upper 4 bits should be zero
+          }
           break;
         }
         by += 7;
@@ -241,7 +243,9 @@ namespace fc {
           s.get(b);
           v |= uint32_t(uint8_t(b) & 0x7f) << by;
           if (by == 28) {
-            FC_ASSERT( uint8_t(b) <= 0x0f, "unsigned_int out of bounds"); // upper 4 bits should be zero
+            if ( UNLIKELY(uint8_t(b) > 0x0f) ) {
+              FC_THROW_EXCEPTION(overflow_exception, "unsigned_int out of bounds"); // upper 4 bits should be zero
+            }
             break;
           }
           by += 7;
