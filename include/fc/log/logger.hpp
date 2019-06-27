@@ -22,6 +22,7 @@ namespace fc
    {
       public:
          static logger get( const fc::string& name = "default");
+         static void update( const fc::string& name, logger& log );
 
          logger();
          logger( const string& name, const logger& parent = nullptr );
@@ -42,12 +43,12 @@ namespace fc
          void  set_name( const fc::string& n );
          const fc::string& name()const;
 
-         void add_appender( const std::shared_ptr<appender>& a );
-         std::vector<std::shared_ptr<appender> > get_appenders()const;
-         void remove_appender( const std::shared_ptr<appender>& a );
-
          bool is_enabled( log_level e )const;
          void log( log_message m );
+
+      private:
+         friend struct log_config;
+         void add_appender( const std::shared_ptr<appender>& a );
 
       private:
          class impl;

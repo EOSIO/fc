@@ -59,30 +59,28 @@ namespace fc {
     }
 
     void logger::log( log_message m ) {
+       std::unique_lock g( log_config::get().log_mutex );
        m.get_context().append_context( my->_name );
 
        for( auto itr = my->_appenders.begin(); itr != my->_appenders.end(); ++itr )
           (*itr)->log( m );
 
        if( my->_additivity && my->_parent != nullptr) {
-          my->_parent.log(m);
+          logger parent = my->_parent;
+          g.unlock();
+          parent.log( m );
        }
     }
+
     void logger::set_name( const fc::string& n ) { my->_name = n; }
     const fc::string& logger::name()const { return my->_name; }
 
-    extern bool do_default_config;
-
-    std::unordered_map<std::string,logger>& get_logger_map() {
-      static bool force_link_default_config = fc::do_default_config;
-      //TODO: Atomic compare/swap set
-      static std::unordered_map<std::string,logger>* lm = new std::unordered_map<std::string, logger>();
-      (void)force_link_default_config; // hide warning;
-      return *lm;
+    logger logger::get( const fc::string& s ) {
+       return log_config::get_logger( s );
     }
 
-    logger logger::get( const fc::string& s ) {
-       return get_logger_map()[s];
+    void logger::update( const fc::string& name, logger& log ) {
+       log_config::update_logger( name, log );
     }
 
     logger  logger::get_parent()const { return my->_parent; }
@@ -91,15 +89,8 @@ namespace fc {
     log_level logger::get_log_level()const { return my->_level; }
     logger& logger::set_log_level(log_level ll) { my->_level = ll; return *this; }
 
-    void logger::add_appender( const std::shared_ptr<appender>& a )
-    { my->_appenders.push_back(a); }
-
-//    void logger::remove_appender( const std::shared_ptr<appender>& a )
- //   { my->_appenders.erase(a); }
-
-    std::vector<std::shared_ptr<appender> > logger::get_appenders()const
-    {
-        return my->_appenders;
+    void logger::add_appender( const std::shared_ptr<appender>& a ) {
+       my->_appenders.push_back(a);
     }
 
    bool configure_logging( const logging_config& cfg );
