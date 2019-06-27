@@ -19,7 +19,6 @@ namespace fc {
    class console_appender::impl {
    public:
      config                      cfg;
-     std::mutex                  log_mutex;
      color::type                 lc[log_level::off+1];
      bool                        use_syslog_header{getenv("JOURNAL_STREAM")};
 #ifdef WIN32
@@ -141,8 +140,6 @@ namespace fc {
       }
       line += "] ";
       line += fc::format_string( m.get_format(), m.get_data() );
-
-      std::unique_lock<std::mutex> lock(my->log_mutex);
 
       print( line, my->lc[context.get_log_level()] );
 
