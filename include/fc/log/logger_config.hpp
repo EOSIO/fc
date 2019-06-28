@@ -1,5 +1,10 @@
 #pragma once
 #include <fc/log/logger.hpp>
+#include <fc/log/appender.hpp>
+#include <mutex>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace fc {
    class path;
@@ -28,8 +33,6 @@ namespace fc {
       /// if any appenders are sepecified, then parent's appenders are not set.
       bool                             additivity;
       std::vector<string>               appenders;
-
-      logger_config& add_appender( const string& s );
    };
 
    struct logging_config {
@@ -37,6 +40,33 @@ namespace fc {
       std::vector<string>          includes;
       std::vector<appender_config> appenders;
       std::vector<logger_config>   loggers;
+   };
+
+   struct log_config {
+
+      template<typename T>
+      static bool register_appender(const fc::string& type) {
+         return register_appender( type, std::make_shared<detail::appender_factory_impl<T>>() );
+      }
+
+      static bool register_appender( const fc::string& type, const appender_factory::ptr& f );
+
+      static logger get_logger( const fc::string& name );
+      static void update_logger( const fc::string& name, logger& log );
+
+      static void initialize_appenders( boost::asio::io_service& ios );
+
+      static bool configure_logging( const logging_config& l );
+
+   private:
+      static log_config& get();
+
+      friend class logger;
+
+      std::mutex                                               log_mutex;
+      std::unordered_map<std::string, appender_factory::ptr>   appender_factory_map;
+      std::unordered_map<std::string, appender::ptr>           appender_map;
+      std::unordered_map<std::string, logger>                  logger_map;
    };
 
    void configure_logging( const fc::path& log_config );
