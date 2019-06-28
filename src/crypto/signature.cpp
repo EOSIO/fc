@@ -10,6 +10,10 @@ namespace fc { namespace crypto {
          //signatures are two bignums: r & s. Just add up least significant digits of the two
          return *(size_t*)&sig._data.data[32-sizeof(size_t)] + *(size_t*)&sig._data.data[64-sizeof(size_t)];
       }
+
+      size_t operator()(const webauthn::signature& sig) const {
+         return sig.get_hash();
+      }
    };
 
    static signature::storage_type parse_base58(const std::string& base58str)
@@ -30,6 +34,24 @@ namespace fc { namespace crypto {
    signature::signature(const std::string& base58str)
       :_storage(parse_base58(base58str))
    {}
+
+   int signature::which() const {
+      return _storage.which();
+   }
+
+   template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+   template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
+   size_t signature::variable_size() const {
+      return _storage.visit<size_t>(overloaded {
+         [&](const auto& k1r1) {
+            return 0;
+         },
+         [&](const webauthn::signature& wa) {
+            return wa.variable_size();
+         }
+      });
+   }
 
    signature::operator std::string() const
    {
