@@ -59,7 +59,7 @@ namespace fc {
     }
 
     void logger::log( log_message m ) {
-       std::unique_lock g( log_config::get().log_mutex );
+       std::unique_lock<std::mutex> g( log_config::get().log_mutex );
        m.get_context().append_context( my->_name );
 
        for( auto itr = my->_appenders.begin(); itr != my->_appenders.end(); ++itr )
