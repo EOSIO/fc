@@ -10,40 +10,77 @@
 #include <fc/exception/exception.hpp>
 
 namespace fc {
-   extern std::unordered_map<std::string,logger>& get_logger_map();
-   extern std::unordered_map<std::string,appender::ptr>& get_appender_map();
-   logger_config& logger_config::add_appender( const string& s ) { appenders.push_back(s); return *this; }
 
-   void configure_logging( const fc::path& lc )
+   log_config& log_config::get() {
+      // allocate dynamically which will leak on exit but allow loggers to be used until the very end of execution
+      static log_config* the = new log_config;
+      return *the;
+   }
+
+   bool log_config::register_appender( const fc::string& type, const appender_factory::ptr& f )
    {
+      std::lock_guard g( log_config::get().log_mutex );
+      log_config::get().appender_factory_map[type] = f;
+      return true;
+   }
+
+   logger log_config::get_logger( const fc::string& name ) {
+      std::lock_guard g( log_config::get().log_mutex );
+      return log_config::get().logger_map[name];
+   }
+
+   void log_config::update_logger( const fc::string& name, logger& log ) {
+      std::lock_guard g( log_config::get().log_mutex );
+      if( log_config::get().logger_map.find( name ) != log_config::get().logger_map.end() )
+         log = log_config::get().logger_map[name];
+   }
+
+   void log_config::initialize_appenders( boost::asio::io_service& ios ) {
+      std::lock_guard g( log_config::get().log_mutex );
+      for( auto& iter : log_config::get().appender_map )
+         iter.second->initialize( ios );
+   }
+
+   void configure_logging( const fc::path& lc ) {
       configure_logging( fc::json::from_file<logging_config>(lc) );
    }
-   bool configure_logging( const logging_config& cfg )
-   {
+   bool configure_logging( const logging_config& cfg ) {
+      return log_config::configure_logging( cfg );
+   }
+
+   bool log_config::configure_logging( const logging_config& cfg ) {
       try {
-      static bool reg_console_appender = appender::register_appender<console_appender>( "console" );
-      static bool reg_gelf_appender = appender::register_appender<gelf_appender>( "gelf" );
-      get_logger_map().clear();
-      get_appender_map().clear();
+      static bool reg_console_appender = log_config::register_appender<console_appender>( "console" );
+      static bool reg_gelf_appender = log_config::register_appender<gelf_appender>( "gelf" );
+
+      std::lock_guard g( log_config::get().log_mutex );
+      log_config::get().logger_map.clear();
+      log_config::get().appender_map.clear();
 
       //slog( "\n%s", fc::json::to_pretty_string(cfg).c_str() );
       for( size_t i = 0; i < cfg.appenders.size(); ++i ) {
-         appender::create( cfg.appenders[i].name, cfg.appenders[i].type, cfg.appenders[i].args );
-        // TODO... process enabled
+         // create appender
+         auto fact_itr = log_config::get().appender_factory_map.find( cfg.appenders[i].type );
+         if( fact_itr == log_config::get().appender_factory_map.end() ) {
+            //wlog( "Unknown appender type '%s'", type.c_str() );
+            continue;
+         }
+         auto ap = fact_itr->second->create( cfg.appenders[i].args );
+         log_config::get().appender_map[cfg.appenders[i].name] = ap;
       }
       for( size_t i = 0; i < cfg.loggers.size(); ++i ) {
-         auto lgr = logger::get( cfg.loggers[i].name );
+         auto lgr = log_config::get().logger_map[cfg.loggers[i].name];
 
          // TODO: finish configure logger here...
          if( cfg.loggers[i].parent.valid() ) {
-            lgr.set_parent( logger::get( *cfg.loggers[i].parent ) );
+            lgr.set_parent( log_config::get().logger_map[*cfg.loggers[i].parent] );
          }
          lgr.set_name(cfg.loggers[i].name);
          if( cfg.loggers[i].level.valid() ) lgr.set_log_level( *cfg.loggers[i].level );
 
 
          for( auto a = cfg.loggers[i].appenders.begin(); a != cfg.loggers[i].appenders.end(); ++a ){
-            auto ap = appender::get( *a );
+            auto ap = log_config::get().appender_map[*a];
             if( ap ) { lgr.add_appender(ap); }
          }
       }
