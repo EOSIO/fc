@@ -19,24 +19,24 @@ namespace fc {
 
    bool log_config::register_appender( const fc::string& type, const appender_factory::ptr& f )
    {
-      std::lock_guard g( log_config::get().log_mutex );
+      std::lock_guard<std::mutex> g( log_config::get().log_mutex );
       log_config::get().appender_factory_map[type] = f;
       return true;
    }
 
    logger log_config::get_logger( const fc::string& name ) {
-      std::lock_guard g( log_config::get().log_mutex );
+      std::lock_guard<std::mutex> g( log_config::get().log_mutex );
       return log_config::get().logger_map[name];
    }
 
    void log_config::update_logger( const fc::string& name, logger& log ) {
-      std::lock_guard g( log_config::get().log_mutex );
+      std::lock_guard<std::mutex> g( log_config::get().log_mutex );
       if( log_config::get().logger_map.find( name ) != log_config::get().logger_map.end() )
          log = log_config::get().logger_map[name];
    }
 
    void log_config::initialize_appenders( boost::asio::io_service& ios ) {
-      std::lock_guard g( log_config::get().log_mutex );
+      std::lock_guard<std::mutex> g( log_config::get().log_mutex );
       for( auto& iter : log_config::get().appender_map )
          iter.second->initialize( ios );
    }
@@ -53,7 +53,7 @@ namespace fc {
       static bool reg_console_appender = log_config::register_appender<console_appender>( "console" );
       static bool reg_gelf_appender = log_config::register_appender<gelf_appender>( "gelf" );
 
-      std::lock_guard g( log_config::get().log_mutex );
+      std::lock_guard<std::mutex> g( log_config::get().log_mutex );
       log_config::get().logger_map.clear();
       log_config::get().appender_map.clear();
 
