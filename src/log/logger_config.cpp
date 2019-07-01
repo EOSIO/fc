@@ -12,8 +12,8 @@
 namespace fc {
 
    log_config& log_config::get() {
-      static log_config the;
-      return the;
+      static log_config* the = new log_config;
+      return *the;
    }
 
    bool log_config::register_appender( const fc::string& type, const appender_factory::ptr& f )
