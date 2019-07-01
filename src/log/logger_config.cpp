@@ -12,6 +12,7 @@
 namespace fc {
 
    log_config& log_config::get() {
+      // allocate dynamically which will leak on exit but allow loggers to be used until the very end of execution
       static log_config* the = new log_config;
       return *the;
    }
