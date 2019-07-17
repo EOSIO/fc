@@ -167,6 +167,10 @@ IF(NOT WIN32)
   set(LINK_USR_LOCAL_LIB -L/usr/local/lib)
 ENDIF()
 
+IF(WIN32)
+  target_link_libraries( fc PUBLIC ws2_32 mswsock userenv )
+ENDIF()
+
 IF(APPLE)
   find_library(security_framework Security)
   find_library(corefoundation_framework CoreFoundation)
