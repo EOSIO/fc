@@ -17,6 +17,7 @@ BOOST_AUTO_TEST_SUITE(cfile_test_suite)
       BOOST_CHECK( fc::exists( tempdir.path() / "test") );
 
       t.open( "rb+" );
+      BOOST_CHECK( t.is_open() );
       t.write( "abc", 3 );
       BOOST_CHECK_EQUAL( t.tellp(), 3 );
       std::vector<char> v(3);
@@ -42,6 +43,17 @@ BOOST_AUTO_TEST_SUITE(cfile_test_suite)
 
       t.close();
       BOOST_CHECK( !t.is_open() );
+
+      // re-open and read again
+      t.open( "rb+" );
+      BOOST_CHECK( t.is_open() );
+
+      y = 0;
+      t.seek( 1 );
+      t.read( reinterpret_cast<char*>( &y ), sizeof( y ) );
+      BOOST_CHECK_EQUAL( x, y );
+
+      t.close();
       t.remove();
       BOOST_CHECK( !fc::exists( tempdir.path() / "test") );
    }
