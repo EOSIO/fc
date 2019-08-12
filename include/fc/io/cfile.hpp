@@ -38,10 +38,6 @@ public:
 
    bool is_open() const { return _open; }
 
-   size_t file_size() const {
-      return fc::file_size( _file_path );
-   }
-
    /// @param mode is any mode supported by fopen
    ///        Tested with:
    ///         "ab+" - open for binary update - create if does not exist
@@ -76,7 +72,7 @@ public:
       size_t result = fread( d, 1, n, _file.get() );
       if( result != n ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
-                                       " unable to read " + std::to_string( n ) + " only read " + std::to_string( result ) );
+                                       " unable to read " + std::to_string( n ) + " bytes; only read " + std::to_string( result ) );
       }
    }
 
@@ -84,26 +80,21 @@ public:
       size_t result = fwrite( d, 1, n, _file.get() );
       if( result != n ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
-                                       " unable to write " + std::to_string( n ) + " only wrote " + std::to_string( result ) );
+                                       " unable to write " + std::to_string( n ) + " bytes; only wrote " + std::to_string( result ) );
       }
    }
 
    void flush() {
       if( 0 != fflush( _file.get() ) ) {
-         throw std::ios_base::failure( "cfile: " + _file_path.generic_string() + " unable to flush file." );
+         int ec = ferror( _file.get() );
+         throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
+                                       " unable to flush file, ferror: " + std::to_string( ec ) );
       }
    }
 
    void close() {
       _file.reset();
       _open = false;
-   }
-
-   void remove() {
-      if( _open ) {
-         throw std::ios_base::failure( "cfile: " + _file_path.generic_string() + " Unable to remove as file is open" );
-      }
-      fc::remove_all( _file_path );
    }
 
    cfile_datastream create_datastream();

@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_SUITE(cfile_test_suite)
       BOOST_CHECK_EQUAL( x, y );
 
       t.close();
-      t.remove();
+      fc::remove_all( t.get_file_path() );
       BOOST_CHECK( !fc::exists( tempdir.path() / "test") );
    }
 
