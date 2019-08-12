@@ -2,6 +2,14 @@
 #include <fc/filesystem.hpp>
 #include <cstdio>
 
+#ifndef _WIN32
+#define FC_FOPEN(p, m) fopen(p, m)
+#else
+#define FC_CAT(s1, s2) s1 ## s2
+#define FC_PREL(s) FC_CAT(L, s)
+#define FC_FOPEN(p, m) _wfopen(p, FC_PREL(m))
+#endif
+
 namespace fc {
 
 namespace detail {
@@ -39,7 +47,7 @@ public:
    ///         "ab+" - open for binary update - create if does not exist
    ///         "rb+" - open for binary update - file must exist
    void open( const char* mode ) {
-      _file.reset( fopen( _file_path.generic_string().c_str(), mode ) );
+      _file.reset( FC_FOPEN( _file_path.generic_string().c_str(), mode ) );
       if( !_file ) {
          throw std::ios_base::failure( "cfile unable to open: " +  _file_path.generic_string() + " in mode: " + std::string( mode ) );
       }
@@ -139,3 +147,11 @@ inline cfile_datastream cfile::create_datastream() {
 
 
 } // namespace fc
+
+#ifndef _WIN32
+#undef FC_FOPEN
+#else
+#undef FC_CAT
+#undef FC_PREL
+#undef FC_FOPEN
+#endif
