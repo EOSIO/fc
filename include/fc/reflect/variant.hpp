@@ -29,6 +29,8 @@ namespace fc
          { 
             if( v.valid() )
                vo(name,*v);
+            else
+               vo(name,{});
          }
          template<typename M>
          void add( mutable_variant_object& vo, const char* name, const M& v )const
