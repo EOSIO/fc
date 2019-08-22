@@ -34,7 +34,7 @@ namespace fc {
       if( log_config::get().logger_map.find( name ) != log_config::get().logger_map.end() ) {
          log = log_config::get().logger_map[name];
       } else {
-         // no entry for logger, so setup with log_config's registered appenders
+         // no entry for logger, so setup with default logger
          log = log_config::get().logger_map[ DEFAULT_LOGGER ];
          log_config::get().logger_map.emplace( name, log );
       }
