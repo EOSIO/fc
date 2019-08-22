@@ -3,7 +3,11 @@
 #include <fc/time.hpp>
 #include <fc/log/log_message.hpp>
 
-namespace fc  
+#ifndef DEFAULT_LOGGER
+#define DEFAULT_LOGGER "default"
+#endif
+
+namespace fc
 {
 
    class appender;
@@ -21,7 +25,7 @@ namespace fc
    class logger 
    {
       public:
-         static logger get( const fc::string& name = "default");
+         static logger get( const fc::string& name = DEFAULT_LOGGER );
          static void update( const fc::string& name, logger& log );
 
          logger();
@@ -56,10 +60,6 @@ namespace fc
    };
 
 } // namespace fc
-
-#ifndef DEFAULT_LOGGER
-#define DEFAULT_LOGGER
-#endif
 
 // suppress warning "conditional expression is constant" in the while(0) for visual c++
 // http://cnicholson.net/2009/03/stupid-c-tricks-dowhile0-and-c4127/
