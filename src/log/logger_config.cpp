@@ -31,8 +31,16 @@ namespace fc {
 
    void log_config::update_logger( const fc::string& name, logger& log ) {
       std::lock_guard g( log_config::get().log_mutex );
-      if( log_config::get().logger_map.find( name ) != log_config::get().logger_map.end() )
+      if( log_config::get().logger_map.find( name ) != log_config::get().logger_map.end() ) {
          log = log_config::get().logger_map[name];
+      } else {
+         // no entry for logger, so setup with log_config's registered appenders
+         log = logger(name);
+         for( auto a : log_config::get().appender_map ) {
+            log.add_appender( a.second );
+         }
+         log_config::get().logger_map.emplace( name, log );
+      }
    }
 
    void log_config::initialize_appenders( boost::asio::io_service& ios ) {
