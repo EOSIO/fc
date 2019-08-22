@@ -34,15 +34,9 @@ namespace fc {
       if( log_config::get().logger_map.find( name ) != log_config::get().logger_map.end() ) {
          log = log_config::get().logger_map[name];
       } else {
-         // no entry for logger, so setup with default logger if it exists, otherwise default construct and use registered appenders
+         // no entry for logger, so setup with default logger if it exists, otherwise do nothing since default logger not configured
          if( log_config::get().logger_map.find( DEFAULT_LOGGER ) != log_config::get().logger_map.end() ) {
             log = log_config::get().logger_map[DEFAULT_LOGGER];
-            log_config::get().logger_map.emplace( name, log );
-         } else {
-            log = logger(name);
-            for( const auto& a : log_config::get().appender_map ) {
-               log.add_appender( a.second );
-            }
             log_config::get().logger_map.emplace( name, log );
          }
       }
