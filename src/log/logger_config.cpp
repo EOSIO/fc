@@ -120,7 +120,7 @@ namespace fc {
                  ) );
 
       logger_config dlc;
-      dlc.name = "default";
+      dlc.name = DEFAULT_LOGGER;
       dlc.level = log_level::info;
       dlc.appenders.push_back("stderr");
       cfg.loggers.push_back( dlc );
