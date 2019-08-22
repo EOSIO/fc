@@ -36,7 +36,7 @@ namespace fc {
       } else {
          // no entry for logger, so setup with log_config's registered appenders
          log = logger(name);
-         for( auto a : log_config::get().appender_map ) {
+         for( const auto& a : log_config::get().appender_map ) {
             log.add_appender( a.second );
          }
          log_config::get().logger_map.emplace( name, log );
