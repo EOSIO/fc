@@ -627,17 +627,7 @@ void from_variant( const variant& var,  int32_t& vo )
 }
 
 void to_variant( const unsigned __int128& var,  variant& vo )  {
-   /*
-   if( var <= static_cast<unsigned __int128>( std::numeric_limits<uint32_t>::max() ) )
-   { // uint32_t rather than uint64_t so that the number can be represented in JavaScript
-      vo = static_cast<uint64_t>(var);
-      return;
-   }
-   */
-   std::string s = "0x";
-   s.append( to_hex( reinterpret_cast<const char*>(&var), sizeof(var) ) );
-   vo = s;
-   // Assumes platform is little endian since it should write out the hex representation of 128-bit integer in little endian order.
+   vo = boost::multiprecision::uint128_t( var ).str();
 }
 
 void from_variant( const variant& var,  unsigned __int128& vo )
@@ -645,32 +635,14 @@ void from_variant( const variant& var,  unsigned __int128& vo )
    if( var.is_uint64() ) {
       vo = var.as_uint64();
    } else if( var.is_string() ) {
-      unsigned __int128 temp = 0;
-      auto s = var.as_string();
-      FC_ASSERT( s.size() == 2 + 2 * sizeof(temp) && s.find("0x") == 0,
-                 "Failure in converting hex data into a uint128_t"      );
-      auto sz = from_hex( s.substr(2), reinterpret_cast<char*>(&temp), sizeof(temp) );
-      // Assumes platform is little endian and hex representation of 128-bit integer is in little endian order.
-      FC_ASSERT( sz == sizeof(temp), "Failure in converting hex data into a uint128_t" );
-      vo = temp;
+      vo = static_cast<unsigned __int128>( boost::multiprecision::uint128_t(var.as_string()) );
    } else {
       FC_THROW_EXCEPTION( bad_cast_exception, "Cannot convert variant of type '${type}' into a uint128_t", ("type", var.get_type()) );
    }
 }
 
 void to_variant( const __int128& var,  variant& vo )  {
-   /*
-   if( static_cast<__int128>( std::numeric_limits<int32_t>::lowest() ) <= var
-       && var <= static_cast<__int128>( std::numeric_limits<int32_t>::max() ) )
-   { // int32_t rather than int64_t so that the number can be represented in JavaScript
-      vo = static_cast<int64_t>(var);
-      return;
-   }
-   */
-   std::string s = "0x";
-   s.append( to_hex( reinterpret_cast<const char*>(&var), sizeof(var) ) );
-   vo = s;
-   // Assumes platform is little endian since it should write out the hex representation of 128-bit integer in little endian order.
+   vo = boost::multiprecision::int128_t( var ).str();
 }
 
 void from_variant( const variant& var,  __int128& vo )
@@ -678,14 +650,7 @@ void from_variant( const variant& var,  __int128& vo )
    if( var.is_int64() ) {
       vo = var.as_int64();
    } else if( var.is_string() ) {
-      __int128 temp = 0;
-      auto s = var.as_string();
-      FC_ASSERT( s.size() == 2 + 2 * sizeof(temp) && s.find("0x") == 0,
-                 "Failure in converting hex data into a int128_t"       );
-      auto sz = from_hex( s.substr(2), reinterpret_cast<char*>(&temp), sizeof(temp) );
-      // Assumes platform is little endian and hex representation of 128-bit integer is in little endian order.
-      FC_ASSERT( sz == sizeof(temp), "Failure in converting hex data into a int128_t" );
-      vo = temp;
+      vo = static_cast<__int128>( boost::multiprecision::int128_t(var.as_string()) );
    } else {
       FC_THROW_EXCEPTION( bad_cast_exception, "Cannot convert variant of type '${type}' into a int128_t", ("type", var.get_type()) );
    }
