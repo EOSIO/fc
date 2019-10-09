@@ -22,6 +22,10 @@
 #include <boost/interprocess/managed_mapped_file.hpp>
 #include <fc/crypto/hex.hpp>
 
+namespace chainbase {
+    class shared_cow_string;
+}
+
 namespace fc {
     namespace raw {
 
@@ -326,6 +330,41 @@ namespace fc {
       FC_ASSERT(v.size() == 0);
       if( tmp.size() ) {
          v.append(tmp.begin(), tmp.end());
+      }
+    }
+
+    // bip::basic_string
+    template<typename Stream, typename Traits, typename Allocator> inline void pack( Stream& s, const bip::basic_string<char, Traits, Allocator>& v )  {
+      FC_ASSERT( v.size() <= MAX_SIZE_OF_BYTE_ARRAYS );
+      fc::raw::pack( s, unsigned_int((uint32_t)v.size()));
+      if( v.size() ) s.write( v.c_str(), v.size() );
+    }
+
+      template<typename Stream, typename Traits, typename Allocator> inline void unpack( Stream& s, bip::basic_string<char, Traits, Allocator>& v )  {
+      std::vector<char> tmp; fc::raw::unpack(s,tmp);
+      FC_ASSERT(v.size() == 0);
+      if( tmp.size() ) {
+         v.append(tmp.begin(), tmp.end());
+      }
+    }
+
+    template<typename Stream, typename T>
+    T&& helperxxx(T&& t) { return static_cast<T&&>(t); }
+
+    // chainbase::shared_cow_string
+    template<typename Stream> inline void pack( Stream& s, const chainbase::shared_cow_string& vxxx )  {
+      auto& v = helperxxx<Stream>(vxxx);
+      FC_ASSERT( v.size() <= MAX_SIZE_OF_BYTE_ARRAYS );
+      fc::raw::pack( s, unsigned_int((uint32_t)v.size()));
+      if( v.size() ) s.write( v.data(), v.size() );
+    }
+
+    template<typename Stream> inline void unpack( Stream& s, chainbase::shared_cow_string& vxxx )  {
+      auto& v = helperxxx<Stream>(vxxx);
+      std::vector<char> tmp; fc::raw::unpack(s,tmp);
+      FC_ASSERT(v.size() == 0);
+      if( tmp.size() ) {
+         v.assign(tmp.data(), tmp.size());
       }
     }
 
