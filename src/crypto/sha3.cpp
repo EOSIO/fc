@@ -25,7 +25,7 @@ inline constexpr bool is_little_endian = false;
 #error "sha3 implementation needs __BYTE_ORDER__ and __ORDER_LITTLE/BIG_ENDIAN__ defined"
 #endif
 
-#if defined(__clang__)
+#if defined(__builtin_rotateleft64)
 __attribute__ ((always_inline))
 inline uint64_t rotl64(uint64_t x, uint64_t y) { return __builtin_rotateleft64(x, y); }
 #else
