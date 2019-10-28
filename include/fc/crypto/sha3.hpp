@@ -3,7 +3,6 @@
 #include <fc/string.hpp>
 #include <fc/platform_independence.hpp>
 #include <fc/io/raw_fwd.hpp>
-#include <variant>
 
 namespace fc
 {
@@ -27,7 +26,6 @@ public:
 		encoder e;
 		e.write(d, dlen);
 		const auto& sha = e.result(is_nist);
-		std::cout << "Returning " << sha.str() << "\n";
 		return sha;
 	}
 	static sha3 hash(const string& s, bool is_nist=true) { return hash(s.c_str(), s.size(), is_nist); }

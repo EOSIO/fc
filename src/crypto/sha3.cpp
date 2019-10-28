@@ -9,8 +9,6 @@
 #include <fc/exception/exception.hpp>
 #include "_digest_common.hpp"
 
-#include <iostream>
-
 namespace fc
 {
 
@@ -168,7 +166,7 @@ struct sha3_impl {
 
 	union {
 		uint8_t bytes[number_of_words*8];
-		uint64_t words[number_of_words*5];
+		uint64_t words[number_of_words*5]; // this is greater than 25, because in the theta portion we need a wide berth
 	};
 	bool keccak = false;
 	int point;
