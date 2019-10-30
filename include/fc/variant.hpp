@@ -14,7 +14,6 @@
 #include <fc/string.hpp>
 #include <fc/container/deque_fwd.hpp>
 #include <fc/container/flat_fwd.hpp>
-#include <fc/smart_ref_fwd.hpp>
 #include <boost/multi_index_container_fwd.hpp>
 
 #include <boost/multiprecision/cpp_int.hpp>
@@ -74,8 +73,6 @@ namespace fc
    template<typename T> void to_variant( const boost::multiprecision::number<T>& n, variant& v );
    template<typename T> void from_variant( const variant& v, boost::multiprecision::number<T>& n );
 
-   template<typename T> void to_variant( const smart_ref<T>& s, variant& v );
-   template<typename T> void from_variant( const variant& v, smart_ref<T>& s );
    template<typename T> void to_variant( const safe<T>& s, variant& v );
    template<typename T> void from_variant( const variant& v, safe<T>& s );
    template<typename T> void to_variant( const std::unique_ptr<T>& s, variant& v );
@@ -632,12 +629,6 @@ namespace fc
 
    template<typename T>
    void from_variant( const variant& v, safe<T>& s ) { s.value = v.as_uint64(); }
-
-   template<typename T>
-   void to_variant( const smart_ref<T>& s, variant& v ) { v = *s; }
-
-   template<typename T>
-   void from_variant( const variant& v, smart_ref<T>& s ) { from_variant( v, *s ); }
 
    template<typename T, typename... Args> void to_variant( const boost::multi_index_container<T,Args...>& c, variant& v )
    {
