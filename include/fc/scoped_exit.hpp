@@ -22,17 +22,6 @@ namespace fc {
                try { callback(); } catch( ... ) {}
          }
 
-         scoped_exit& operator = ( scoped_exit&& mv ) {
-            if( this != &mv ) {
-               ~scoped_exit();
-               callback = std::move(mv.callback);
-               canceled = mv.canceled;
-               mv.canceled = true;
-            }
-
-            return *this;
-         }
-
          void cancel() { canceled = true; }
 
       private:
