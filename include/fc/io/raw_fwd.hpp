@@ -25,7 +25,32 @@ namespace fc {
    namespace ecc { class public_key; class private_key; }
    template<typename Storage> class fixed_string;
 
-   namespace raw {
+using block_1024_option_t = boost::container::deque_options< boost::container::block_size<1024u> >::type;
+template<typename T>
+using deque_1024 = boost::container::deque<T, void, block_1024_option_t >;
+
+template<typename T, typename... U>
+void to_variant( const boost::container::deque<T, U...>& vec, fc::variant& vo ) {
+   FC_ASSERT( vec.size() <= MAX_NUM_ARRAY_ELEMENTS );
+   variants vars;
+   for( const auto& item : vec ) {
+      vars.emplace_back( item );
+   }
+   vo = std::move(vars);
+}
+
+template<typename T, typename... U>
+void from_variant( const fc::variant& v, boost::container::deque<T, U...>& vec ) {
+   const variants& vars = v.get_array();
+   FC_ASSERT( vars.size() <= MAX_NUM_ARRAY_ELEMENTS );
+   vec.clear();
+   vec.resize( vars.size() );
+   for( uint32_t i = 0; i < vars.size(); ++i ) {
+      from_variant( vars[i], vec[i] );
+   }
+}
+
+namespace raw {
     template<typename T>
     constexpr bool is_trivial_array = std::is_scalar<T>::value == true && std::is_pointer<T>::value == false;
 
@@ -123,4 +148,32 @@ namespace fc {
     template<typename T> inline T unpack( const std::vector<char>& s );
     template<typename T> inline T unpack( const char* d, uint32_t s );
     template<typename T> inline void unpack( const char* d, uint32_t s, T& v );
-} }
+
+   template<typename Stream, typename T>
+   inline void pack( Stream& s, const fc::deque_1024<T>& value ) {
+      FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
+      fc::raw::pack( s, unsigned_int( (uint32_t) value.size() ) );
+      auto itr = value.begin();
+      auto end = value.end();
+      while( itr != end ) {
+         fc::raw::pack( s, *itr );
+         ++itr;
+      }
+   }
+
+   template<typename Stream, typename T>
+   inline void unpack( Stream& s, fc::deque_1024<T>& value ) {
+      unsigned_int size;
+      fc::raw::unpack( s, size );
+      FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
+      value.resize( size.value );
+      auto itr = value.begin();
+      auto end = value.end();
+      while( itr != end ) {
+         fc::raw::unpack( s, *itr );
+         ++itr;
+      }
+   }
+
+
+   } }
