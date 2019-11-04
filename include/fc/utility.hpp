@@ -146,8 +146,8 @@ namespace fc {
   }
 
 
-  template<typename T>
-  void move_append(std::vector<T> &dest, std::vector<T>&& src ) {
+  template<typename Container>
+  void move_append(Container& dest, Container&& src ) {
     if (src.empty()) {
       return;
     } else if (dest.empty()) {
