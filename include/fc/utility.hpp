@@ -157,8 +157,8 @@ namespace fc {
     }
   }
 
-  template<typename T>
-  void copy_append(std::vector<T> &dest, const std::vector<T>& src ) {
+  template<typename Container>
+  void copy_append(Container& dest, const Container& src ) {
     if (src.empty()) {
       return;
     } else {
@@ -166,8 +166,8 @@ namespace fc {
     }
   }
 
-  template<typename T>
-  void deduplicate( std::vector<T>& entries ) {
+  template<typename Container>
+  void deduplicate( Container& entries ) {
     if (entries.size() > 1) {
       std::sort( entries.begin(), entries.end() );
       auto itr = std::unique( entries.begin(), entries.end() );
