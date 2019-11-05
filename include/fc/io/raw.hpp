@@ -535,11 +535,8 @@ namespace fc {
     inline void pack( Stream& s, const std::deque<T>& value ) {
       FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
       fc::raw::pack( s, unsigned_int((uint32_t)value.size()) );
-      auto itr = value.begin();
-      auto end = value.end();
-      while( itr != end ) {
-        fc::raw::pack( s, *itr );
-        ++itr;
+      for( const auto& i : value ) {
+         fc::raw::pack( s, i );
       }
     }
 
@@ -548,23 +545,37 @@ namespace fc {
       unsigned_int size; fc::raw::unpack( s, size );
       FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
       value.resize(size.value);
-      auto itr = value.begin();
-      auto end = value.end();
-      while( itr != end ) {
-        fc::raw::unpack( s, *itr );
-        ++itr;
+      for( auto& i : value ) {
+         fc::raw::unpack( s, i );
       }
+    }
+
+    template<typename Stream, typename T, typename... U>
+    inline void pack( Stream& s, const boost::container::deque<T, U...>& value ) {
+       FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
+       fc::raw::pack( s, unsigned_int( (uint32_t) value.size() ) );
+       for( const auto& i : value ) {
+          fc::raw::pack( s, i );
+       }
+    }
+
+    template<typename Stream, typename T, typename... U>
+    inline void unpack( Stream& s, boost::container::deque<T, U...>& value ) {
+       unsigned_int size;
+       fc::raw::unpack( s, size );
+       FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
+       value.resize( size.value );
+       for( auto& i : value ) {
+          fc::raw::unpack( s, i );
+       }
     }
 
     template<typename Stream, typename T>
     inline void pack( Stream& s, const std::vector<T>& value ) {
       FC_ASSERT( value.size() <= MAX_NUM_ARRAY_ELEMENTS );
       fc::raw::pack( s, unsigned_int((uint32_t)value.size()) );
-      auto itr = value.begin();
-      auto end = value.end();
-      while( itr != end ) {
-        fc::raw::pack( s, *itr );
-        ++itr;
+      for( const auto& i : value ) {
+         fc::raw::pack( s, i );
       }
     }
 
@@ -573,11 +584,8 @@ namespace fc {
       unsigned_int size; fc::raw::unpack( s, size );
       FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
       value.resize(size.value);
-      auto itr = value.begin();
-      auto end = value.end();
-      while( itr != end ) {
-        fc::raw::unpack( s, *itr );
-        ++itr;
+      for( auto& i : value ) {
+         fc::raw::unpack( s, i );
       }
     }
 

@@ -136,6 +136,11 @@ namespace fc
    template<typename T>
    void from_variant( const variant& var,  std::deque<T>& vo );
 
+   template<typename T, typename... U>
+   void to_variant( const boost::container::deque<T, U...>& d, fc::variant& vo );
+   template<typename T, typename... U>
+   void from_variant( const fc::variant& v, boost::container::deque<T, U...>& d );
+
    template<typename T>
    void to_variant( const std::set<T>& var,  variant& vo );
    template<typename T>
@@ -518,6 +523,30 @@ namespace fc
       v = std::move(vars);
    }
 
+   /** @ingroup Serializable */
+   template<typename T, typename... U>
+   void from_variant( const variant& v, boost::container::deque<T, U...>& d )
+   {
+      const variants& vars = v.get_array();
+      if( vars.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
+      d.clear();
+      d.resize( vars.size() );
+      for( uint32_t i = 0; i < vars.size(); ++i ) {
+         from_variant( vars[i], d[i] );
+      }
+   }
+
+   /** @ingroup Serializable */
+   template<typename T, typename... U>
+   void to_variant( const boost::container::deque<T, U...>& d, fc::variant& vo )
+   {
+      if( d.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
+      variants vars(d.size());
+      for( size_t i = 0; i < d.size(); ++i ) {
+         vars[i] = variant( d[i] );
+      }
+      vo = std::move( vars );
+   }
 
    /** @ingroup Serializable */
    template<typename T>
