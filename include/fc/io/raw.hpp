@@ -5,7 +5,6 @@
 #include <fc/io/varint.hpp>
 #include <fc/optional.hpp>
 #include <fc/fwd.hpp>
-#include <fc/smart_ref_fwd.hpp>
 #include <fc/array.hpp>
 #include <fc/time.hpp>
 #include <fc/filesystem.hpp>
@@ -265,11 +264,6 @@ namespace fc {
     void unpack( Stream& s, fc::fwd<T,S,Align>& v ) {
        fc::raw::unpack( *v );
     }
-    template<typename Stream, typename T>
-    void pack( Stream& s, const fc::smart_ref<T>& v ) { fc::raw::pack( s, *v ); }
-
-    template<typename Stream, typename T>
-    void unpack( Stream& s, fc::smart_ref<T>& v ) { fc::raw::unpack( s, *v ); }
 
     // optional
     template<typename Stream, typename T>
