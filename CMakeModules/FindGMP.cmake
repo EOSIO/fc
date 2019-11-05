@@ -31,12 +31,18 @@ else()
   	        DOC "The directory containing the GMP header files"
            )
 
-  find_library(GMP_LIBRARIES NAMES libgmp.a gmp.lib gmp libgmp-10 mpir
+  set(PREVIOUS_CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_FIND_LIBRARY_SUFFIXES}")
+  set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
+  find_library(GMP_LIBRARIES NAMES gmp
     HINTS ENV GMP_LIB_DIR
           ENV GMP_DIR
     PATH_SUFFIXES lib
     DOC "Path to the GMP library"
     )
+
+  set(CMAKE_FIND_LIBRARY_SUFFIXES "${PREVIOUS_CMAKE_FIND_LIBRARY_SUFFIXES}")
+  unset(PREVIOUS_CMAKE_FIND_LIBRARY_SUFFIXES)
 
   if ( GMP_LIBRARIES )
     get_filename_component(GMP_LIBRARIES_DIR ${GMP_LIBRARIES} PATH CACHE )
