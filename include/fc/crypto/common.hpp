@@ -5,8 +5,74 @@
 #include <fc/io/raw.hpp>
 #include <fc/utility.hpp>
 #include <fc/static_variant.hpp>
+#include <openssl/bn.h>
 
 namespace fc { namespace crypto {
+    /**
+     *  @class big_number
+     *  @brief a C++ wrapper over BIGNUM from openssl
+     */
+    class big_number {
+       public:
+         big_number() = default;
+         big_number(const char* bytes, std::size_t len) { from_bytes(bytes, len); }
+         big_number(const std::string& hex) { from_hex(hex); }
+         big_number(const big_number& bn) {
+            _data = BN_dup(bn._data);
+            FC_ASSERT(_data);
+         }
+         big_number(big_number&& bn) = default;
+         ~big_number() {
+            if (_data)
+               BN_free(_data);
+         }
+
+         operator BIGNUM*() { return _data; }
+         operator const BIGNUM*()const { return _data; }
+         BIGNUM* data() { return _data; }
+         const BIGNUM* data()const { return _data; }
+
+         void from_bytes(const char* bytes, std::size_t len) {
+            _data = BN_bin2bn((const unsigned char*)bytes, len, nullptr);
+            FC_ASSERT(!_data, "invalid binary to big number");
+         }
+
+         void from_hex(const std::string& hex) {
+            char buff[1024];
+            FC_ASSERT(hex.size() < 1024);
+            int sz = from_hex(hex, buff, 1024);
+            _data = BN_bin2bn((const unsigned char*)buff, sz, nullptr);
+            FC_ASSERT(_data, "invalid binary to big number");
+         }
+
+         std::size_t size()const { return BN_num_bytes(_data); }
+         std::vector<char> to_bytes()const {
+            std::vector<char> bytes;
+            bytes.resize(size());
+            BN_bn2bin(_data, (unsigned char*)bytes.data());
+            return bytes;
+         }
+         std::string to_hex()const { return BN_bn2hex(_data); }
+       private:
+         uint8_t from_hex( char c ) {
+            if( c >= '0' && c <= '9' )
+            return c - '0';
+            if( c >= 'a' && c <= 'f' )
+               return c - 'a' + 10;
+            if( c >= 'A' && c <= 'F' )
+               return c - 'A' + 10;
+            FC_ASSERT(false, "from_hex failed");
+         }
+
+         int from_hex( const std::string& hex_str, char* out_data, size_t out_data_len ) {
+            int j=0;
+            for (int i=0; i < hex_str.size(); i += 2, j++)
+               out_data[j] = (from_hex(hex_str[i]) << 4) | from_hex(hex_str[i+1]);
+            return j;
+         }
+         BIGNUM* _data = nullptr;
+    };
+
    template<typename DataType>
    struct checksummed_data {
       checksummed_data() {}

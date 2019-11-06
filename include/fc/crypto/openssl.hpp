@@ -14,11 +14,11 @@ void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps);
 int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
 #endif
 
-/** 
+/**
  * @file openssl.hpp
  * Provides common utility calls for wrapping openssl c api.
  */
-namespace fc 
+namespace fc
 {
   class path;
 
@@ -48,7 +48,7 @@ namespace fc
         };
 
     SSL_TYPE(ec_group,       EC_GROUP,       EC_GROUP_free)
-    SSL_TYPE(ec_point,       EC_POINT,       EC_POINT_free)
+    //SSL_TYPE(ec_point,       EC_POINT,       EC_POINT_free)
     SSL_TYPE(ecdsa_sig,      ECDSA_SIG,      ECDSA_SIG_free)
     SSL_TYPE(bn_ctx,         BN_CTX,         BN_CTX_free)
     SSL_TYPE(evp_cipher_ctx, EVP_CIPHER_CTX, EVP_CIPHER_CTX_free )

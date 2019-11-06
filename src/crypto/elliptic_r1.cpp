@@ -253,7 +253,7 @@ namespace fc { namespace crypto { namespace r1 {
         BN_one(one);
         bn_ctx ctx(BN_CTX_new());
 
-        ec_point result(EC_POINT_new(group));
+        ec_point result;
         EC_POINT_mul(group, result, z, master_pub, one, ctx);
 
         public_key rtn;
@@ -295,7 +295,7 @@ namespace fc { namespace crypto { namespace r1 {
         ssl_bignum one;
         BN_one(one);
 
-        ec_point result(EC_POINT_new(group));
+        ec_point result;
         EC_POINT_add(group, result, digest_point, master_pub, ctx);
 
         if (EC_POINT_is_at_infinity(group, result))
