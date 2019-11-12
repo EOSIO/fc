@@ -252,14 +252,12 @@ namespace fc { namespace crypto { namespace r1 {
         ssl_bignum one;
         BN_one(one);
         bn_ctx ctx(BN_CTX_new());
-
-        ec_point result;
+        ec_point result(EC_POINT_new(group));
         EC_POINT_mul(group, result, z, master_pub, one, ctx);
 
         public_key rtn;
         rtn.my->_key = EC_KEY_new_by_curve_name( NID_X9_62_prime256v1 );
         EC_KEY_set_public_key(rtn.my->_key,result);
-
         return rtn;
     }
     bool       public_key::valid()const

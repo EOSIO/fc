@@ -21,7 +21,9 @@ namespace fc { namespace crypto {
             _data = BN_dup(bn._data);
             FC_ASSERT(_data);
          }
-         big_number(big_number&& bn) = default;
+         big_number(big_number&& bn) : _data(bn._data) {
+            bn._data = nullptr;
+         }
          ~big_number() {
             if (_data)
                BN_free(_data);
@@ -34,7 +36,7 @@ namespace fc { namespace crypto {
 
          void from_bytes(const char* bytes, std::size_t len) {
             _data = BN_bin2bn((const unsigned char*)bytes, len, nullptr);
-            FC_ASSERT(!_data, "invalid binary to big number");
+            FC_ASSERT(_data, "invalid binary to big number");
          }
 
          void from_hex(const std::string& hex) {

@@ -30,6 +30,98 @@ namespace fc {
     typedef fc::sha256                  blind_signature;
 
     /**
+     *  @class ec_point
+     *  @brief contains the representation of a point on an elliptic curve
+     */
+    class ec_point {
+       public:
+         enum curve_t {
+            r1_curve_t = NID_X9_62_prime256v1,
+            k1_curve_t = NID_secp256k1
+         };
+
+         static constexpr curve_t r1_curve = r1_curve_t;
+         static constexpr curve_t k1_curve = k1_curve_t;
+
+         ec_point(curve_t ct = r1_curve) : _curve(ct), _point(EC_POINT_new(get_group())) {
+            FC_ASSERT(_point);
+         }
+
+         ec_point(const ec_point& p, curve_t ct = r1_curve) : _curve(ct), _point(EC_POINT_new(get_group())) {
+            FC_ASSERT(_point && EC_POINT_copy(_point, p._point));
+         }
+
+         ec_point(ec_point&& p) : _curve(p._curve), _point(p._point) { p._point = nullptr; }
+         ec_point& operator=(ec_point&& p) {
+            _point = p._point;
+            _curve = p._curve;
+            p._point = nullptr;
+            return *this;
+         }
+
+         template <typename BigNum>
+         ec_point(BigNum&& x, int y, curve_t ct = r1_curve) : _curve(ct), _point(EC_POINT_new(get_group())) {
+            FC_ASSERT(_point);
+            EC_POINT_set_compressed_coordinates_GFp(get_group(), _point, x.get(), y, nullptr);
+         }
+
+         template <typename BigNum>
+         ec_point(BigNum&& x, BigNum&& y, curve_t ct = r1_curve) : _curve(ct), _point(EC_POINT_new(get_group())) {
+            FC_ASSERT(_point);
+            EC_POINT_set_affine_coordinates_GFp(get_group(), _point, x.get(), y.get(), nullptr);
+         }
+
+         ~ec_point() {
+            if (_point)
+               EC_POINT_free(_point);
+         }
+
+         bool valid()const { return EC_POINT_is_on_curve(get_group(), _point, nullptr); }
+
+         operator EC_POINT*() { return _point; }
+         operator const EC_POINT*() { return _point; }
+         EC_POINT* data() { return _point; }
+         const EC_POINT* data()const { return _point; }
+
+         int64_t to_bin(uint8_t* buff, uint32_t len)const {
+            if (len < 64)
+               return -1;
+            static bigint x;
+            static bigint y;
+            EC_POINT_get_affine_coordinates_GFp(get_group(), _point, x.get(), y.get(), nullptr);
+            BN_bn2bin(x.get(), buff);
+            BN_bn2bin(y.get(), buff+32);
+            std::cout << "X: ";
+            BN_print_fp(stdout, x.get());
+            std::cout << " Y: ";
+            BN_print_fp(stdout, y.get());
+            std::cout << "\n";
+            return 64;
+         }
+
+         ec_point mult( const bigint& s) {
+            ec_point r(_curve);
+            FC_ASSERT(EC_POINT_mul(get_group(), r._point, nullptr, _point, s.get(), nullptr));
+            return r;
+         }
+
+         ec_point add(const ec_point& p) {
+            ec_point r(_curve);
+            FC_ASSERT(EC_POINT_add(get_group(), r._point, _point, p._point, nullptr));
+
+            return r;
+         }
+
+         const ec_group& get_group()const {
+             static const ec_group& group = EC_GROUP_new_by_curve_name(_curve);
+             return group;
+         }
+       private:
+          curve_t   _curve;
+          EC_POINT* _point = nullptr;
+    };
+
+    /**
      *  @class public_key
      *  @brief contains only the public point of an elliptic curve key.
      */

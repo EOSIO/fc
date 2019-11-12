@@ -27,62 +27,6 @@ namespace fc {
     int ECDSA_SIG_recover_key_GFp(EC_KEY *eckey, ECDSA_SIG *ecsig, const unsigned char *msg, int msglen, int recid, int check);
 
     /**
-     *  @class ec_point
-     *  @brief contains the representation of a point on an elliptic curve
-     */
-    class ec_point {
-       public:
-         ec_point() { _point = EC_POINT_new(get_group()); }
-
-         ec_point(const ec_point& p) {
-            _point = EC_POINT_new(get_group());
-            FC_ASSERT(EC_POINT_copy(_point, p._point));
-         }
-
-         ec_point(ec_point&& p) = default;
-         ec_point& operator=(ec_point&& p) = default;
-
-         template <typename BigNum>
-         ec_point(BigNum&& x, int y) {
-            static_assert(std::is_same_v<std::decay_t<BigNum>, big_number>);
-            FC_ASSERT(EC_POINT_set_compressed_coordinates_GFp(get_group(), _point, x.data(), y, nullptr));
-         }
-
-         template <typename BigNum>
-         ec_point(BigNum&& x, BigNum&& y) {
-            static_assert(std::is_same_v<std::decay_t<BigNum>, big_number>);
-            FC_ASSERT(EC_POINT_set_affine_coordinates_GFp(get_group(), _point, x.data(), y.data(), nullptr));
-         }
-
-         ~ec_point() { EC_POINT_free(_point); }
-
-         bool valid()const { return EC_POINT_is_on_curve(get_group(), _point, nullptr); }
-
-         operator EC_POINT*() { return _point; }
-         operator const EC_POINT*() { return _point; }
-         EC_POINT* data() { return _point; }
-         const EC_POINT* data()const { return _point; }
-
-         ec_point mult( const big_number& s) {
-            ec_point r;
-            FC_ASSERT(EC_POINT_mul(get_group(), r._point, nullptr, _point, s.data(), nullptr));
-            return r;
-         }
-
-         ec_point add(const ec_point& p) {
-            ec_point r;
-            FC_ASSERT(EC_POINT_add(get_group(), r._point, _point, p._point, nullptr));
-            return r;
-         }
-
-         const ec_group& get_group()const {
-             static const ec_group& group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
-             return group;
-         }
-       private:
-          EC_POINT* _point;
-    };
-    /**
      *  @class public_key
      *  @brief contains only the public point of an elliptic curve key.
      */

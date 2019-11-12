@@ -48,7 +48,7 @@ namespace fc
         };
 
     SSL_TYPE(ec_group,       EC_GROUP,       EC_GROUP_free)
-    //SSL_TYPE(ec_point,       EC_POINT,       EC_POINT_free)
+    SSL_TYPE(ec_point,       EC_POINT,       EC_POINT_free)
     SSL_TYPE(ecdsa_sig,      ECDSA_SIG,      ECDSA_SIG_free)
     SSL_TYPE(bn_ctx,         BN_CTX,         BN_CTX_free)
     SSL_TYPE(evp_cipher_ctx, EVP_CIPHER_CTX, EVP_CIPHER_CTX_free )
