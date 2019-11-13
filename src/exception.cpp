@@ -317,10 +317,10 @@ namespace fc
 
    bool enable_record_assert_trip = false;
 
-   std_exception_wrapper::std_exception_wrapper( log_message&& m, const std::exception_ptr e)
+   std_exception_wrapper::std_exception_wrapper( log_message&& m, std::exception_ptr e)
    :exception( fc::move(m), exception_code::std_exception_code )
    {
-      _inner = e;
+      _inner = {std::move(e)};
    }
 
    std::exception_ptr std_exception_wrapper::get_inner_exception()const { return _inner; }

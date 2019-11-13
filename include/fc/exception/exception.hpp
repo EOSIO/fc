@@ -178,7 +178,7 @@ namespace fc
    class std_exception_wrapper : public exception
    {
       public:
-       std_exception_wrapper( log_message&& m, std::exception_ptr e = std::current_exception());
+       explicit std_exception_wrapper( log_message&& m, std::exception_ptr e = std::current_exception());
 
        std::exception_ptr get_inner_exception()const;
 
