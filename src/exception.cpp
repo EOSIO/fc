@@ -317,4 +317,24 @@ namespace fc
 
    bool enable_record_assert_trip = false;
 
+   std_exception_wrapper::std_exception_wrapper( log_message&& m, std::exception_ptr e)
+   :exception( fc::move(m), exception_code::std_exception_code )
+   {
+      _inner = {std::move(e)};
+   }
+
+   std::exception_ptr std_exception_wrapper::get_inner_exception()const { return _inner; }
+
+   NO_RETURN void std_exception_wrapper::dynamic_rethrow_exception()const
+   {
+      if( !(_inner == std::exception_ptr()) ) std::rethrow_exception( _inner );
+      else { fc::exception::dynamic_rethrow_exception(); }
+   }
+
+   std::shared_ptr<exception> std_exception_wrapper::dynamic_copy_exception()const
+   {
+      auto e = std::make_shared<std_exception_wrapper>( *this );
+      e->_inner = _inner;
+      return e;
+   }
 } // fc
