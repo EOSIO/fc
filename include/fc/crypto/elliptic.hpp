@@ -33,24 +33,28 @@ namespace fc {
      *  @class ec_point
      *  @brief contains the representation of a point on an elliptic curve, only supports 256 bit for now
      */
+    static constexpr uint16_t r1_curve = NID_X9_62_prime256v1;
+    static constexpr uint16_t k1_curve = NID_secp256k1;
+
+    template <uint16_t CurveType>
     class ec_point {
        public:
          static constexpr uint64_t r1_curve = NID_X9_62_prime256v1;
          static constexpr uint64_t k1_curve = NID_secp256k1;
 
-         ec_point(uint16_t ct = r1_curve) : _curve(ct) {}
+         ec_point() = default;
 
-         ec_point(const ec_point& p) : _curve(p._curve) {
+         ec_point(const ec_point& p) {
             FC_ASSERT(EC_POINT_copy(get_point(), p.get_point()));
          }
 
          template <typename BigNum>
-         ec_point(BigNum&& x, int y, uint64_t ct = r1_curve) : _curve(ct) {
+         ec_point(BigNum&& x, int y) {
             EC_POINT_set_compressed_coordinates_GFp(get_group(), get_point(), x.get(), y, nullptr);
          }
 
          template <typename BigNum>
-         ec_point(BigNum&& x, BigNum&& y, uint64_t ct = r1_curve) : _curve(ct) {
+         ec_point(BigNum&& x, BigNum&& y) {
             EC_POINT_set_affine_coordinates_GFp(get_group(), get_point(), x.get(), y.get(), nullptr);
          }
 
@@ -78,30 +82,31 @@ namespace fc {
          }
 
          ec_point mult( const bigint& s)const {
-            ec_point r(_curve);
+            ec_point r;
             FC_ASSERT(EC_POINT_mul(get_group(), r.get_point(), nullptr, get_point(), s.get(), nullptr));
             return r;
          }
 
          ec_point add(const ec_point& p)const {
-            ec_point r(_curve);
+            ec_point r;
             FC_ASSERT(EC_POINT_add(get_group(), r.get_point(), get_point(), p.get_point(), nullptr));
 
             return r;
          }
 
          const ec_group& get_group()const {
-             static const ec_group& group = EC_GROUP_new_by_curve_name(_curve);
+             static const ec_group& group = EC_GROUP_new_by_curve_name(CurveType);
              return group;
          }
 
          EC_POINT* get_point() { return (EC_POINT*)(_point.data()); }
          const EC_POINT* get_point()const { return (const EC_POINT*)(_point.data()); }
-         uint64_t get_curve() { return _curve; }
-         uint64_t get_curve()const { return _curve; }
-         uint64_t _curve;
+         uint16_t get_curve()const { return CurveType; }
          alignas(64) std::array<uint8_t, 64> _point;
     };
+
+    using r1_ec_point = ec_point<r1_curve>;
+    using k1_ec_point = ec_point<k1_curve>;
 
     /**
      *  @class public_key
@@ -345,7 +350,7 @@ namespace fc {
 } // namespace fc
 #include <fc/reflect/reflect.hpp>
 
-FC_REFLECT( fc::ecc::ec_point, (_curve)(_point) )
+FC_REFLECT_TEMPLATE( (uint16_t C), fc::ecc::ec_point<C>, (_point) )
 FC_REFLECT_TYPENAME( fc::ecc::private_key )
 FC_REFLECT_TYPENAME( fc::ecc::public_key )
 FC_REFLECT( fc::ecc::range_proof_info, (exp)(mantissa)(min_value)(max_value) )
