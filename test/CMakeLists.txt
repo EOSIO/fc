@@ -1,5 +1,6 @@
 add_subdirectory( crypto )
 add_subdirectory( io )
+add_subdirectory( network )
 add_subdirectory( static_variant )
 add_subdirectory( variant )
 
