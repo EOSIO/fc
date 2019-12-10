@@ -1,6 +1,6 @@
 #pragma once
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/pool/object_pool.hpp>
+#include <boost/pool/singleton_pool.hpp>
 #include <fc/io/raw.hpp>
 #include <deque>
 #include <array>
@@ -16,7 +16,7 @@ namespace fc {
    *  @brief abstraction for a message buffer that spans a chain of physical buffers
    *
    *  This message buffer abstraction will allocate individual character arrays
-   *  of size buffer_len from a boost::object_pool.  It supports creation of a
+   *  of size buffer_len from a boost::singleton_pool.  It supports creation of a
    *  vector of boost::mutable_buffer for use with async_read() and async_read_some().
    *  It also supports use with the fc unpack() functionality via a datastream
    *  helper class.
@@ -31,11 +31,11 @@ namespace fc {
      */
     typedef std::pair<uint32_t, uint32_t> index_t;
 
-    message_buffer() : buffers{pool().malloc()}, read_ind{0,0}, write_ind{0,0}, sanity_check (1) { }
+    message_buffer() : buffers{malloc()}, read_ind{0,0}, write_ind{0,0}, sanity_check (1) { }
 
     ~message_buffer() {
       while (buffers.size() > 0) {
-        pool().destroy(buffers.back());
+        free(buffers.back());
         buffers.pop_back();
       }
     }
@@ -74,7 +74,7 @@ namespace fc {
      */
     void add_buffer_to_chain() {
       sanity_check++;
-      buffers.push_back(pool().malloc());
+      buffers.push_back(malloc());
     }
 
     /*
@@ -86,7 +86,7 @@ namespace fc {
       int buffers_to_add = bytes / buffer_len + 1;
       for (int i = 0; i < buffers_to_add; i++) {
         sanity_check++;
-        buffers.push_back(pool().malloc());
+        buffers.push_back(malloc());
       }
     }
 
@@ -107,7 +107,7 @@ namespace fc {
       }
       while (buffers.size() > 1) {
         sanity_check--;
-        pool().destroy(buffers.back());
+        free(buffers.back());
         buffers.pop_back();
       }
 
@@ -162,7 +162,7 @@ namespace fc {
         reset();
       } else if (read_ind.first > 0) {
         while (read_ind.first > 0) {
-          pool().destroy(buffers.front());
+          free(buffers.front());
           buffers.pop_front();
           sanity_check--;
           read_ind.first--;
@@ -179,7 +179,7 @@ namespace fc {
       advance_index(write_ind, bytes);
       while (write_ind.first >= buffers.size()) {
         sanity_check++;
-        buffers.push_back(pool().malloc());
+        buffers.push_back(malloc());
       }
     }
 
@@ -264,10 +264,10 @@ namespace fc {
     mb_peek_datastream<buffer_len> create_peek_datastream();
 
   private:
-    static boost::object_pool<std::array<char, buffer_len> >& pool() {
-      static boost::object_pool<std::array<char, buffer_len> > pool;
-      return pool;
-    }
+    using buffer_type = std::array<char, buffer_len>;
+    using pool_type = boost::singleton_pool<message_buffer, sizeof(buffer_type)>;
+    static buffer_type* malloc() { return static_cast<buffer_type*>(pool_type::malloc()); }
+    static void free(buffer_type* ptr) { pool_type::free(ptr); }
 
     /*
      *  Returns the character pointer associated with the supplied index.
