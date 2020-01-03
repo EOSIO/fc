@@ -769,7 +769,7 @@ string format_string( const string& frmt, const variant_object& args, bool minim
                   if( minimize ) {
                      replaced = false;
                   } else {
-                     result += json::to_string( val->value() );
+                     result += json::to_string( val->value(), fc::time_point::maximum() );
                   }
                } else if( val->value().is_blob() ) {
                   if( minimize && val->value().get_blob().data.size() > minimize_sub_max_size ) {
