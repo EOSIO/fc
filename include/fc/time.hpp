@@ -140,6 +140,13 @@ FC_REFLECT_TYPENAME( fc::time_point )
 FC_REFLECT_TYPENAME( fc::microseconds )
 FC_REFLECT_TYPENAME( fc::time_point_sec )
 
+#define FC_CHECK_DEADLINE( DEADLINE, ... ) \
+  FC_MULTILINE_MACRO_BEGIN \
+    if( DEADLINE < fc::time_point::maximum() && DEADLINE < fc::time_point::now() ) \
+       throw timeout_exception( FC_LOG_MESSAGE( error, "deadline ${d} exceeded by ${t}us ", \
+             FC_FORMAT_ARG_PARAMS(__VA_ARGS__)("d", DEADLINE)("t", fc::time_point::now() - DEADLINE) ) ); \
+  FC_MULTILINE_MACRO_END
+
 #ifdef _MSC_VER
   #pragma warning (pop)
 #endif /// #ifdef _MSC_VER
