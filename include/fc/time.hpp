@@ -142,9 +142,12 @@ FC_REFLECT_TYPENAME( fc::time_point_sec )
 
 #define FC_CHECK_DEADLINE( DEADLINE, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
-    if( DEADLINE < fc::time_point::maximum() && DEADLINE < fc::time_point::now() ) \
-       throw timeout_exception( FC_LOG_MESSAGE( error, "deadline ${d} exceeded by ${t}us ", \
-             FC_FORMAT_ARG_PARAMS(__VA_ARGS__)("d", DEADLINE)("t", fc::time_point::now() - DEADLINE) ) ); \
+    if( DEADLINE < fc::time_point::maximum() && DEADLINE < fc::time_point::now() ) { \
+       auto log_mgs = FC_LOG_MESSAGE( error, "deadline ${d} exceeded by ${t}us ", \
+             FC_FORMAT_ARG_PARAMS(__VA_ARGS__)("d", DEADLINE)("t", fc::time_point::now() - DEADLINE) ); \
+       auto msg = log_mgs.get_limited_message(); \
+       throw timeout_exception( std::move( log_mgs ), timeout_exception_code, "timeout_exception", std::move( msg ) ); \
+    } \
   FC_MULTILINE_MACRO_END
 
 #ifdef _MSC_VER
