@@ -40,6 +40,10 @@ namespace fc { namespace raw {
          {
             fc::raw::pack( s, v );
          }
+         virtual void handle( const blob& v)const
+         {
+            fc::raw::pack( s, v );
+         }
         
          Stream& s;
         
@@ -109,6 +113,12 @@ namespace fc { namespace raw {
             raw::unpack(s,val);
             v = fc::move(val);
             return;
+         }
+         case variant::blob_type:
+         {
+            blob val;
+            raw::unpack(s,val);
+            v = fc::move(val);
          }
          default:
             FC_THROW_EXCEPTION( parse_error_exception, "Unknown Variant Type ${t}", ("t", t) );
