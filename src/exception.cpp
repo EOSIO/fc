@@ -177,7 +177,7 @@ namespace fc
             } catch( std::bad_alloc& ) {
                throw;
             } catch( const fc::timeout_exception& e) {
-               ss << "<- timeout exception in to_detail_string: " << e.to_string();
+               ss << "<- timeout exception in to_detail_string: " << e.what();
                break;
             } catch( ... ) {
                ss << "<- exception in to_detail_string.";
@@ -216,7 +216,7 @@ namespace fc
             } catch( std::bad_alloc& ) {
                throw;
             } catch( const fc::timeout_exception& e) {
-               ss << "<- timeout exception in to_string: " << e.to_detail_string();
+               ss << "<- timeout exception in to_string: " << e.what();
                break;
             } catch( ... ) {
                ss << "<- exception in to_string.\n";
