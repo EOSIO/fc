@@ -292,6 +292,9 @@ void  variant::visit( const visitor& v )const
       case object_type:
          v.handle( **reinterpret_cast<const const_variant_object_ptr*>(this) );
          return;
+      case blob_type:
+         v.handle( **reinterpret_cast<const const_blob_ptr*>(this) );
+         return;
       default:
          FC_THROW_EXCEPTION( assert_exception, "Invalid Type / Corrupted Memory" );
    }
