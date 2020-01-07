@@ -568,25 +568,6 @@ namespace fc
    }
 
    template<typename T>
-   void to_stream( T& os, const variant_object& o, const fc::time_point& deadline, json::output_formatting format )
-   {
-      FC_CHECK_DEADLINE(deadline);
-      os << '{';
-       auto itr = o.begin();
-
-       while( itr != o.end() )
-       {
-          escape_string( itr->key(), os, deadline );
-          os << ':';
-          to_stream( os, itr->value(), deadline, format );
-          ++itr;
-          if( itr != o.end() )
-             os << ',';
-       }
-       os << '}';
-   }
-
-   template<typename T>
    void to_stream( T& os, const variants& a, const fc::time_point& deadline, json::output_formatting format )
    {
       FC_CHECK_DEADLINE(deadline);
@@ -601,6 +582,25 @@ namespace fc
             os << ',';
       }
       os << ']';
+   }
+
+   template<typename T>
+   void to_stream( T& os, const variant_object& o, const fc::time_point& deadline, json::output_formatting format )
+   {
+       FC_CHECK_DEADLINE(deadline);
+       os << '{';
+       auto itr = o.begin();
+
+       while( itr != o.end() )
+       {
+          escape_string( itr->key(), os, deadline );
+          os << ':';
+          to_stream( os, itr->value(), deadline, format );
+          ++itr;
+          if( itr != o.end() )
+             os << ',';
+       }
+       os << '}';
    }
 
    template<typename T>
