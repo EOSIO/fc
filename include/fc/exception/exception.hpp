@@ -58,6 +58,8 @@ namespace fc
    class exception
    {
       public:
+         static constexpr fc::microseconds format_time_limit = fc::milliseconds( 10 ); // limit time spent formatting exceptions
+
          enum code_enum
          {
             code_value = unspecified_exception_code
