@@ -1,6 +1,7 @@
 #include <fc/log/logger.hpp>
 #include <fc/log/log_message.hpp>
 #include <fc/log/appender.hpp>
+#include <fc/exception/exception.hpp>
 #include <fc/filesystem.hpp>
 #include <unordered_map>
 #include <string>
@@ -62,8 +63,17 @@ namespace fc {
        std::unique_lock g( log_config::get().log_mutex );
        m.get_context().append_context( my->_name );
 
-       for( auto itr = my->_appenders.begin(); itr != my->_appenders.end(); ++itr )
-          (*itr)->log( m );
+       for( auto itr = my->_appenders.begin(); itr != my->_appenders.end(); ++itr ) {
+          try {
+             (*itr)->log( m );
+          } catch( fc::exception& er ) {
+             std::cerr << "ERROR: logger::log fc::exception: " << er.to_detail_string() << std::endl;
+          } catch( const std::exception& e ) {
+             std::cerr << "ERROR: logger::log std::exception: " << e.what() << std::endl;
+          } catch( ... ) {
+             std::cerr << "ERROR: logger::log unknown exception: " << std::endl;
+          }
+       }
 
        if( my->_additivity && my->_parent != nullptr) {
           logger parent = my->_parent;
