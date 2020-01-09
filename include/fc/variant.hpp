@@ -248,6 +248,7 @@ namespace fc
               virtual void handle( const string& v )const        = 0;
               virtual void handle( const variant_object& v)const = 0;
               virtual void handle( const variants& v)const       = 0;
+              virtual void handle( const blob& v)const           = 0;
         };
 
         void  visit( const visitor& v )const;

@@ -108,7 +108,7 @@ namespace fc
     mutable_variant_object gelf_message;
     gelf_message["version"] = "1.1";
     gelf_message["host"] = my->cfg.host;
-    gelf_message["short_message"] = format_string(message.get_format(), message.get_data());
+    gelf_message["short_message"] = format_string(message.get_format(), message.get_data(), true);
 
     // use now() instead of context.get_timestamp() because log_message construction can include user provided long running calls
     const auto time_ns = time_point::now().time_since_epoch().count();
@@ -148,7 +148,9 @@ namespace fc
     if (!context.get_task_name().empty())
       gelf_message["_task_name"] = context.get_task_name();
 
-    string gelf_message_as_string = json::to_string(gelf_message, json::legacy_generator); // GELF 1.1 specifies unstringified numbers
+    string gelf_message_as_string = json::to_string(gelf_message,
+          fc::time_point::now() + fc::exception::format_time_limit,
+          json::legacy_generator); // GELF 1.1 specifies unstringified numbers
     //unsigned uncompressed_size = gelf_message_as_string.size();
     gelf_message_as_string = zlib_compress(gelf_message_as_string);
 
