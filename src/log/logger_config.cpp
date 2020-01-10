@@ -80,8 +80,10 @@ namespace fc {
 
 
          for( auto a = cfg.loggers[i].appenders.begin(); a != cfg.loggers[i].appenders.end(); ++a ){
-            auto ap = log_config::get().appender_map[*a];
-            if( ap ) { lgr.add_appender(ap); }
+            auto ap_it = log_config::get().appender_map.find(*a);
+            if( ap_it != log_config::get().appender_map.end() ) {
+               lgr.add_appender(ap_it->second);
+            }
          }
       }
       return reg_console_appender || reg_gelf_appender;
