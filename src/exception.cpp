@@ -157,6 +157,7 @@ namespace fc
     */
    string exception::to_detail_string( log_level ll  )const
    {
+      const auto deadline = fc::time_point::now() + format_time_limit;
       std::stringstream ss;
       try {
          try {
@@ -170,11 +171,14 @@ namespace fc
          for( auto itr = my->_elog.begin(); itr != my->_elog.end(); ) {
             try {
                ss << itr->get_message() << "\n"; //fc::format_string( itr->get_format(), itr->get_data() ) <<"\n";
-               ss << "    " << json::to_string( itr->get_data()) << "\n";
+               ss << "    " << json::to_string( itr->get_data(), deadline ) << "\n";
                ss << "    " << itr->get_context().to_string();
                ++itr;
             } catch( std::bad_alloc& ) {
                throw;
+            } catch( const fc::timeout_exception& e) {
+               ss << "<- timeout exception in to_detail_string: " << e.what();
+               break;
             } catch( ... ) {
                ss << "<- exception in to_detail_string.";
             }
@@ -193,6 +197,7 @@ namespace fc
     */
    string exception::to_string( log_level ll   )const
    {
+      const auto deadline = fc::time_point::now() + format_time_limit;
       std::stringstream ss;
       try {
          ss << my->_what;
@@ -205,10 +210,14 @@ namespace fc
          }
          for( auto itr = my->_elog.begin(); itr != my->_elog.end(); ++itr ) {
             try {
-               ss << fc::format_string( itr->get_format(), itr->get_data()) << "\n";
+               FC_CHECK_DEADLINE(deadline);
+               ss << fc::format_string( itr->get_format(), itr->get_data(), true) << "\n";
                //      ss << "    " << itr->get_context().to_string() <<"\n";
             } catch( std::bad_alloc& ) {
                throw;
+            } catch( const fc::timeout_exception& e) {
+               ss << "<- timeout exception in to_string: " << e.what();
+               break;
             } catch( ... ) {
                ss << "<- exception in to_string.\n";
             }

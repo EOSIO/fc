@@ -292,6 +292,9 @@ void  variant::visit( const visitor& v )const
       case object_type:
          v.handle( **reinterpret_cast<const const_variant_object_ptr*>(this) );
          return;
+      case blob_type:
+         v.handle( **reinterpret_cast<const const_blob_ptr*>(this) );
+         return;
       default:
          FC_THROW_EXCEPTION( assert_exception, "Invalid Type / Corrupted Memory" );
    }
@@ -769,7 +772,7 @@ string format_string( const string& frmt, const variant_object& args, bool minim
                   if( minimize ) {
                      replaced = false;
                   } else {
-                     result += json::to_string( val->value() );
+                     result += json::to_string( val->value(), fc::time_point::maximum() );
                   }
                } else if( val->value().is_blob() ) {
                   if( minimize && val->value().get_blob().data.size() > minimize_sub_max_size ) {

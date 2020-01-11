@@ -337,7 +337,7 @@ public:
       req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
       req.set(http::field::content_type, "application/json");
       req.keep_alive(true);
-      req.body() = json::to_string(payload);
+      req.body() = json::to_string(payload, _deadline);
       req.prepare_payload();
 
       auto conn_iter = get_connection(dest, deadline);
