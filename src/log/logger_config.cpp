@@ -133,7 +133,7 @@ namespace fc {
 
    static thread_local std::string thread_name;
    void set_os_thread_name( const string& name ) {
-#ifdef __linux__
+#ifdef FC_USE_PTHREAD_NAME_NP
       pthread_setname_np( pthread_self(), name.c_str() );
 #endif
    }
@@ -142,7 +142,7 @@ namespace fc {
    }
    const string& get_thread_name() {
       if( thread_name.empty() ) {
-#ifdef __linux__
+#ifdef FC_USE_PTHREAD_NAME_NP
          char thr_name[64];
          int rc = pthread_getname_np( pthread_self(), thr_name, 64 );
          if( rc == 0 ) {

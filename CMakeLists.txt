@@ -122,6 +122,19 @@ list(APPEND sources ${fc_headers})
 
 setup_library( fc SOURCES ${sources} LIBRARY_TYPE STATIC DONT_INSTALL_LIBRARY )
 
+function(detect_thread_name)
+  include(CheckSymbolExists)
+  list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
+  list(APPEND CMAKE_REQUIRED_LIBRARIES "-pthread")
+  check_symbol_exists(pthread_setname_np pthread.h HAVE_PTHREAD_SETNAME_NP)
+  if(HAVE_PTHREAD_SETNAME_NP)
+    set_source_files_properties(src/log/logger_config.cpp PROPERTIES COMPILE_DEFINITIONS FC_USE_PTHREAD_NAME_NP)
+  endif()
+endfunction()
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  detect_thread_name()
+endif()
+
 find_package(Boost 1.66 REQUIRED COMPONENTS
     date_time
     filesystem
