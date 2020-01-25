@@ -3,6 +3,7 @@
  *  @copyright defined in LICENSE.txt; Parts of this file Copyright (c) 2009 The Go Authors
  */
 #include <fc/network/platform_root_ca.hpp>
+#include <fc/exception/exception.hpp>
 
 #include <string>
 
@@ -51,7 +52,9 @@ static void add_macos_root_cas(boost::asio::ssl::context& ctx) {
             }
             if(trustSettings == nullptr)
                continue;
-            for(CFIndex k = 0; k < CFArrayGetCount(trustSettings); k++) {
+            if(CFArrayGetCount(trustSettings) == 0)
+               trust_as_root = true;
+            else for(CFIndex k = 0; k < CFArrayGetCount(trustSettings); k++) {
                CFNumberRef cfNum;
                CFDictionaryRef tSetting = (CFDictionaryRef)CFArrayGetValueAtIndex(trustSettings, k);
                if(CFDictionaryGetValueIfPresent(tSetting, kSecTrustSettingsResult, (const void**)&cfNum)){

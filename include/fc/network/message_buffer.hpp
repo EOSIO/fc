@@ -1,10 +1,6 @@
-/**
- *  @file
- *  @copyright defined in eos/LICENSE.txt
- */
 #pragma once
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/pool/object_pool.hpp>
+#include <boost/pool/singleton_pool.hpp>
 #include <fc/io/raw.hpp>
 #include <deque>
 #include <array>
@@ -13,12 +9,14 @@
 namespace fc {
   template <uint32_t buffer_len>
   class mb_datastream;
+  template <uint32_t buffer_len>
+  class mb_peek_datastream;
 
   /**
    *  @brief abstraction for a message buffer that spans a chain of physical buffers
    *
    *  This message buffer abstraction will allocate individual character arrays
-   *  of size buffer_len from a boost::object_pool.  It supports creation of a
+   *  of size buffer_len from a boost::singleton_pool.  It supports creation of a
    *  vector of boost::mutable_buffer for use with async_read() and async_read_some().
    *  It also supports use with the fc unpack() functionality via a datastream
    *  helper class.
@@ -33,11 +31,11 @@ namespace fc {
      */
     typedef std::pair<uint32_t, uint32_t> index_t;
 
-    message_buffer() : buffers{pool().malloc()}, read_ind{0,0}, write_ind{0,0}, sanity_check (1) { }
+    message_buffer() : buffers{malloc()}, read_ind{0,0}, write_ind{0,0}, sanity_check (1) { }
 
     ~message_buffer() {
       while (buffers.size() > 0) {
-        pool().destroy(buffers.back());
+        free(buffers.back());
         buffers.pop_back();
       }
     }
@@ -76,7 +74,7 @@ namespace fc {
      */
     void add_buffer_to_chain() {
       sanity_check++;
-      buffers.push_back(pool().malloc());
+      buffers.push_back(malloc());
     }
 
     /*
@@ -88,7 +86,7 @@ namespace fc {
       int buffers_to_add = bytes / buffer_len + 1;
       for (int i = 0; i < buffers_to_add; i++) {
         sanity_check++;
-        buffers.push_back(pool().malloc());
+        buffers.push_back(malloc());
       }
     }
 
@@ -101,14 +99,15 @@ namespace fc {
       // this seems to be related to some sort of memory overrun possibly. By forcing an exit here, an
       // external watchdog can be used to restart the process and avoid hanging.
       if( buffers.size() != sanity_check || buffers.size() > 1000000) {
-        elog ("read_ind = ${r1}, ${r2} write_ind = ${w1}, ${w2}, buff.size = ${bs}, sanity = ${s}",
-              ("r1",read_ind.first)("r2",read_ind.second)("w1",write_ind.first)("w2",write_ind.second)("bs",buffers.size())("s",sanity_check));
+         elog( "read_ind = ${r1}, ${r2} write_ind = ${w1}, ${w2}, buff.size = ${bs}, sanity = ${s}",
+               ( "r1", read_ind.first )( "r2", read_ind.second )( "w1", write_ind.first )( "w2", write_ind.second )
+               ( "bs", buffers.size() )( "s", sanity_check ) );
         elog("Buffer manager overwrite detected. Terminating to allow external restart");
         exit(1);
       }
       while (buffers.size() > 1) {
         sanity_check--;
-        pool().destroy(buffers.back());
+        free(buffers.back());
         buffers.pop_back();
       }
 
@@ -128,7 +127,7 @@ namespace fc {
      *  Returns the current number of bytes remaining to be read from a given index
      *  Logically, this is the different between where the given index is and the write pointers.
      */
-    uint32_t bytes_to_read_from_index(index_t ind) const {
+    uint32_t bytes_to_read_from_index(const index_t& ind) const {
       return (write_ind.first - ind.first) * buffer_len + write_ind.second - ind.second;
     }
 
@@ -163,7 +162,7 @@ namespace fc {
         reset();
       } else if (read_ind.first > 0) {
         while (read_ind.first > 0) {
-          pool().destroy(buffers.front());
+          free(buffers.front());
           buffers.pop_front();
           sanity_check--;
           read_ind.first--;
@@ -180,7 +179,7 @@ namespace fc {
       advance_index(write_ind, bytes);
       while (write_ind.first >= buffers.size()) {
         sanity_check++;
-        buffers.push_back(pool().malloc());
+        buffers.push_back(malloc());
       }
     }
 
@@ -207,7 +206,8 @@ namespace fc {
      */
     bool read(void* s, uint32_t size) {
       if (bytes_to_read() < size) {
-        FC_THROW_EXCEPTION(out_of_range_exception, "tried to read ${r} but only ${s} left", ("r", size)("s", bytes_to_read()));
+        FC_THROW_EXCEPTION( out_of_range_exception, "tried to read ${r} but only ${s} left",
+                            ("r", size)( "s", bytes_to_read() ) );
       }
       if (read_ind.second + size <= buffer_len) {
         memcpy(s, read_ptr(), size);
@@ -225,9 +225,10 @@ namespace fc {
      *  Reads size bytes from the buffer chain starting at the supplied index.
      *  The supplied index is advanced, but the read pointer is unaffected.
      */
-    bool peek(void* s, uint32_t size, index_t& index) {
+    bool peek(void* s, uint32_t size, index_t& index) const {
       if (bytes_to_read_from_index(index) < size) {
-        FC_THROW_EXCEPTION(out_of_range_exception, "tried to peek ${r} but only ${s} left", ("r", size)("s",bytes_to_read_from_index(index)));
+        FC_THROW_EXCEPTION( out_of_range_exception, "tried to peek ${r} but only ${s} left",
+                            ("r", size)( "s", bytes_to_read_from_index( index ) ) );
       }
       if (index.second + size <= buffer_len) {
         memcpy(s, get_ptr(index), size);
@@ -241,31 +242,37 @@ namespace fc {
       return true;
     }
 
-    /*
+     /*
+      *  Advances the supplied index along the buffer chain the specified
+      *  number of bytes.
+      */
+     static void advance_index(index_t& index, uint32_t bytes) {
+        index.first += (bytes + index.second) / buffer_len;
+        index.second = (bytes + index.second) % buffer_len;
+     }
+
+     /*
      *  Creates an mb_datastream object that can be used with the
      *  fc library's unpack functionality.
      */
     mb_datastream<buffer_len> create_datastream();
 
-  private:
-    static boost::object_pool<std::array<char, buffer_len> >& pool() {
-      static boost::object_pool<std::array<char, buffer_len> > pool;
-      return pool;
-    }
-
     /*
-     *  Advances the supplied index along the buffer chain the specified
-     *  number of bytes.
+     *  Creates an mb_peek_datastream object that can be used with the
+     *  fc library's unpack functionality.
      */
-    static void advance_index(index_t& index, uint32_t bytes) {
-      index.first += (bytes + index.second) / buffer_len;
-      index.second = (bytes + index.second) % buffer_len;
-    }
+    mb_peek_datastream<buffer_len> create_peek_datastream();
+
+  private:
+    using buffer_type = std::array<char, buffer_len>;
+    using pool_type = boost::singleton_pool<message_buffer, sizeof(buffer_type)>;
+    static buffer_type* malloc() { return static_cast<buffer_type*>(pool_type::malloc()); }
+    static void free(buffer_type* ptr) { pool_type::free(ptr); }
 
     /*
      *  Returns the character pointer associated with the supplied index.
      */
-    char* get_ptr(index_t index) {
+    char* get_ptr(const index_t& index) const {
       return &buffers[index.first]->at(index.second);
     }
 
@@ -281,11 +288,10 @@ namespace fc {
    *
    *  This class supports unpack functionality but not pack.
    */
-  // Stream adapter for use with the fc unpack functionality
   template <uint32_t buffer_len>
   class mb_datastream {
      public:
-        mb_datastream( message_buffer<buffer_len>& m ) : mb(m) {}
+        explicit mb_datastream( message_buffer<buffer_len>& m ) : mb(m) {}
 
         inline void skip( size_t s ) { mb.advance_read_ptr(s); }
         inline bool read( char* d, size_t s ) {
@@ -306,6 +312,41 @@ namespace fc {
   template <uint32_t buffer_len>
   inline mb_datastream<buffer_len> message_buffer<buffer_len>::create_datastream() {
     return mb_datastream<buffer_len>(*this);
+  }
+
+  /*
+   *  @brief peek datastream adapter that adapts message_buffer for use with fc unpack
+   *
+   *  This class supports unpack functionality but not pack.
+   */
+  template <uint32_t buffer_len>
+  class mb_peek_datastream {
+  public:
+     explicit mb_peek_datastream( const message_buffer<buffer_len>& m )
+     : mb( m ), index( m.read_index() ) {}
+
+     inline void skip( size_t s ) { message_buffer<buffer_len>::advance_index( index, s ); }
+
+     inline bool read( char* d, size_t s ) {
+        if( mb.bytes_to_read_from_index(index) >= s ) {
+           mb.peek( d, s, index );
+           return true;
+        }
+        fc::detail::throw_datastream_range_error( "peek",
+              mb.bytes_to_read_from_index(index), s - mb.bytes_to_read_from_index(index) );
+     }
+
+     inline bool get( unsigned char& c ) { return mb.peek( &c, 1, index ); }
+     inline bool get( char& c ) { return mb.peek( &c, 1, index ); }
+
+  private:
+     const message_buffer<buffer_len>& mb;
+     typename message_buffer<buffer_len>::index_t index{0,0};
+  };
+
+  template <uint32_t buffer_len>
+  inline mb_peek_datastream<buffer_len> message_buffer<buffer_len>::create_peek_datastream() {
+     return mb_peek_datastream<buffer_len>( *this );
   }
 
 } // namespace fc

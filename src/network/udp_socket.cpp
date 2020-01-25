@@ -1,14 +1,10 @@
-/**
- *  @file
- *  @copyright defined in eos/LICENSE.txt
- */
 #include <fc/network/udp_socket.hpp>
 #include <fc/network/ip.hpp>
 
 
 namespace fc
 {
-  class udp_socket::impl : public fc::retainable
+  class udp_socket::impl
   {
     public:
       impl(){}

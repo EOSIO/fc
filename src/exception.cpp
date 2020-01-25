@@ -157,6 +157,7 @@ namespace fc
     */
    string exception::to_detail_string( log_level ll  )const
    {
+      const auto deadline = fc::time_point::now() + format_time_limit;
       std::stringstream ss;
       try {
          try {
@@ -170,11 +171,14 @@ namespace fc
          for( auto itr = my->_elog.begin(); itr != my->_elog.end(); ) {
             try {
                ss << itr->get_message() << "\n"; //fc::format_string( itr->get_format(), itr->get_data() ) <<"\n";
-               ss << "    " << json::to_string( itr->get_data()) << "\n";
+               ss << "    " << json::to_string( itr->get_data(), deadline ) << "\n";
                ss << "    " << itr->get_context().to_string();
                ++itr;
             } catch( std::bad_alloc& ) {
                throw;
+            } catch( const fc::timeout_exception& e) {
+               ss << "<- timeout exception in to_detail_string: " << e.what();
+               break;
             } catch( ... ) {
                ss << "<- exception in to_detail_string.";
             }
@@ -193,6 +197,7 @@ namespace fc
     */
    string exception::to_string( log_level ll   )const
    {
+      const auto deadline = fc::time_point::now() + format_time_limit;
       std::stringstream ss;
       try {
          ss << my->_what;
@@ -205,10 +210,14 @@ namespace fc
          }
          for( auto itr = my->_elog.begin(); itr != my->_elog.end(); ++itr ) {
             try {
-               ss << fc::format_string( itr->get_format(), itr->get_data()) << "\n";
+               FC_CHECK_DEADLINE(deadline);
+               ss << fc::format_string( itr->get_format(), itr->get_data(), true) << "\n";
                //      ss << "    " << itr->get_context().to_string() <<"\n";
             } catch( std::bad_alloc& ) {
                throw;
+            } catch( const fc::timeout_exception& e) {
+               ss << "<- timeout exception in to_string: " << e.what();
+               break;
             } catch( ... ) {
                ss << "<- exception in to_string.\n";
             }
@@ -317,4 +326,26 @@ namespace fc
 
    bool enable_record_assert_trip = false;
 
+   std_exception_wrapper::std_exception_wrapper( log_message&& m, std::exception_ptr e,
+                                                 const std::string& name_value,
+                                                 const std::string& what_value)
+   :exception( fc::move(m), exception_code::std_exception_code, name_value, what_value )
+   {
+      _inner = {std::move(e)};
+   }
+
+   std::exception_ptr std_exception_wrapper::get_inner_exception()const { return _inner; }
+
+   NO_RETURN void std_exception_wrapper::dynamic_rethrow_exception()const
+   {
+      if( !(_inner == std::exception_ptr()) ) std::rethrow_exception( _inner );
+      else { fc::exception::dynamic_rethrow_exception(); }
+   }
+
+   std::shared_ptr<exception> std_exception_wrapper::dynamic_copy_exception()const
+   {
+      auto e = std::make_shared<std_exception_wrapper>( *this );
+      e->_inner = _inner;
+      return e;
+   }
 } // fc

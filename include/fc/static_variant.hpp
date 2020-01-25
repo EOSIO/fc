@@ -20,7 +20,7 @@ namespace fc {
 // Implementation details, the user should not import this:
 namespace impl {
 
-template<int N, typename... Ts>
+template<typename R, int N, typename... Ts>
 struct storage_ops;
 
 template<typename X, typename... Ts>
@@ -32,10 +32,15 @@ struct type_at;
 template<typename... Ts>
 struct type_info;
 
+template< typename Visitor, typename ...Ts>
+struct const_result_type_info;
+
+template< typename Visitor, typename ...Ts>
+struct result_type_info;
+
 template<typename StaticVariant>
 struct copy_construct
 {
-   typedef void result_type;
    StaticVariant& sv;
    copy_construct( StaticVariant& s ):sv(s){}
    template<typename T>
@@ -48,7 +53,6 @@ struct copy_construct
 template<typename StaticVariant>
 struct move_construct
 {
-   typedef void result_type;
    StaticVariant& sv;
    move_construct( StaticVariant& s ):sv(s){}
    template<typename T>
@@ -58,62 +62,53 @@ struct move_construct
    }
 };
 
-template<int N, typename T, typename... Ts>
-struct storage_ops<N, T&, Ts...> {
+template<typename R, int N, typename T, typename... Ts>
+struct storage_ops<R, N, T&, Ts...> {
     static void del(int n, void *data) {}
     static void con(int n, void *data) {}
 
     template<typename visitor>
-    static typename visitor::result_type apply(int n, void *data, visitor& v) {}
+    static R apply(int n, void *data, visitor&& v) {}
 
     template<typename visitor>
-    static typename visitor::result_type apply(int n, void *data, const visitor& v) {}
+    static R apply(int n, const void *data, visitor&& v) {}
 
-    template<typename visitor>
-    static typename visitor::result_type apply(int n, const void *data, visitor& v) {}
-
-    template<typename visitor>
-    static typename visitor::result_type apply(int n, const void *data, const visitor& v) {}
+    template<template<typename> class Op>
+    static R apply_binary_operator(int n, const void *lhs, const void *rhs) {}
 };
 
-template<int N, typename T, typename... Ts>
-struct storage_ops<N, T, Ts...> {
+template<typename R, int N, typename T, typename... Ts>
+struct storage_ops<R, N, T, Ts...> {
     static void del(int n, void *data) {
         if(n == N) reinterpret_cast<T*>(data)->~T();
-        else storage_ops<N + 1, Ts...>::del(n, data);
+        else storage_ops<R, N + 1, Ts...>::del(n, data);
     }
     static void con(int n, void *data) {
         if(n == N) new(reinterpret_cast<T*>(data)) T();
-        else storage_ops<N + 1, Ts...>::con(n, data);
+        else storage_ops<R, N + 1, Ts...>::con(n, data);
     }
 
     template<typename visitor>
-    static typename visitor::result_type apply(int n, void *data, visitor& v) {
+    static R apply(int n, void *data, visitor&& v) {
         if(n == N) return v(*reinterpret_cast<T*>(data));
-        else return storage_ops<N + 1, Ts...>::apply(n, data, v);
+        else return storage_ops<R, N + 1, Ts...>::apply(n, data, std::forward<visitor>(v));
     }
 
     template<typename visitor>
-    static typename visitor::result_type apply(int n, void *data, const visitor& v) {
-        if(n == N) return v(*reinterpret_cast<T*>(data));
-        else return storage_ops<N + 1, Ts...>::apply(n, data, v);
-    }
-
-    template<typename visitor>
-    static typename visitor::result_type apply(int n, const void *data, visitor& v) {
+    static R apply(int n, const void *data, visitor&& v) {
         if(n == N) return v(*reinterpret_cast<const T*>(data));
-        else return storage_ops<N + 1, Ts...>::apply(n, data, v);
+        else return storage_ops<R, N + 1, Ts...>::apply(n, data, std::forward<visitor>(v));
     }
 
-    template<typename visitor>
-    static typename visitor::result_type apply(int n, const void *data, const visitor& v) {
-        if(n == N) return v(*reinterpret_cast<const T*>(data));
-        else return storage_ops<N + 1, Ts...>::apply(n, data, v);
+    template<template<typename> class Op>
+    static R apply_binary_operator(int n, const void *lhs, const void *rhs) {
+       if (n == N) return Op<void>()(*reinterpret_cast<const T*>(lhs), *reinterpret_cast<const T*>(rhs));
+       else return storage_ops<R, N + 1, Ts...>::template apply_binary_operator<Op>(n, lhs, rhs);
     }
 };
 
-template<int N>
-struct storage_ops<N> {
+template<typename R, int N>
+struct storage_ops<R, N> {
     static void del(int n, void *data) {
        FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid.");
     }
@@ -122,22 +117,26 @@ struct storage_ops<N> {
     }
 
     template<typename visitor>
-    static typename visitor::result_type apply(int n, void *data, visitor& v) {
+    static R apply(int n, void *data, visitor&& v) {
        FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
     }
     template<typename visitor>
-    static typename visitor::result_type apply(int n, void *data, const visitor& v) {
+    static R apply(int n, const void *data, visitor&& v) {
        FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
     }
-    template<typename visitor>
-    static typename visitor::result_type apply(int n, const void *data, visitor& v) {
-       FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
-    }
-    template<typename visitor>
-    static typename visitor::result_type apply(int n, const void *data, const visitor& v) {
+
+    template<template<typename> class Op>
+    static R apply_binary_operator(int n, const void *lhs, const void *rhs) {
        FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
     }
 };
+
+template<typename visitor, int N, typename... Ts>
+using storage_ops_auto = storage_ops<typename result_type_info<visitor, Ts...>::result_type, N, Ts...>;
+
+template<typename visitor, int N, typename... Ts>
+using storage_ops_const_auto = storage_ops<typename const_result_type_info<visitor, Ts...>::result_type, N, Ts...>;
+
 
 template<typename X>
 struct position<X> {
@@ -164,12 +163,28 @@ struct type_at<Pos, T, Ts...> {
    using type = typename type_at<Pos - 1, Ts...>::type;
 };
 
+template<template<typename> class Op, typename T>
+std::is_convertible<std::invoke_result_t<Op<void>, const T&, const T&>, bool> can_invoke_operator_test(int);
+
+template<template<typename> class Op, typename T>
+std::false_type can_invoke_operator_test(...);
+
+template<template<typename> class Op, typename T>
+using can_invoke_operator = decltype(can_invoke_operator_test<Op, T>(0));
+
 template<typename T, typename... Ts>
 struct type_info<T&, Ts...> {
     static const bool no_reference_types = false;
     static const bool no_duplicates = position<T, Ts...>::pos == -1 && type_info<Ts...>::no_duplicates;
     static const size_t size = type_info<Ts...>::size > sizeof(T&) ? type_info<Ts...>::size : sizeof(T&);
     static const size_t count = 1 + type_info<Ts...>::count;
+
+    static const bool has_equal_to = can_invoke_operator<std::equal_to, std::remove_reference_t<T>>::value && type_info<Ts...>::has_equal_to;
+    static const bool has_not_equal_to = can_invoke_operator<std::not_equal_to, std::remove_reference_t<T>>::value && type_info<Ts...>::has_not_equal_to;
+    static const bool has_less = can_invoke_operator<std::less, std::remove_reference_t<T>>::value && type_info<Ts...>::has_less;
+    static const bool has_less_equal = can_invoke_operator<std::less_equal, std::remove_reference_t<T>>::value && type_info<Ts...>::has_less_equal;
+    static const bool has_greater = can_invoke_operator<std::greater, std::remove_reference_t<T>>::value && type_info<Ts...>::has_greater;
+    static const bool has_greater_equal = can_invoke_operator<std::greater_equal, std::remove_reference_t<T>>::value && type_info<Ts...>::has_greater_equal;
 };
 
 template<typename T, typename... Ts>
@@ -178,6 +193,13 @@ struct type_info<T, Ts...> {
     static const bool no_duplicates = position<T, Ts...>::pos == -1 && type_info<Ts...>::no_duplicates;
     static const size_t size = type_info<Ts...>::size > sizeof(T) ? type_info<Ts...>::size : sizeof(T&);
     static const size_t count = 1 + type_info<Ts...>::count;
+
+    static const bool has_equal_to = can_invoke_operator<std::equal_to, T>::value && type_info<Ts...>::has_equal_to;
+    static const bool has_not_equal_to = can_invoke_operator<std::not_equal_to, T>::value && type_info<Ts...>::has_not_equal_to;
+    static const bool has_less = can_invoke_operator<std::less, T>::value && type_info<Ts...>::has_less;
+    static const bool has_less_equal = can_invoke_operator<std::less_equal, T>::value && type_info<Ts...>::has_less_equal;
+    static const bool has_greater = can_invoke_operator<std::greater, T>::value && type_info<Ts...>::has_greater;
+    static const bool has_greater_equal = can_invoke_operator<std::greater_equal, T>::value && type_info<Ts...>::has_greater_equal;
 };
 
 template<>
@@ -186,14 +208,52 @@ struct type_info<> {
     static const bool no_duplicates = true;
     static const size_t count = 0;
     static const size_t size = 0;
+    static const bool has_equal_to = true;
+    static const bool has_not_equal_to = true;
+    static const bool has_less = true;
+    static const bool has_less_equal = true;
+    static const bool has_greater = true;
+    static const bool has_greater_equal = true;
+};
+
+template<typename Visitor, typename T>
+struct const_result_type_info<Visitor, T> {
+   using result_type = decltype(std::declval<std::decay_t<Visitor>>()(std::declval<const T&>()));
+};
+
+template<typename Visitor, typename T, typename ... Ts>
+struct const_result_type_info<Visitor, T, Ts...> {
+   using result_type = typename const_result_type_info<Visitor,T>::result_type;
+
+   static_assert(
+      std::is_same_v<result_type, typename const_result_type_info<Visitor,Ts...>::result_type >,
+      "Varying result types are not supported from visitors"
+   );
+};
+
+template<typename Visitor, typename T>
+struct result_type_info<Visitor, T> {
+   using result_type = decltype(std::declval<std::decay_t<Visitor>>()(std::declval<T&>()));
+};
+
+
+template<typename Visitor, typename T, typename ... Ts>
+struct result_type_info<Visitor, T, Ts...> {
+   using result_type = typename result_type_info<Visitor,T>::result_type;
+
+   static_assert(
+      std::is_same_v<result_type, typename result_type_info<Visitor,Ts...>::result_type >,
+      "Varying result types are not supported from visitors"
+   );
 };
 
 } // namespace impl
 
 template<typename... Types>
 class static_variant {
-    static_assert(impl::type_info<Types...>::no_reference_types, "Reference types are not permitted in static_variant.");
-    static_assert(impl::type_info<Types...>::no_duplicates, "static_variant type arguments contain duplicate types.");
+    using type_info = impl::type_info<Types...>;
+    static_assert(type_info::no_reference_types, "Reference types are not permitted in static_variant.");
+    static_assert(type_info::no_duplicates, "static_variant type arguments contain duplicate types.");
 
     alignas(Types...) char storage[impl::type_info<Types...>::size];
     int _tag;
@@ -222,7 +282,7 @@ public:
     static_variant()
     {
        _tag = 0;
-       impl::storage_ops<0, Types...>::con(0, storage);
+       impl::storage_ops<void, 0, Types...>::con(0, storage);
     }
 
     template<typename... Other>
@@ -255,7 +315,7 @@ public:
     }
 
    ~static_variant() {
-       impl::storage_ops<0, Types...>::del(_tag, storage);
+       impl::storage_ops<void, 0, Types...>::del(_tag, storage);
     }
 
 
@@ -283,13 +343,81 @@ public:
        v.visit( impl::move_construct<static_variant>(*this) );
        return *this;
     }
-    friend bool operator == ( const static_variant& a, const static_variant& b )
+
+    template <typename Bool = bool>
+    friend std::enable_if_t<type_info::has_equal_to, Bool> operator == ( const static_variant& a, const static_variant& b )
     {
-       return a.which() == b.which();
+       if (a.which() != b.which()) {
+          return false;
+       }
+
+       return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::equal_to>(a._tag, a.storage, b.storage);
     }
-    friend bool operator < ( const static_variant& a, const static_variant& b )
+
+    template <typename Bool = bool>
+    friend std::enable_if_t<type_info::has_not_equal_to, Bool> operator != ( const static_variant& a, const static_variant& b )
     {
-       return a.which() < b.which();
+       if (a.which() != b.which()) {
+          return true;
+       }
+
+       return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::not_equal_to>(a._tag, a.storage, b.storage);
+    }
+
+    template <typename Bool = bool>
+    friend std::enable_if_t<type_info::has_less, Bool> operator < ( const static_variant& a, const static_variant& b )
+    {
+       if (a.which() > b.which()) {
+          return false;
+       }
+
+       if (a.which() < b.which()) {
+          return true;
+       }
+
+       return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::less>(a._tag, a.storage, b.storage);
+    }
+
+    template <typename Bool = bool>
+    friend std::enable_if_t<type_info::has_less_equal, Bool> operator <= ( const static_variant& a, const static_variant& b )
+    {
+       if (a.which() > b.which()) {
+          return false;
+       }
+
+       if (a.which() < b.which()) {
+          return true;
+       }
+
+       return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::less_equal>(a._tag, a.storage, b.storage);
+    }
+
+    template <typename Bool = bool>
+    friend std::enable_if_t<type_info::has_greater, Bool> operator > ( const static_variant& a, const static_variant& b )
+    {
+       if (a.which() < b.which()) {
+          return false;
+       }
+
+       if (a.which() > b.which()) {
+          return true;
+       }
+
+       return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::greater>(a._tag, a.storage, b.storage);
+    }
+
+    template <typename Bool = bool>
+    friend std::enable_if_t<type_info::has_greater_equal, Bool> operator >= ( const static_variant& a, const static_variant& b )
+    {
+       if (a.which() < b.which()) {
+          return false;
+       }
+
+       if (a.which() > b.which()) {
+          return true;
+       }
+       
+       return impl::storage_ops<bool, 0, Types...>::template apply_binary_operator<std::greater_equal>(a._tag, a.storage, b.storage);
     }
 
     template<typename X>
@@ -321,35 +449,37 @@ public:
         }
     }
     template<typename visitor>
-    typename visitor::result_type visit(visitor& v) {
-        return impl::storage_ops<0, Types...>::apply(_tag, storage, v);
+    auto visit(visitor&& v) {
+        return impl::storage_ops_auto<visitor, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
     }
+
 
     template<typename visitor>
-    typename visitor::result_type visit(const visitor& v) {
-        return impl::storage_ops<0, Types...>::apply(_tag, storage, v);
+    auto visit(visitor&& v)const {
+        return impl::storage_ops_const_auto<visitor, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
     }
 
-    template<typename visitor>
-    typename visitor::result_type visit(visitor& v)const {
-        return impl::storage_ops<0, Types...>::apply(_tag, storage, v);
+    template<typename R, typename visitor>
+    auto visit(visitor&& v) {
+        return impl::storage_ops<R, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
     }
 
-    template<typename visitor>
-    typename visitor::result_type visit(const visitor& v)const {
-        return impl::storage_ops<0, Types...>::apply(_tag, storage, v);
+
+    template<typename R, typename visitor>
+    auto visit(visitor&& v)const {
+        return impl::storage_ops<R, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
     }
 
-    static uint32_t count() { return impl::type_info<Types...>::count; }
+    static uint32_t count() { return type_info::count; }
     void set_which( uint32_t w ) {
       FC_ASSERT( w < count()  );
       this->~static_variant();
       try {
          _tag = w;
-         impl::storage_ops<0, Types...>::con(_tag, storage);
+         impl::storage_ops<void, 0, Types...>::con(_tag, storage);
       } catch ( ... ) {
          _tag = 0;
-         impl::storage_ops<0, Types...>::con(_tag, storage);
+         impl::storage_ops<void, 0, Types...>::con(_tag, storage);
       }
     }
 
@@ -361,13 +491,12 @@ public:
     template<typename X>
     static constexpr int position() { return impl::position<X, Types...>::pos; }
 
-    template<int Pos, std::enable_if_t<Pos < impl::type_info<Types...>::size,int> = 1>
+    template<int Pos, std::enable_if_t<Pos < type_info::size,int> = 1>
     using type_at = typename impl::type_at<Pos, Types...>::type;
 };
 
 template<typename Result>
 struct visitor {
-    typedef Result result_type;
 };
 
    struct from_static_variant
@@ -375,7 +504,6 @@ struct visitor {
       variant& var;
       from_static_variant( variant& dv ):var(dv){}
 
-      typedef void result_type;
       template<typename T> void operator()( const T& v )const
       {
          to_variant( v, var );
@@ -387,7 +515,6 @@ struct visitor {
       const variant& var;
       to_static_variant( const variant& dv ):var(dv){}
 
-      typedef void result_type;
       template<typename T> void operator()( T& v )const
       {
          from_variant( var, v );

@@ -5,7 +5,6 @@
  */
 #include <fc/time.hpp>
 #include <fc/variant_object.hpp>
-#include <fc/shared_ptr.hpp>
 #include <memory>
 
 namespace fc
@@ -40,6 +39,7 @@ namespace fc
          log_level( values v = off ):value(v){}
          explicit log_level( int v ):value( static_cast<values>(v)){}
          operator int()const { return value; }
+         string to_string()const;
          values value;
    };
 
@@ -116,6 +116,11 @@ namespace fc
          variant        to_variant()const;
                               
          string         get_message()const;
+         /**
+          * A faster version of get_message which does limited formatting and excludes large variants
+          * @return formatted message according to format and variant args
+          */
+         string         get_limited_message()const;
                               
          log_context    get_context()const;
          string         get_format()const;

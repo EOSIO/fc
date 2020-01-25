@@ -1,5 +1,5 @@
 #define BOOST_TEST_MODULE cypher_suites
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include <fc/crypto/public_key.hpp>
 #include <fc/crypto/private_key.hpp>

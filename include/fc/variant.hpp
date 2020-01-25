@@ -14,7 +14,6 @@
 #include <fc/string.hpp>
 #include <fc/container/deque_fwd.hpp>
 #include <fc/container/flat_fwd.hpp>
-#include <fc/smart_ref_fwd.hpp>
 #include <boost/multi_index_container_fwd.hpp>
 
 #include <boost/multiprecision/cpp_int.hpp>
@@ -74,8 +73,6 @@ namespace fc
    template<typename T> void to_variant( const boost::multiprecision::number<T>& n, variant& v );
    template<typename T> void from_variant( const variant& v, boost::multiprecision::number<T>& n );
 
-   template<typename T> void to_variant( const smart_ref<T>& s, variant& v );
-   template<typename T> void from_variant( const variant& v, smart_ref<T>& s );
    template<typename T> void to_variant( const safe<T>& s, variant& v );
    template<typename T> void from_variant( const variant& v, safe<T>& s );
    template<typename T> void to_variant( const std::unique_ptr<T>& s, variant& v );
@@ -116,11 +113,6 @@ namespace fc
    template<typename K, typename T>
    void from_variant( const variant& var,  std::unordered_map<K,T>& vo );
 
-   template<typename K, typename... T>
-   void to_variant( const fc::flat_map<K,T...>& var,  variant& vo );
-   template<typename K, typename... T>
-   void from_variant( const variant& var, fc::flat_map<K,T...>& vo );
-
    template<typename K, typename T>
    void to_variant( const std::map<K,T>& var,  variant& vo );
    template<typename K, typename T>
@@ -141,15 +133,20 @@ namespace fc
    template<typename T>
    void from_variant( const variant& var,  std::deque<T>& vo );
 
-   template<typename T>
-   void to_variant( const fc::flat_set<T>& var,  variant& vo );
-   template<typename T>
-   void from_variant( const variant& var, fc::flat_set<T>& vo );
+   template<typename T, typename... U>
+   void to_variant( const boost::container::deque<T, U...>& d, fc::variant& vo );
+   template<typename T, typename... U>
+   void from_variant( const fc::variant& v, boost::container::deque<T, U...>& d );
 
    template<typename T>
    void to_variant( const std::set<T>& var,  variant& vo );
    template<typename T>
    void from_variant( const variant& var,  std::set<T>& vo );
+
+   template<typename T, std::size_t S>
+   void to_variant( const std::array<T,S>& var,  variant& vo );
+   template<typename T, std::size_t S>
+   void from_variant( const variant& var,  std::array<T,S>& vo );
 
    void to_variant( const time_point& var,  variant& vo );
    void from_variant( const variant& var,  time_point& vo );
@@ -253,6 +250,7 @@ namespace fc
               virtual void handle( const string& v )const        = 0;
               virtual void handle( const variant_object& v)const = 0;
               virtual void handle( const variants& v)const       = 0;
+              virtual void handle( const blob& v)const           = 0;
         };
 
         void  visit( const visitor& v )const;
@@ -400,6 +398,7 @@ namespace fc
    template<typename T>
    void to_variant( const std::unordered_set<T>& var,  variant& vo )
    {
+       if( var.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
        std::vector<variant> vars(var.size());
        size_t i = 0;
        for( auto itr = var.begin(); itr != var.end(); ++itr, ++i )
@@ -410,6 +409,7 @@ namespace fc
    void from_variant( const variant& var,  std::unordered_set<T>& vo )
    {
       const variants& vars = var.get_array();
+      if( vars.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
       vo.clear();
       vo.reserve( vars.size() );
       for( auto itr = vars.begin(); itr != vars.end(); ++itr )
@@ -420,6 +420,7 @@ namespace fc
    template<typename K, typename T>
    void to_variant( const std::unordered_map<K, T>& var,  variant& vo )
    {
+       if( var.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
        std::vector< variant > vars(var.size());
        size_t i = 0;
        for( auto itr = var.begin(); itr != var.end(); ++itr, ++i )
@@ -430,6 +431,7 @@ namespace fc
    void from_variant( const variant& var,  std::unordered_map<K, T>& vo )
    {
       const variants& vars = var.get_array();
+      if( vars.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
       vo.clear();
       for( auto itr = vars.begin(); itr != vars.end(); ++itr )
          vo.insert( itr->as< std::pair<K,T> >() );
@@ -438,6 +440,7 @@ namespace fc
    template<typename K, typename T>
    void to_variant( const std::map<K, T>& var,  variant& vo )
    {
+       if( var.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
        std::vector< variant > vars(var.size());
        size_t i = 0;
        for( auto itr = var.begin(); itr != var.end(); ++itr, ++i )
@@ -448,6 +451,7 @@ namespace fc
    void from_variant( const variant& var,  std::map<K, T>& vo )
    {
       const variants& vars = var.get_array();
+      if( vars.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
       vo.clear();
       for( auto itr = vars.begin(); itr != vars.end(); ++itr )
          vo.insert( itr->as< std::pair<K,T> >() );
@@ -456,6 +460,7 @@ namespace fc
    template<typename K, typename T>
    void to_variant( const std::multimap<K, T>& var,  variant& vo )
    {
+       if( var.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
        std::vector< variant > vars(var.size());
        size_t i = 0;
        for( auto itr = var.begin(); itr != var.end(); ++itr, ++i )
@@ -466,6 +471,7 @@ namespace fc
    void from_variant( const variant& var,  std::multimap<K, T>& vo )
    {
       const variants& vars = var.get_array();
+      if( vars.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
       vo.clear();
       for( auto itr = vars.begin(); itr != vars.end(); ++itr )
          vo.insert( itr->as< std::pair<K,T> >() );
@@ -475,6 +481,7 @@ namespace fc
    template<typename T>
    void to_variant( const std::set<T>& var,  variant& vo )
    {
+       if( var.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
        std::vector<variant> vars(var.size());
        size_t i = 0;
        for( auto itr = var.begin(); itr != var.end(); ++itr, ++i )
@@ -485,6 +492,7 @@ namespace fc
    void from_variant( const variant& var,  std::set<T>& vo )
    {
       const variants& vars = var.get_array();
+      if( vars.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
       vo.clear();
       //vo.reserve( vars.size() );
       for( auto itr = vars.begin(); itr != vars.end(); ++itr )
@@ -496,6 +504,7 @@ namespace fc
    void from_variant( const variant& var, std::deque<T>& tmp )
    {
       const variants& vars = var.get_array();
+      if( vars.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
       tmp.clear();
       for( auto itr = vars.begin(); itr != vars.end(); ++itr )
          tmp.push_back( itr->as<T>() );
@@ -505,18 +514,44 @@ namespace fc
    template<typename T>
    void to_variant( const std::deque<T>& t, variant& v )
    {
+      if( t.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
       std::vector<variant> vars(t.size());
       for( size_t i = 0; i < t.size(); ++i )
          vars[i] = variant(t[i]);
       v = std::move(vars);
    }
 
+   /** @ingroup Serializable */
+   template<typename T, typename... U>
+   void from_variant( const variant& v, boost::container::deque<T, U...>& d )
+   {
+      const variants& vars = v.get_array();
+      if( vars.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
+      d.clear();
+      d.resize( vars.size() );
+      for( uint32_t i = 0; i < vars.size(); ++i ) {
+         from_variant( vars[i], d[i] );
+      }
+   }
+
+   /** @ingroup Serializable */
+   template<typename T, typename... U>
+   void to_variant( const boost::container::deque<T, U...>& d, fc::variant& vo )
+   {
+      if( d.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
+      variants vars(d.size());
+      for( size_t i = 0; i < d.size(); ++i ) {
+         vars[i] = variant( d[i] );
+      }
+      vo = std::move( vars );
+   }
 
    /** @ingroup Serializable */
    template<typename T>
    void from_variant( const variant& var, std::vector<T>& tmp )
    {
       const variants& vars = var.get_array();
+      if( vars.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
       tmp.clear();
       tmp.reserve( vars.size() );
       for( auto itr = vars.begin(); itr != vars.end(); ++itr )
@@ -527,12 +562,31 @@ namespace fc
    template<typename T>
    void to_variant( const std::vector<T>& t, variant& v )
    {
+      if( t.size() > MAX_NUM_ARRAY_ELEMENTS ) throw std::range_error( "too large" );
       std::vector<variant> vars(t.size());
        for( size_t i = 0; i < t.size(); ++i )
           vars[i] = variant(t[i]);
        v = std::move(vars);
    }
 
+   /** @ingroup Serializable */
+   template<typename T, std::size_t S>
+   void from_variant( const variant& var, std::array<T,S>& tmp )
+   {
+      const variants& vars = var.get_array();
+      for( std::size_t i = 0; i < S; ++i )
+         tmp[i] = vars.at(i).as<T>();
+   }
+
+   /** @ingroup Serializable */
+   template<typename T, std::size_t S>
+   void to_variant( const std::array<T,S>& t, variant& v )
+   {
+      std::vector<variant> vars(S);
+      for( std::size_t i = 0; i < S; ++i )
+         vars[i] = variant(t[i]);
+      v = std::move(vars);
+   }
 
    /** @ingroup Serializable */
    template<typename A, typename B>
@@ -543,16 +597,17 @@ namespace fc
       vars[1] = variant(t.second);
        v = vars;
    }
+
+   /** @ingroup Serializable */
    template<typename A, typename B>
    void from_variant( const variant& v, std::pair<A,B>& p )
    {
       const variants& vars = v.get_array();
       if( vars.size() > 0 )
-      p.first  = vars[0].as<A>();
+         vars[0].as<A>( p.first );
       if( vars.size() > 1 )
-      p.second = vars[1].as<B>();
+         vars[1].as<B>( p.second );
    }
-
 
    template<typename T>
    variant::variant( const T& val )
@@ -605,12 +660,6 @@ namespace fc
    template<typename T>
    void from_variant( const variant& v, safe<T>& s ) { s.value = v.as_uint64(); }
 
-   template<typename T>
-   void to_variant( const smart_ref<T>& s, variant& v ) { v = *s; }
-
-   template<typename T>
-   void from_variant( const variant& v, smart_ref<T>& s ) { from_variant( v, *s ); }
-
    template<typename T, typename... Args> void to_variant( const boost::multi_index_container<T,Args...>& c, variant& v )
    {
        std::vector<variant> vars;
@@ -628,7 +677,7 @@ namespace fc
          c.insert( item.as<T>() );
    }
    template<typename T> void to_variant( const boost::multiprecision::number<T>& n, variant& v ) {
-      v = std::string(n);
+      v = n.str();
    }
    template<typename T> void from_variant( const variant& v, boost::multiprecision::number<T>& n ) {
       n = boost::multiprecision::number<T>(v.get_string());

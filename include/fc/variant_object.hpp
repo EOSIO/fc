@@ -1,16 +1,15 @@
 #pragma once
 #include <fc/variant.hpp>
-#include <fc/shared_ptr.hpp>
 #include <fc/unique_ptr.hpp>
 
 namespace fc
 {
    class mutable_variant_object;
-   
+
    /**
     *  @ingroup Serializable
     *
-    *  @brief An order-perserving dictionary of variant's.  
+    *  @brief An order-preserving dictionary of variants.
     *
     *  Keys are kept in the order they are inserted.
     *  This dictionary implements copy-on-write
@@ -22,7 +21,7 @@ namespace fc
    {
    public:
       /** @brief a key/value pair */
-      class entry 
+      class entry
       {
       public:
          entry();
@@ -31,7 +30,7 @@ namespace fc
          entry( const entry& e);
          entry& operator=(const entry&);
          entry& operator=(entry&&);
-                
+
          const string&        key()const;
          const variant& value()const;
          void  set( variant v );
@@ -44,7 +43,7 @@ namespace fc
          friend bool operator != (const entry& a, const entry& b) {
             return !(a == b);
          }
-             
+
       private:
          string  _key;
          variant _value;
@@ -73,7 +72,7 @@ namespace fc
 
       /** initializes the first key/value pair in the object */
       variant_object( string key, variant val );
-       
+
       template<typename T>
       variant_object( string key, T&& val )
       :_key_value( std::make_shared<std::vector<entry> >() )
@@ -105,7 +104,7 @@ namespace fc
   /**
    *  @ingroup Serializable
    *
-   *  @brief An order-perserving dictionary of variant's.  
+   *  @brief An order-preserving dictionary of variants.
    *
    *  Keys are kept in the order they are inserted.
    *  This dictionary implements copy-on-write
@@ -143,7 +142,7 @@ namespace fc
       /**
          * @name mutable Interface
          *
-         * Calling these methods will result in a copy of the underlying type 
+         * Calling these methods will result in a copy of the underlying type
          * being created if there is more than one reference to this object.
          */
       ///@{
@@ -159,14 +158,16 @@ namespace fc
       iterator             find( const char* key );
 
 
-      /** replaces the value at \a key with \a var or insert's \a key if not found */
-      mutable_variant_object& set( string key, variant var );
-      /** Appends \a key and \a var without checking for duplicates, designed to
-         *  simplify construction of dictionaries using (key,val)(key2,val2) syntax 
+      /** replaces the value at \a key with \a var or inserts \a key if not found */
+      mutable_variant_object& set( string key, variant var ) &;
+      mutable_variant_object set( string key, variant var ) &&;
+
+     /** Appends \a key and \a var without checking for duplicates, designed to
+         *  simplify construction of dictionaries using (key,val)(key2,val2) syntax
          */
       /**
       *  Convenience method to simplify the manual construction of
-      *  variant_object's
+      *  variant_objects
       *
       *  Instead of:
       *    <code>mutable_variant_object("c",c).set("a",a).set("b",b);</code>
@@ -176,25 +177,36 @@ namespace fc
       *
       *  @return *this;
       */
-      mutable_variant_object& operator()( string key, variant var );
+      mutable_variant_object& operator()( string key, variant var ) &;
+      mutable_variant_object operator()( string key, variant var ) &&;
       template<typename T>
-      mutable_variant_object& operator()( string key, T&& var )
+      mutable_variant_object& operator()( string key, T&& var ) &
       {
          set(std::move(key), variant( fc::forward<T>(var) ) );
          return *this;
       }
+      template<typename T>
+      mutable_variant_object operator()( string key, T&& var ) &&
+      {
+         set(std::move(key), variant( fc::forward<T>(var) ) );
+         return std::move(*this);
+      }
       /**
        * Copy a variant_object into this mutable_variant_object.
        */
-      mutable_variant_object& operator()( const variant_object& vo );
+      mutable_variant_object& operator()( const variant_object& vo ) &;
+      mutable_variant_object operator()( const variant_object& vo ) &&;
       /**
        * Copy another mutable_variant_object into this mutable_variant_object.
        */
-      mutable_variant_object& operator()( const mutable_variant_object& mvo );
+      mutable_variant_object& operator()( const mutable_variant_object& mvo ) &;
+      mutable_variant_object operator()( const mutable_variant_object& mvo ) &&;
       ///@}
 
 
-      template<typename T>
+      template<typename T,
+               typename = std::enable_if_t<!std::is_base_of<mutable_variant_object,
+                                                            std::decay_t<T>>::value>>
       explicit mutable_variant_object( T&& v )
       :_key_value( new std::vector<entry>() )
       {

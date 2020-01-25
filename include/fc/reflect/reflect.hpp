@@ -45,15 +45,20 @@ struct reflector{
      *     };
      *    @endcode
      *
-     *  If reflection requires a verification (what a constructor might normally assert) then
-     *  derive your Visitor from reflector_verifier_visitor and implement a reflector_verify()
-     *  on your reflected type.
+     *  If reflection requires an init (what a constructor might normally do) then
+     *  derive your Visitor publicly from fc::reflector_init_visitor, derive your reflected
+     *  type from fc::reflect_init and implement a reflector_init() method
+     *  on your reflected type. reflector_init() needs to be public or you can friend:
+     *     friend struct fc::reflector_init_visitor<your_reflected_class>;
+     *     friend struct fc::has_reflector_init<your_reflected_class>;
+     *  Note that if your attributes are also protected/private then you also need:
+     *     friend struct fc::reflector<your_reflected_class>;
      *
      *    @code
      *     template<typename Class>
-     *     struct functor : reflector_verifier_visitor<Class>  {
+     *     struct functor : public fc::reflector_init_visitor<Class>  {
      *        functor(Class& _c)
-     *        : fc::reflector_verifier_visitor<Class>(_c) {}
+     *        : fc::reflector_init_visitor<Class>(_c) {}
      *
      *        template<typename Member, class Class, Member (Class::*member)>
      *        void operator()( const char* name )const;
@@ -81,30 +86,48 @@ struct reflector{
 void throw_bad_enum_cast( int64_t i, const char* e );
 void throw_bad_enum_cast( const char* k, const char* e );
 
+template<typename C>
+struct has_reflector_init {
+private:
+   template<typename T>
+   static auto test( int ) -> decltype( std::declval<T>().reflector_init(), std::true_type() ) { return {}; }
+   template<typename>
+   static std::false_type test( long ) { return {}; }
+public:
+   static constexpr bool value = std::is_same<decltype( test<C>( 0 ) ), std::true_type>::value;
+};
+
+struct reflect_init {};
+
 template <typename Class>
-struct reflector_verifier_visitor {
-   explicit reflector_verifier_visitor( Class& c )
+struct reflector_init_visitor {
+   explicit reflector_init_visitor( Class& c )
      : obj(c) {}
 
-   void reflector_verify() {
-      reflect_verify( obj );
+   void reflector_init() const {
+      reflect_init( obj );
+   }
+   void reflector_init() {
+      reflect_init( obj );
    }
 
  private:
 
-   // int matches 0 if reflector_verify exists SFINAE
+   // 0 matches int if Class derived from reflect_init (SFINAE)
    template<class T>
-   auto verify_imp(const T& t, int) -> decltype(t.reflector_verify(), void()) {
-      t.reflector_verify();
+   typename std::enable_if<std::is_base_of<fc::reflect_init, T>::value>::type
+   init_imp(T& t) {
+      t.reflector_init();
    }
 
-   // if no reflector_verify method exists (SFINAE), 0 matches long
+   // SFINAE if Class not derived from reflect_init
    template<class T>
-   auto verify_imp(const T& t, long) -> decltype(t, void()) {}
+   typename std::enable_if<not std::is_base_of<fc::reflect_init, T>::value>::type
+   init_imp(T& t) {}
 
    template<typename T>
-   auto reflect_verify(const T& t) -> decltype(verify_imp(t, 0), void()) {
-      verify_imp(t, 0);
+   auto reflect_init(T& t) -> decltype(init_imp(t), void()) {
+      init_imp(t);
    }
 
  protected:
@@ -117,7 +140,7 @@ struct reflector_verifier_visitor {
 #ifndef DOXYGEN
 
 #define FC_REFLECT_VISIT_BASE(r, visitor, base) \
-  fc::reflector<base>::visit( visitor );
+  fc::reflector<base>::visit_base( visitor );
 
 
 #ifndef _MSC_VER
@@ -142,17 +165,15 @@ struct reflector_verifier_visitor {
 
 #define FC_REFLECT_DERIVED_IMPL_INLINE( TYPE, INHERITS, MEMBERS ) \
 template<typename Visitor>\
-static inline void visit( const Visitor& v ) { \
+static inline void visit_base( Visitor&& v ) { \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_BASE, v, INHERITS ) \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
-    verify( v ); \
-}
-
-#define FC_REFLECT_DERIVED_IMPL_EXT( TYPE, INHERITS, MEMBERS ) \
+} \
 template<typename Visitor>\
-void fc::reflector<TYPE>::visit( const Visitor& v ) { \
+static inline void visit( Visitor&& v ) { \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_BASE, v, INHERITS ) \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
+    init( std::forward<Visitor>(v) ); \
 }
 
 #endif // DOXYGEN
@@ -246,29 +267,6 @@ template<> struct get_typename<ENUM>  { static const char* name()  { return BOOS
  *  @param INHERITS - a sequence of base class names (basea)(baseb)(basec)
  *  @param MEMBERS - a sequence of member names.  (field1)(field2)(field3)
  */
-#define FC_REFLECT_DERIVED( TYPE, INHERITS, MEMBERS ) \
-namespace fc {  \
-  template<> struct get_typename<TYPE>  { static const char* name()  { return BOOST_PP_STRINGIZE(TYPE);  } }; \
-template<> struct reflector<TYPE> {\
-    typedef TYPE type; \
-    typedef fc::true_type  is_defined; \
-    typedef fc::false_type is_enum; \
-    template<typename Visitor> \
-    static auto verify_imp(const Visitor& v, int) -> decltype(v.reflector_verify(), void()) { \
-       v.reflector_verify(); \
-    } \
-    template<typename Visitor> \
-    static auto verify_imp(const Visitor& v, long) -> decltype(v, void()) {} \
-    template<typename Visitor> \
-    static auto verify(const Visitor& v) -> decltype(verify_imp(v, 0), void()) { \
-       verify_imp(v, 0); \
-    } \
-    enum  member_count_enum {  \
-      local_member_count = 0  BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_MEMBER_COUNT, +, MEMBERS ),\
-      total_member_count = local_member_count BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_BASE_MEMBER_COUNT, +, INHERITS )\
-    }; \
-    FC_REFLECT_DERIVED_IMPL_INLINE( TYPE, INHERITS, MEMBERS ) \
-}; }
 #define FC_REFLECT_DERIVED_TEMPLATE( TEMPLATE_ARGS, TYPE, INHERITS, MEMBERS ) \
 namespace fc {  \
   template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct get_typename<TYPE>  { static const char* name()  { return BOOST_PP_STRINGIZE(TYPE);  } }; \
@@ -277,21 +275,28 @@ template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct reflector<TYPE> {\
     typedef fc::true_type  is_defined; \
     typedef fc::false_type is_enum; \
     template<typename Visitor> \
-    static auto verify_imp(const Visitor& v, int) -> decltype(v.reflector_verify(), void()) { \
-       v.reflector_verify(); \
+    static auto init_imp(Visitor&& v, int) -> decltype(std::forward<Visitor>(v).reflector_init(), void()) { \
+       std::forward<Visitor>(v).reflector_init(); \
     } \
     template<typename Visitor> \
-    static auto verify_imp(const Visitor& v, long) -> decltype(v, void()) {} \
+    static auto init_imp(Visitor&& v, long) -> decltype(v, void()) {} \
     template<typename Visitor> \
-    static auto verify(const Visitor& v) -> decltype(verify_imp(v, 0), void()) { \
-       verify_imp(v, 0); \
+    static auto init(Visitor&& v) -> decltype(init_imp(std::forward<Visitor>(v), 0), void()) { \
+       init_imp(std::forward<Visitor>(v), 0); \
     } \
     enum  member_count_enum {  \
       local_member_count = 0  BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_MEMBER_COUNT, +, MEMBERS ),\
       total_member_count = local_member_count BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_BASE_MEMBER_COUNT, +, INHERITS )\
     }; \
     FC_REFLECT_DERIVED_IMPL_INLINE( TYPE, INHERITS, MEMBERS ) \
+    static_assert( not fc::has_reflector_init<TYPE>::value || \
+                   std::is_base_of<fc::reflect_init, TYPE>::value, "must derive from fc::reflect_init" ); \
+    static_assert( not std::is_base_of<fc::reflect_init, TYPE>::value || \
+                   fc::has_reflector_init<TYPE>::value, "must provide reflector_init() method" ); \
 }; }
+
+#define FC_REFLECT_DERIVED( TYPE, INHERITS, MEMBERS ) \
+   FC_REFLECT_DERIVED_TEMPLATE( (), TYPE, INHERITS, MEMBERS )
 
 //BOOST_PP_SEQ_SIZE(MEMBERS),
 
@@ -316,26 +321,3 @@ template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct reflector<TYPE> {\
 namespace fc { \
   template<> struct get_typename<TYPE>  { static const char* name()  { return BOOST_PP_STRINGIZE(TYPE);  } }; \
 }
-
-#define FC_REFLECT_FWD( TYPE ) \
-namespace fc { \
-  template<> struct get_typename<TYPE>  { static const char* name()  { return BOOST_PP_STRINGIZE(TYPE);  } }; \
-template<> struct reflector<TYPE> {\
-    typedef TYPE type; \
-    typedef fc::true_type is_defined; \
-    enum  member_count_enum {  \
-      local_member_count = BOOST_PP_SEQ_SIZE(MEMBERS), \
-      total_member_count = local_member_count BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_BASE_MEMBER_COUNT, +, INHERITS )\
-    }; \
-    template<typename Visitor> static void visit( const Visitor& v ); \
-}; }
-
-
-#define FC_REFLECT_DERIVED_IMPL( TYPE, MEMBERS ) \
-    FC_REFLECT_IMPL_DERIVED_EXT( TYPE, BOOST_PP_SEQ_NIL, MEMBERS )
-
-#define FC_REFLECT_IMPL( TYPE, MEMBERS ) \
-    FC_REFLECT_DERIVED_IMPL_EXT( TYPE, BOOST_PP_SEQ_NIL, MEMBERS )
-
-
-

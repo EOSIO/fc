@@ -12,11 +12,9 @@
 #include <boost/lexical_cast.hpp>
 #include <iomanip>
 #include <iostream>
-#include <mutex>
 #include <queue>
 #include <sstream>
 #include <iostream>
-#include <boost/thread/mutex.hpp>
 
 namespace fc
 {
@@ -28,13 +26,12 @@ namespace fc
     }
   }
 
-  class gelf_appender::impl : public retainable
+  class gelf_appender::impl
   {
   public:
     config                                    cfg;
     optional<boost::asio::ip::udp::endpoint>  gelf_endpoint;
     udp_socket                                gelf_socket;
-    boost::mutex                              gelf_log_mutex;
 
     impl(const config& c) :
       cfg(c)
@@ -111,13 +108,14 @@ namespace fc
     mutable_variant_object gelf_message;
     gelf_message["version"] = "1.1";
     gelf_message["host"] = my->cfg.host;
-    gelf_message["short_message"] = format_string(message.get_format(), message.get_data());
+    gelf_message["short_message"] = format_string(message.get_format(), message.get_data(), true);
 
-    const auto time_ns = context.get_timestamp().time_since_epoch().count();
+    // use now() instead of context.get_timestamp() because log_message construction can include user provided long running calls
+    const auto time_ns = time_point::now().time_since_epoch().count();
     gelf_message["timestamp"] = time_ns / 1000000.;
     gelf_message["_timestamp_ns"] = time_ns;
 
-    static unsigned long gelf_log_counter;
+    static uint64_t gelf_log_counter;
     gelf_message["_log_id"] = fc::to_string(++gelf_log_counter);
 
     switch (context.get_log_level())
@@ -150,7 +148,9 @@ namespace fc
     if (!context.get_task_name().empty())
       gelf_message["_task_name"] = context.get_task_name();
 
-    string gelf_message_as_string = json::to_string(gelf_message, json::legacy_generator); // GELF 1.1 specifies unstringified numbers
+    string gelf_message_as_string = json::to_string(gelf_message,
+          fc::time_point::now() + fc::exception::format_time_limit,
+          json::legacy_generator); // GELF 1.1 specifies unstringified numbers
     //unsigned uncompressed_size = gelf_message_as_string.size();
     gelf_message_as_string = zlib_compress(gelf_message_as_string);
 
@@ -163,8 +163,6 @@ namespace fc
         gelf_message_as_string[1] == (char)0xda)
       gelf_message_as_string[1] = (char)0x9c;
     FC_ASSERT(gelf_message_as_string[1] == (char)0x9c);
-
-    std::unique_lock<boost::mutex> lock(my->gelf_log_mutex);
 
     // packets are sent by UDP, and they tend to disappear if they
     // get too large.  It's hard to find any solid numbers on how

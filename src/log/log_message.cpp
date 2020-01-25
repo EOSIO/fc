@@ -146,7 +146,24 @@ namespace fc
                                    ("variant",v) );
    }
 
-
+   string log_level::to_string()const {
+      switch( value )
+      {
+         case log_level::all:
+            return "all";
+         case log_level::debug:
+            return "debug";
+         case log_level::info:
+            return "info";
+         case log_level::warn:
+            return "warn";
+         case log_level::error:
+            return "error";
+         case log_level::off:
+            return "off";
+      }
+      return "unknown";
+   }
 
    string     log_context::get_file()const       { return my->file; }
    uint64_t   log_context::get_line_number()const { return my->line; }
@@ -208,6 +225,12 @@ namespace fc
    string        log_message::get_message()const
    {
       return format_string( my->format, my->args );
+   }
+
+   string        log_message::get_limited_message()const
+   {
+      const bool minimize = true;
+      return format_string( my->format, my->args, minimize );
    }
 
 

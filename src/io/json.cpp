@@ -22,10 +22,9 @@ namespace fc
     template<typename T, json::parse_type parser_type> variants arrayFromStream( T& in, uint32_t max_depth );
     template<typename T, json::parse_type parser_type> variant number_from_stream( T& in );
     template<typename T> variant token_from_stream( T& in );
-    void escape_string( const std::string& str, std::ostream& os );
-    template<typename T> void to_stream( T& os, const variants& a, json::output_formatting format );
-    template<typename T> void to_stream( T& os, const variant_object& o, json::output_formatting format );
-    template<typename T> void to_stream( T& os, const variant& v, json::output_formatting format );
+    template<typename T> void to_stream( T& os, const variants& a, const fc::time_point& deadline, json::output_formatting format );
+    template<typename T> void to_stream( T& os, const variant_object& o, const fc::time_point& deadline, json::output_formatting format );
+    template<typename T> void to_stream( T& os, const variant& v, const fc::time_point& deadline, json::output_formatting format );
     std::string pretty_print( const std::string& v, uint8_t indent );
 }
 
@@ -491,11 +490,13 @@ namespace fc
     *
     *  All other characters are printed as UTF8.
     */
-   void escape_string( const string& str, std::ostream& os )
+   void escape_string( const string& str, std::ostream& os, const fc::time_point& deadline )
    {
       os << '"';
-      for( auto itr = str.begin(); itr != str.end(); ++itr )
+      size_t i = 0;
+      for( auto itr = str.begin(); itr != str.end(); ++i,++itr )
       {
+         if( i % 1024 == 0 ) FC_CHECK_DEADLINE(deadline);
          switch( *itr )
          {
             case '\b':        // \x08
@@ -560,38 +561,41 @@ namespace fc
       }
       os << '"';
    }
-   std::ostream& json::to_stream( std::ostream& out, const std::string& str )
+   std::ostream& json::to_stream( std::ostream& out, const std::string& str, const fc::time_point& deadline )
    {
-        escape_string( str, out );
+        escape_string( str, out, deadline );
         return out;
    }
 
    template<typename T>
-   void to_stream( T& os, const variants& a, json::output_formatting format )
+   void to_stream( T& os, const variants& a, const fc::time_point& deadline, json::output_formatting format )
    {
+      FC_CHECK_DEADLINE(deadline);
       os << '[';
       auto itr = a.begin();
 
       while( itr != a.end() )
       {
-         to_stream( os, *itr, format );
+         to_stream( os, *itr, deadline, format );
          ++itr;
          if( itr != a.end() )
             os << ',';
       }
       os << ']';
    }
+
    template<typename T>
-   void to_stream( T& os, const variant_object& o, json::output_formatting format )
+   void to_stream( T& os, const variant_object& o, const fc::time_point& deadline, json::output_formatting format )
    {
+       FC_CHECK_DEADLINE(deadline);
        os << '{';
        auto itr = o.begin();
 
        while( itr != o.end() )
        {
-          escape_string( itr->key(), os );
+          escape_string( itr->key(), os, deadline );
           os << ':';
-          to_stream( os, itr->value(), format );
+          to_stream( os, itr->value(), deadline, format );
           ++itr;
           if( itr != o.end() )
              os << ',';
@@ -600,8 +604,9 @@ namespace fc
    }
 
    template<typename T>
-   void to_stream( T& os, const variant& v, json::output_formatting format )
+   void to_stream( T& os, const variant& v, const fc::time_point& deadline, json::output_formatting format )
    {
+      FC_CHECK_DEADLINE(deadline);
       switch( v.get_type() )
       {
          case variant::null_type:
@@ -639,21 +644,21 @@ namespace fc
               os << v.as_string();
               return;
          case variant::string_type:
-              escape_string( v.get_string(), os );
+              escape_string( v.get_string(), os, deadline );
               return;
          case variant::blob_type:
-              escape_string( v.as_string(), os );
+              escape_string( v.as_string(), os, deadline );
               return;
          case variant::array_type:
            {
               const variants&  a = v.get_array();
-              to_stream( os, a, format );
+              to_stream( os, a, deadline, format );
               return;
            }
          case variant::object_type:
            {
               const variant_object& o =  v.get_object();
-              to_stream(os, o, format );
+              to_stream(os, o, deadline, format );
               return;
            }
          default:
@@ -661,10 +666,11 @@ namespace fc
       }
    }
 
-   std::string   json::to_string( const variant& v, output_formatting format )
+   std::string   json::to_string( const variant& v, const fc::time_point& deadline, output_formatting format )
    {
       std::stringstream ss;
-      fc::to_stream( ss, v, format );
+      fc::to_stream( ss, v, deadline, format );
+      FC_CHECK_DEADLINE(deadline);
       return ss.str();
    }
 
@@ -741,7 +747,12 @@ namespace fc
               }
               break;
             case 'n':
-              //If we're in quotes and see a \n, just print it literally but unset the escape flag.
+              //If we're in quotes and see a \n, \b, \f, \r, \t, or \u, just print it literally but unset the escape flag.
+            case 'b':
+            case 'f':
+            case 'r':
+            case 't':
+            case 'u':
               if( quote && escape )
                 escape = false;
               //No break; fall through to default case
@@ -759,23 +770,24 @@ namespace fc
 
 
 
-   std::string json::to_pretty_string( const variant& v, output_formatting format )
+   std::string json::to_pretty_string( const variant& v, const fc::time_point& deadline, output_formatting format )
    {
-      return pretty_print(to_string(v, format), 2);
+      auto s = to_string(v, deadline, format);
+      FC_CHECK_DEADLINE(deadline);
+      return pretty_print( std::move( s ), 2);
    }
 
-   void json::save_to_file( const variant& v, const fc::path& fi, bool pretty, output_formatting format )
+   bool json::save_to_file( const variant& v, const fc::path& fi, bool pretty, output_formatting format )
    {
-      if( pretty )
-      {
-         auto str = json::to_pretty_string( v, format );
-        std::ofstream o(fi.generic_string().c_str());
-        o.write( str.c_str(), str.size() );
-      }
-      else
-      {
-       std::ofstream o(fi.generic_string().c_str());
-       fc::to_stream( o, v, format );
+      if( pretty ) {
+         auto str = json::to_pretty_string( v, fc::time_point::maximum(), format );
+         std::ofstream o(fi.generic_string().c_str());
+         o.write( str.c_str(), str.size() );
+         return o.good();
+      } else {
+         std::ofstream o(fi.generic_string().c_str());
+         fc::to_stream( o, v, fc::time_point::maximum(), format );
+         return o.good();
       }
    }
    variant json::from_file( const fc::path& p, parse_type ptype, uint32_t max_depth )
@@ -817,19 +829,22 @@ namespace fc
    }
    */
 
-   std::ostream& json::to_stream( std::ostream& out, const variant& v, output_formatting format )
+   std::ostream& json::to_stream( std::ostream& out, const variant& v, const fc::time_point& deadline, output_formatting format )
    {
-      fc::to_stream( out, v, format );
+      FC_CHECK_DEADLINE(deadline);
+      fc::to_stream( out, v, deadline, format );
       return out;
    }
-   std::ostream& json::to_stream( std::ostream& out, const variants& v, output_formatting format )
+   std::ostream& json::to_stream( std::ostream& out, const variants& v, const fc::time_point& deadline, output_formatting format )
    {
-      fc::to_stream( out, v, format );
+      FC_CHECK_DEADLINE(deadline);
+      fc::to_stream( out, v, deadline, format );
       return out;
    }
-   std::ostream& json::to_stream( std::ostream& out, const variant_object& v, output_formatting format )
+   std::ostream& json::to_stream( std::ostream& out, const variant_object& v, const fc::time_point& deadline, output_formatting format )
    {
-      fc::to_stream( out, v, format );
+      FC_CHECK_DEADLINE(deadline);
+      fc::to_stream( out, v, deadline, format );
       return out;
    }
 

@@ -11,9 +11,6 @@
 #include <unordered_map>
 #include <set>
 
-#define MAX_NUM_ARRAY_ELEMENTS (1024*1024)
-#define MAX_SIZE_OF_BYTE_ARRAYS (20*1024*1024)
-
 namespace fc {
    class time_point;
    class time_point_sec;
@@ -29,6 +26,9 @@ namespace fc {
    template<typename Storage> class fixed_string;
 
    namespace raw {
+    template<typename T>
+    constexpr bool is_trivial_array = std::is_scalar<T>::value == true && std::is_pointer<T>::value == false;
+
     template<typename T>
     inline size_t pack_size(  const T& v );
 
@@ -50,11 +50,13 @@ namespace fc {
     template<typename Stream, typename... T> void pack( Stream& s, const static_variant<T...>& sv );
     template<typename Stream, typename... T> void unpack( Stream& s, static_variant<T...>& sv );
 
-    template<typename Stream, typename T> inline void pack( Stream& s, const flat_set<T>& value );
-    template<typename Stream, typename T> inline void unpack( Stream& s, flat_set<T>& value );
-
     template<typename Stream, typename T> inline void pack( Stream& s, const std::deque<T>& value );
     template<typename Stream, typename T> inline void unpack( Stream& s, std::deque<T>& value );
+
+    template<typename Stream, typename T, typename... U>
+    inline void pack( Stream& s, const boost::container::deque<T, U...>& value );
+    template<typename Stream, typename T, typename... U>
+    inline void unpack( Stream& s, boost::container::deque<T, U...>& value );
 
     template<typename Stream, typename K, typename V> inline void pack( Stream& s, const std::unordered_map<K,V>& value );
     template<typename Stream, typename K, typename V> inline void unpack( Stream& s, std::unordered_map<K,V>& value );
@@ -62,11 +64,13 @@ namespace fc {
     template<typename Stream, typename K, typename V> inline void pack( Stream& s, const std::map<K,V>& value );
     template<typename Stream, typename K, typename V> inline void unpack( Stream& s, std::map<K,V>& value );
 
-    template<typename Stream, typename K, typename... V> inline void pack( Stream& s, const flat_map<K,V...>& value );
-    template<typename Stream, typename K, typename V, typename... A> inline void unpack( Stream& s, flat_map<K,V,A...>& value );
-
     template<typename Stream, typename K, typename V> inline void pack( Stream& s, const std::pair<K,V>& value );
     template<typename Stream, typename K, typename V> inline void unpack( Stream& s, std::pair<K,V>& value );
+
+    template<typename Stream, typename T, std::size_t S> inline auto pack( Stream& s, const std::array<T,S>& value ) -> std::enable_if_t<is_trivial_array<T>>;
+    template<typename Stream, typename T, std::size_t S> inline auto pack( Stream& s, const std::array<T,S>& value ) -> std::enable_if_t<!is_trivial_array<T>>;
+    template<typename Stream, typename T, std::size_t S> inline auto unpack( Stream& s, std::array<T,S>& value ) -> std::enable_if_t<is_trivial_array<T>>;
+    template<typename Stream, typename T, std::size_t S> inline auto unpack( Stream& s, std::array<T,S>& value ) -> std::enable_if_t<!is_trivial_array<T>>;
 
     template<typename Stream> inline void pack( Stream& s, const variant_object& v );
     template<typename Stream> inline void unpack( Stream& s, variant_object& v );
@@ -112,14 +116,10 @@ namespace fc {
     template<typename Stream> inline void pack( Stream& s, const std::vector<char>& value );
     template<typename Stream> inline void unpack( Stream& s, std::vector<char>& value );
 
-    template<typename Stream, typename T, std::size_t N,
-             std::enable_if_t<std::is_scalar<T>::value == false || std::is_pointer<T>::value == true, int> = 0> inline void pack( Stream& s, const fc::array<T,N>& v);
-    template<typename Stream, typename T, std::size_t N,
-             std::enable_if_t<std::is_scalar<T>::value == true && std::is_pointer<T>::value == false, int> = 0> inline void pack( Stream& s, const fc::array<T,N>& v);
-    template<typename Stream, typename T, std::size_t N,
-                 std::enable_if_t<std::is_scalar<T>::value == false || std::is_pointer<T>::value == true, int> = 0> inline void unpack( Stream& s, fc::array<T,N>& v);
-    template<typename Stream, typename T, std::size_t N,
-                 std::enable_if_t<std::is_scalar<T>::value == true && std::is_pointer<T>::value == false, int> = 0> inline void unpack( Stream& s, fc::array<T,N>& v);
+    template<typename Stream, typename T, std::size_t N> inline auto pack( Stream& s, const fc::array<T,N>& v) -> std::enable_if_t<is_trivial_array<T>>;
+    template<typename Stream, typename T, std::size_t N> inline auto pack( Stream& s, const fc::array<T,N>& v) -> std::enable_if_t<!is_trivial_array<T>>;
+    template<typename Stream, typename T, std::size_t N> inline auto unpack( Stream& s, fc::array<T,N>& v) -> std::enable_if_t<is_trivial_array<T>>;
+    template<typename Stream, typename T, std::size_t N> inline auto unpack( Stream& s, fc::array<T,N>& v) -> std::enable_if_t<!is_trivial_array<T>>;
 
     template<typename Stream> inline void pack( Stream& s, const bool& v );
     template<typename Stream> inline void unpack( Stream& s, bool& v );

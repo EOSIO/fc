@@ -5,7 +5,7 @@
 
 namespace fc 
 {
-   class console_appender : public appender 
+   class console_appender final : public appender 
    {
        public:
             struct color 
