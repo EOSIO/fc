@@ -12,6 +12,7 @@
 
 #include <fc/optional.hpp>
 #include <fc/string.hpp>
+#include <fc/time.hpp>
 #include <fc/container/deque_fwd.hpp>
 #include <fc/container/flat_fwd.hpp>
 #include <fc/smart_ref_fwd.hpp>
@@ -354,6 +355,8 @@ namespace fc
         template<typename T>
         explicit variant( const T& val );
 
+        template<typename T>
+        explicit variant( const T& val, const fc::time_point& deadline );
 
         void    clear();
       private:
@@ -589,6 +592,14 @@ namespace fc
       memset( this, 0, sizeof(*this) );
       to_variant( val, *this );
    }
+
+   template<typename T>
+   variant::variant( const T& val, const fc::time_point& deadline )
+   {
+      memset( this, 0, sizeof(*this) );
+      to_variant( val, *this, deadline );
+   }
+
    #ifdef __APPLE__
    inline void to_variant( size_t s, variant& v ) { v = variant(uint64_t(s)); }
    #endif
