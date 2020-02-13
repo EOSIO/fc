@@ -60,7 +60,7 @@ namespace fc { namespace crypto {
    }
 
    template<typename Data>
-   string to_wif( const Data& secret )
+   string to_wif( const Data& secret, const fc::time_point& deadline )
    {
       const size_t size_of_data_to_hash = sizeof(typename Data::data_type) + 1;
       const size_t size_of_hash_bytes = 4;
@@ -70,7 +70,7 @@ namespace fc { namespace crypto {
       sha256 digest = sha256::hash(data, size_of_data_to_hash);
       digest = sha256::hash(digest);
       memcpy(data + size_of_data_to_hash, (char*)&digest, size_of_hash_bytes);
-      return to_base58(data, sizeof(data));
+      return to_base58(data, sizeof(data), deadline);
    }
 
    template<typename Data>
@@ -111,21 +111,21 @@ namespace fc { namespace crypto {
    :_storage(parse_base58(base58str))
    {}
 
-   private_key::operator std::string() const
+   std::string private_key::to_string(const fc::time_point& deadline) const
    {
       auto which = _storage.which();
 
       if (which == 0) {
          using default_type = storage_type::template type_at<0>;
-         return to_wif(_storage.template get<default_type>());
+         return to_wif(_storage.template get<default_type>(), deadline);
       }
 
-      auto data_str = _storage.visit(base58str_visitor<storage_type, config::private_key_prefix>());
+      auto data_str = _storage.visit(base58str_visitor<storage_type, config::private_key_prefix>(deadline));
       return std::string(config::private_key_base_prefix) + "_" + data_str;
    }
 
    std::ostream& operator<<(std::ostream& s, const private_key& k) {
-      s << "private_key(" << std::string(k) << ')';
+      s << "private_key(" << k.to_string() << ')';
       return s;
    }
 
@@ -141,9 +141,9 @@ namespace fc { namespace crypto {
 
 namespace fc
 {
-   void to_variant(const fc::crypto::private_key& var, variant& vo)
+   void to_variant(const fc::crypto::private_key& var, variant& vo, const fc::time_point& deadline)
    {
-      vo = string(var);
+      vo = var.to_string(deadline);
    }
 
    void from_variant(const variant& var, fc::crypto::private_key& vo)
