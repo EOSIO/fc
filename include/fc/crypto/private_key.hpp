@@ -47,7 +47,7 @@ namespace fc { namespace crypto {
 
          // serialize to/from string
          explicit private_key(const string& base58str);
-         explicit operator string() const;
+         std::string to_string(const fc::time_point& deadline = fc::time_point::maximum()) const;
 
       private:
          storage_type _storage;
@@ -65,7 +65,7 @@ namespace fc { namespace crypto {
 } }  // fc::crypto
 
 namespace fc {
-   void to_variant(const crypto::private_key& var,  variant& vo);
+   void to_variant(const crypto::private_key& var, variant& vo, const fc::time_point& deadline = fc::time_point::maximum());
 
    void from_variant(const variant& var, crypto::private_key& vo);
 } // namespace fc
