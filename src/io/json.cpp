@@ -497,7 +497,7 @@ namespace fc
       for( auto itr = str.begin(); itr != str.end(); ++i,++itr )
       {
          if( i % 1024 == 0 ) FC_CHECK_DEADLINE(deadline);
-         if ( i + init_pos > max_len)  throw;
+         if ( os.tellp() > max_len)  throw;
          switch( *itr )
          {
             case '\b':        // \x08
