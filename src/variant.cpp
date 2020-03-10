@@ -729,14 +729,18 @@ void to_variant( const UInt<64>& n, variant& v ) { v = uint64_t(n); }
 void from_variant( const variant& v, UInt<64>& n ) { n = v.as_uint64(); }
 
 constexpr size_t minimize_max_size = 1024;
-constexpr size_t minimize_sub_max_size = minimize_max_size / 4;
 
 string format_string( const string& frmt, const variant_object& args, bool minimize )
 {
    std::string result;
    const string& format = ( minimize && frmt.size() > minimize_max_size ) ?
          frmt.substr( 0, minimize_max_size ) + "..." : frmt;
-   result.reserve( minimize_sub_max_size );
+
+   const auto arg_num = (args.size() == 0) ? 1 : args.size();
+   // limit each arg size when minimize is set
+   const int minimize_sub_max_size = minimize ? ((int)minimize_max_size - (int)format.size()) / arg_num :  minimize_max_size;
+   // reserve space for each argument replaced by ...
+   result.reserve( minimize_max_size + 3 * args.size());
    size_t prev = 0;
    size_t next = format.find( '$' );
    while( prev != string::npos && prev < format.size() ) {
@@ -766,23 +770,42 @@ string format_string( const string& frmt, const variant_object& args, bool minim
             string key = format.substr( prev + 1, (next - prev - 1) );
 
             auto val = args.find( key );
-            bool replaced = true;
             if( val != args.end() ) {
                if( val->value().is_object() || val->value().is_array() ) {
-                  if( minimize ) {
-                     replaced = false;
+                  if( minimize && (result.size() >= minimize_max_size)) {
+                     result += "{...}";
                   } else {
-                     result += json::to_string( val->value(), fc::time_point::maximum() );
+                     const auto jstr = json::to_string( val->value(), fc::time_point::maximum() );
+                     if ( minimize && ((result.size() + jstr.size()) >= minimize_max_size)) {
+                        const auto size = std::min( minimize_sub_max_size, static_cast<int>(minimize_max_size) - static_cast<int>(result.size()) );
+                        if (size > 0) {
+                           result += jstr.substr(0, size) + "...}";
+                        } else {
+                           result += "{...}";
+                        }
+                     } else {
+                        result += jstr;
+                     }
                   }
                } else if( val->value().is_blob() ) {
-                  if( minimize && val->value().get_blob().data.size() > minimize_sub_max_size ) {
-                     replaced = false;
+                  if( minimize && (result.size() >= minimize_max_size)) {
+                     result += "...";
                   } else {
-                     result += val->value().as_string();
+                     const auto vstr = val->value().as_string();
+                     if ( minimize && ((result.size() + vstr.size()) >= minimize_max_size)) {
+                        const auto size = std::min( minimize_sub_max_size, static_cast<int>(minimize_max_size) - static_cast<int>(result.size()) );
+                        if (size > 0) {
+                           result += vstr.substr(0, size) + "...";
+                        } else {
+                           result += "...";
+                        }
+                     } else {
+                        result += vstr;
+                     }
                   }
                } else if( val->value().is_string() ) {
                   if( minimize && val->value().get_string().size() > minimize_sub_max_size ) {
-                     auto sz = std::min( minimize_sub_max_size, minimize_max_size - result.size() );
+                     auto sz = std::min( minimize_sub_max_size, static_cast<int>(minimize_max_size) - static_cast<int>(result.size()) );
                      result += val->value().get_string().substr( 0, sz );
                      result += "...";
                   } else {
@@ -791,13 +814,6 @@ string format_string( const string& frmt, const variant_object& args, bool minim
                } else {
                   result += val->value().as_string();
                }
-            } else {
-               replaced = false;
-            }
-            if( !replaced ) {
-               result += "${";
-               result += key;
-               result += "}";
             }
             prev = next + 1;
             // find the next $
