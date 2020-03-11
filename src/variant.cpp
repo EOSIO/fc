@@ -737,10 +737,11 @@ string format_string( const string& frmt, const variant_object& args, bool minim
          frmt.substr( 0, minimize_max_size ) + "..." : frmt;
 
    const auto arg_num = (args.size() == 0) ? 1 : args.size();
+   const auto max_format_size = std::max(minimize_max_size, format.size());
    // limit each arg size when minimize is set
-   const int minimize_sub_max_size = minimize ? ((int)minimize_max_size - (int)format.size()) / arg_num :  minimize_max_size;
+   const auto minimize_sub_max_size = minimize ? ( max_format_size - format.size() ) / arg_num :  minimize_max_size;
    // reserve space for each argument replaced by ...
-   result.reserve( minimize_max_size + 3 * args.size());
+   result.reserve( max_format_size + 3 * args.size());
    size_t prev = 0;
    size_t next = format.find( '$' );
    while( prev != string::npos && prev < format.size() ) {
@@ -770,42 +771,33 @@ string format_string( const string& frmt, const variant_object& args, bool minim
             string key = format.substr( prev + 1, (next - prev - 1) );
 
             auto val = args.find( key );
+            bool replaced = true;
             if( val != args.end() ) {
                if( val->value().is_object() || val->value().is_array() ) {
                   if( minimize && (result.size() >= minimize_max_size)) {
-                     result += "{...}";
+                     replaced = false;
                   } else {
-                     const auto jstr = json::to_string( val->value(), fc::time_point::maximum() );
-                     if ( minimize && ((result.size() + jstr.size()) >= minimize_max_size)) {
-                        const auto size = std::min( minimize_sub_max_size, static_cast<int>(minimize_max_size) - static_cast<int>(result.size()) );
-                        if (size > 0) {
-                           result += jstr.substr(0, size) + "...}";
-                        } else {
-                           result += "{...}";
-                        }
-                     } else {
-                        result += jstr;
+                     try {
+                        const auto arg_str_size = minimize ? minimize_sub_max_size : json::max_length_limit;
+                        result += json::to_string(val->value(), fc::time_point::maximum(), fc::json::stringify_large_ints_and_doubles, arg_str_size);
+                     } catch (...) {
+                        replaced = false;
                      }
                   }
                } else if( val->value().is_blob() ) {
                   if( minimize && (result.size() >= minimize_max_size)) {
-                     result += "...";
+                     replaced = false;
                   } else {
                      const auto vstr = val->value().as_string();
-                     if ( minimize && ((result.size() + vstr.size()) >= minimize_max_size)) {
-                        const auto size = std::min( minimize_sub_max_size, static_cast<int>(minimize_max_size) - static_cast<int>(result.size()) );
-                        if (size > 0) {
-                           result += vstr.substr(0, size) + "...";
-                        } else {
-                           result += "...";
-                        }
+                     if ( minimize && (vstr.size() > minimize_sub_max_size)) {
+                        replaced = false;
                      } else {
                         result += vstr;
                      }
                   }
                } else if( val->value().is_string() ) {
                   if( minimize && val->value().get_string().size() > minimize_sub_max_size ) {
-                     auto sz = std::min( minimize_sub_max_size, static_cast<int>(minimize_max_size) - static_cast<int>(result.size()) );
+                     auto sz = std::min( minimize_sub_max_size, minimize_max_size - result.size() );
                      result += val->value().get_string().substr( 0, sz );
                      result += "...";
                   } else {
@@ -814,6 +806,13 @@ string format_string( const string& frmt, const variant_object& args, bool minim
                } else {
                   result += val->value().as_string();
                }
+            } else {
+               replaced = false;
+            }
+            if( !replaced ) {
+               result += "${";
+               result += key;
+               result += "}";
             }
             prev = next + 1;
             // find the next $
