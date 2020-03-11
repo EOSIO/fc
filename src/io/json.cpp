@@ -21,9 +21,9 @@ namespace fc
     template<typename T, json::parse_type parser_type> variants arrayFromStream( T& in, uint32_t max_depth );
     template<typename T, json::parse_type parser_type> variant number_from_stream( T& in );
     template<typename T> variant token_from_stream( T& in );
-    template<typename T> void to_stream( T& os, const variants& a, const fc::time_point& deadline, json::output_formatting format, const uint64_t max_len = json::max_length_limit );
-    template<typename T> void to_stream( T& os, const variant_object& o, const fc::time_point& deadline, json::output_formatting format, const uint64_t max_len = json::max_length_limit );
-    template<typename T> void to_stream( T& os, const variant& v, const fc::time_point& deadline, json::output_formatting format, const uint64_t max_len = json::max_length_limit );
+    template<typename T> void to_stream( T& os, const variants& a, const json::yield_func& yield, json::output_formatting format );
+    template<typename T> void to_stream( T& os, const variant_object& o, const json::yield_func& yield, json::output_formatting format );
+    template<typename T> void to_stream( T& os, const variant& v, const json::yield_func& yield, json::output_formatting format );
     std::string pretty_print( const std::string& v, uint8_t indent );
 }
 
@@ -489,14 +489,13 @@ namespace fc
     *
     *  All other characters are printed as UTF8.
     */
-   void escape_string( const string& str, std::ostream& os, const fc::time_point& deadline, const uint64_t max_len )
+   void escape_string( const string& str, std::ostream& os, const json::yield_func& yield )
    {
       os << '"';
       size_t i = 0;
       for( auto itr = str.begin(); itr != str.end(); ++i,++itr )
       {
-         if( i % 1024 == 0 ) FC_CHECK_DEADLINE(deadline);
-         FC_ASSERT( os.tellp() <= max_len );
+         if( i % 128 == 0 ) yield(os);
          switch( *itr )
          {
             case '\b':        // \x08
@@ -561,22 +560,22 @@ namespace fc
       }
       os << '"';
    }
-   std::ostream& json::to_stream( std::ostream& out, const std::string& str, const fc::time_point& deadline, const uint64_t max_len )
+   std::ostream& json::to_stream( std::ostream& out, const std::string& str, const json::yield_func& yield )
    {
-        escape_string( str, out, deadline, max_len );
+        escape_string( str, out, yield );
         return out;
    }
 
    template<typename T>
-   void to_stream( T& os, const variants& a, const fc::time_point& deadline, json::output_formatting format, const uint64_t max_len )
+   void to_stream( T& os, const variants& a, const json::yield_func& yield, json::output_formatting format )
    {
-      json::yield(os, deadline, max_len);
+      yield(os);
       os << '[';
       auto itr = a.begin();
 
       while( itr != a.end() )
       {
-         to_stream( os, *itr, deadline, format, max_len );
+         to_stream( os, *itr, yield, format );
          ++itr;
          if( itr != a.end() )
             os << ',';
@@ -585,17 +584,17 @@ namespace fc
    }
 
    template<typename T>
-   void to_stream( T& os, const variant_object& o, const fc::time_point& deadline, json::output_formatting format, const uint64_t max_len )
+   void to_stream( T& os, const variant_object& o, const json::yield_func& yield, json::output_formatting format )
    {
-       json::yield(os, deadline, max_len);
+       yield(os);
        os << '{';
        auto itr = o.begin();
 
        while( itr != o.end() )
        {
-          escape_string( itr->key(), os, deadline, max_len );
+          escape_string( itr->key(), os, yield );
           os << ':';
-          to_stream( os, itr->value(), deadline, format, max_len );
+          to_stream( os, itr->value(), yield, format );
           ++itr;
           if( itr != o.end() )
              os << ',';
@@ -604,9 +603,9 @@ namespace fc
    }
 
    template<typename T>
-   void to_stream( T& os, const variant& v, const fc::time_point& deadline, json::output_formatting format, const uint64_t max_len )
+   void to_stream( T& os, const variant& v, const json::yield_func& yield, json::output_formatting format )
    {
-      json::yield(os, deadline, max_len);
+      yield(os);
       switch( v.get_type() )
       {
          case variant::null_type:
@@ -644,21 +643,21 @@ namespace fc
               os << v.as_string();
               return;
          case variant::string_type:
-              escape_string( v.get_string(), os, deadline, max_len );
+              escape_string( v.get_string(), os, yield );
               return;
          case variant::blob_type:
-              escape_string( v.as_string(), os, deadline, max_len );
+              escape_string( v.as_string(), os, yield );
               return;
          case variant::array_type:
            {
               const variants&  a = v.get_array();
-              to_stream( os, a, deadline, format, max_len );
+              to_stream( os, a, yield, format );
               return;
            }
          case variant::object_type:
            {
               const variant_object& o =  v.get_object();
-              to_stream(os, o, deadline, format, max_len );
+              to_stream(os, o, yield, format );
               return;
            }
          default:
@@ -666,16 +665,24 @@ namespace fc
       }
    }
 
-   std::string   json::to_string( const variant& v, const fc::time_point& deadline, output_formatting format, const uint64_t max_len )
+   std::string   json::to_string( const variant& v, const fc::time_point& deadline, const uint64_t max_len, output_formatting format )
+   {
+      const auto yield = [&](std::ostream& os) {
+         FC_CHECK_DEADLINE(deadline);
+         FC_ASSERT( os.tellp() <= max_len );
+      };
+      return to_string( v, yield, format );
+   }
+
+   std::string   json::to_string( const variant& v, const json::yield_func& yield, output_formatting format )
    {
       std::stringstream ss;
-      fc::to_stream( ss, v, deadline, format, max_len );
-      FC_CHECK_DEADLINE(deadline);
+      fc::to_stream( ss, v, yield, format );
+      yield(ss);
       return ss.str();
    }
 
-
-    std::string pretty_print( const std::string& v, uint8_t indent ) {
+   std::string pretty_print( const std::string& v, uint8_t indent ) {
       int level = 0;
       std::stringstream ss;
       bool first = false;
@@ -770,23 +777,34 @@ namespace fc
 
 
 
-   std::string json::to_pretty_string( const variant& v, const fc::time_point& deadline, output_formatting format )
-   {
-      auto s = to_string(v, deadline, format);
-      FC_CHECK_DEADLINE(deadline);
+   std::string json::to_pretty_string( const variant& v, const fc::time_point& deadline, const uint64_t max_len, output_formatting format ) {
+      const auto yield = [&](std::ostream& os) {
+         FC_CHECK_DEADLINE(deadline);
+         FC_ASSERT( os.tellp() <= max_len );
+      };
+      return to_pretty_string(v, yield, format);
+   }
+
+   std::string json::to_pretty_string( const variant& v, const json::yield_func& yield, output_formatting format ) {
+
+      auto s = to_string(v, yield, format);
       return pretty_print( std::move( s ), 2);
    }
 
    bool json::save_to_file( const variant& v, const fc::path& fi, bool pretty, output_formatting format )
    {
       if( pretty ) {
-         auto str = json::to_pretty_string( v, fc::time_point::maximum(), format );
+         auto str = json::to_pretty_string( v, fc::time_point::maximum(), max_length_limit, format );
          std::ofstream o(fi.generic_string().c_str());
          o.write( str.c_str(), str.size() );
          return o.good();
       } else {
          std::ofstream o(fi.generic_string().c_str());
-         fc::to_stream( o, v, fc::time_point::maximum(), format );
+         const auto yield = [&](std::ostream& os) {
+            FC_CHECK_DEADLINE(fc::time_point::maximum());
+            FC_ASSERT( os.tellp() <= max_length_limit );
+         };
+         fc::to_stream( o, v, yield, format );
          return o.good();
       }
    }
@@ -829,38 +847,28 @@ namespace fc
    }
    */
 
-   std::ostream& json::to_stream( std::ostream& out, const variant& v, const fc::time_point& deadline, output_formatting format, const uint64_t max_len )
+   std::ostream& json::to_stream( std::ostream& out, const variant& v, const json::yield_func& yield, output_formatting format )
    {
-      try {
-         yield(out, deadline, max_len);
-         fc::to_stream( out, v, deadline, format, max_len );
-      } catch (...)
-      {
-         out << "...";
-      }
+      fc::to_stream( out, v, yield, format );
       return out;
    }
-   std::ostream& json::to_stream( std::ostream& out, const variants& v, const fc::time_point& deadline, output_formatting format, const uint64_t max_len )
+   std::ostream& json::to_stream( std::ostream& out, const variants& v, const json::yield_func& yield, output_formatting format )
    {
-      try {
-         yield(out, deadline, max_len);
-         fc::to_stream( out, v, deadline, format, max_len );
-      } catch (...)
-      {
-         out << "...";
-      }
+      fc::to_stream( out, v, yield, format );
       return out;
    }
-   std::ostream& json::to_stream( std::ostream& out, const variant_object& v, const fc::time_point& deadline, output_formatting format, const uint64_t max_len )
+   std::ostream& json::to_stream( std::ostream& out, const variant_object& v, const json::yield_func& yield, output_formatting format )
    {
-      try {
-         yield(out, deadline, max_len);
-         fc::to_stream( out, v, deadline, format, max_len);
-      } catch (...)
-      {
-         out << "...";
-      }
+      fc::to_stream( out, v, yield, format );
       return out;
+   }
+
+   std::ostream& json::to_stream( std::ostream& out, const variant& v, const fc::time_point& deadline, const uint64_t max_len, output_formatting format ) {
+      const auto yield = [&](std::ostream& os) {
+         FC_CHECK_DEADLINE(deadline);
+         FC_ASSERT( os.tellp() <= max_len );
+      };
+      return to_stream(out, v, yield, format);
    }
 
    bool json::is_valid( const std::string& utf8_str, parse_type ptype, uint32_t max_depth )

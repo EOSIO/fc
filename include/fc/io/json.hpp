@@ -2,7 +2,6 @@
 #include <fc/variant.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/time.hpp>
-#include <fc/exception/exception.hpp>
 
 #define DEFAULT_MAX_RECURSION_DEPTH 200
 
@@ -30,16 +29,20 @@ namespace fc
             stringify_large_ints_and_doubles = 0,
             legacy_generator = 1
          };
+         using yield_func = std::function<void(std::ostream&)>;
          static constexpr uint64_t max_length_limit = std::numeric_limits<uint64_t>::max();
-         static ostream& to_stream( ostream& out, const fc::string&, const fc::time_point& deadline, const uint64_t max_len = max_length_limit );
-         static ostream& to_stream( ostream& out, const variant& v, const fc::time_point& deadline, output_formatting format = stringify_large_ints_and_doubles, const uint64_t max_len = max_length_limit );
-         static ostream& to_stream( ostream& out, const variants& v, const fc::time_point& deadline, output_formatting format = stringify_large_ints_and_doubles, const uint64_t max_len = max_length_limit );
-         static ostream& to_stream( ostream& out, const variant_object& v, const fc::time_point& deadline, output_formatting format = stringify_large_ints_and_doubles, const uint64_t max_len = max_length_limit );
+         static ostream& to_stream( ostream& out, const fc::string&, const yield_func& yield );
+         static ostream& to_stream( ostream& out, const variant& v, const yield_func& yield, output_formatting format = stringify_large_ints_and_doubles );
+         static ostream& to_stream( ostream& out, const variants& v, const yield_func& yield, output_formatting format = stringify_large_ints_and_doubles );
+         static ostream& to_stream( ostream& out, const variant_object& v, const yield_func& yield, output_formatting format = stringify_large_ints_and_doubles );
+         static ostream& to_stream( ostream& out, const variant& v, const fc::time_point& deadline, const uint64_t max_len = max_length_limit, output_formatting format = stringify_large_ints_and_doubles );
 
          static variant  from_string( const string& utf8_str, parse_type ptype = legacy_parser, uint32_t max_depth = DEFAULT_MAX_RECURSION_DEPTH );
          static variants variants_from_string( const string& utf8_str, parse_type ptype = legacy_parser, uint32_t max_depth = DEFAULT_MAX_RECURSION_DEPTH );
-         static string   to_string( const variant& v, const fc::time_point& deadline, output_formatting format = stringify_large_ints_and_doubles, const uint64_t max_len = max_length_limit );
-         static string   to_pretty_string( const variant& v, const fc::time_point& deadline, output_formatting format = stringify_large_ints_and_doubles );
+         static string   to_string( const variant& v, const fc::time_point& deadline, const uint64_t max_len = max_length_limit, output_formatting format = stringify_large_ints_and_doubles);
+         static string   to_string( const variant& v, const yield_func& yield, output_formatting format = stringify_large_ints_and_doubles);
+         static string   to_pretty_string( const variant& v, const fc::time_point& deadline, const uint64_t max_len = max_length_limit, output_formatting format = stringify_large_ints_and_doubles );
+         static string   to_pretty_string( const variant& v, const yield_func& yield, output_formatting format = stringify_large_ints_and_doubles );
 
          static bool     is_valid( const std::string& json_str, parse_type ptype = legacy_parser, uint32_t max_depth = DEFAULT_MAX_RECURSION_DEPTH );
 
@@ -65,9 +68,9 @@ namespace fc
          }
 
          template<typename T>
-         static string   to_pretty_string( const T& v, const fc::time_point& deadline = fc::time_point::maximum(), output_formatting format = stringify_large_ints_and_doubles )
+         static string   to_pretty_string( const T& v, const fc::time_point& deadline = fc::time_point::maximum(), const uint64_t max_len = max_length_limit, output_formatting format = stringify_large_ints_and_doubles )
          {
-            return to_pretty_string( variant(v), deadline, format );
+            return to_pretty_string( variant(v), deadline, max_len, format );
          }
 
          template<typename T>
@@ -75,10 +78,6 @@ namespace fc
          {
             return save_to_file( variant(v), fc::path(p), pretty, format );
          }
-         static void yield(ostream& out, const fc::time_point& deadline, const uint64_t max_len) {
-            FC_CHECK_DEADLINE(deadline);
-            FC_ASSERT( out.tellp() <= max_len );
-         };
    };
 
 } // fc

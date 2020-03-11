@@ -778,22 +778,17 @@ string format_string( const string& frmt, const variant_object& args, bool minim
                      replaced = false;
                   } else {
                      try {
-                        const auto arg_str_size = minimize ? minimize_sub_max_size : json::max_length_limit;
-                        result += json::to_string(val->value(), fc::time_point::maximum(), fc::json::stringify_large_ints_and_doubles, arg_str_size);
+                        const auto max_length = minimize ? minimize_sub_max_size : json::max_length_limit;
+                        result += json::to_string(val->value(), fc::time_point::maximum(), max_length);
                      } catch (...) {
                         replaced = false;
                      }
                   }
                } else if( val->value().is_blob() ) {
-                  if( minimize && (result.size() >= minimize_max_size)) {
+                  if( minimize && val->value().get_blob().data.size() > minimize_sub_max_size ) {
                      replaced = false;
                   } else {
-                     const auto vstr = val->value().as_string();
-                     if ( minimize && (vstr.size() > minimize_sub_max_size)) {
-                        replaced = false;
-                     } else {
-                        result += vstr;
-                     }
+                     result += val->value().as_string();
                   }
                } else if( val->value().is_string() ) {
                   if( minimize && val->value().get_string().size() > minimize_sub_max_size ) {
