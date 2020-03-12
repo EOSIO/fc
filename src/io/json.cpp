@@ -801,8 +801,7 @@ namespace fc
       } else {
          std::ofstream o(fi.generic_string().c_str());
          const auto yield = [&](std::ostream& os) {
-            FC_CHECK_DEADLINE(fc::time_point::maximum());
-            FC_ASSERT( os.tellp() <= max_length_limit );
+            // no limitation
          };
          fc::to_stream( o, v, yield, format );
          return o.good();
