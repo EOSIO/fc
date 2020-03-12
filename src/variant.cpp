@@ -777,8 +777,8 @@ string format_string( const string& frmt, const variant_object& args, bool minim
                   if( minimize && (result.size() >= minimize_max_size)) {
                      replaced = false;
                   } else {
+                     const auto max_length = minimize ? minimize_sub_max_size : std::numeric_limits<uint64_t>::max();
                      try {
-                        const auto max_length = minimize ? minimize_sub_max_size : json::max_length_limit;
                         result += json::to_string(val->value(), fc::time_point::maximum(), max_length);
                      } catch (...) {
                         replaced = false;

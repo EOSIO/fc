@@ -31,6 +31,7 @@ namespace fc
          };
          using yield_func = std::function<void(std::ostream&)>;
          static constexpr uint64_t max_length_limit = std::numeric_limits<uint64_t>::max();
+         static constexpr size_t escape_string_yeild_check_count = 128;
          static ostream& to_stream( ostream& out, const fc::string&, const yield_func& yield );
          static ostream& to_stream( ostream& out, const variant& v, const yield_func& yield, output_formatting format = stringify_large_ints_and_doubles );
          static ostream& to_stream( ostream& out, const variants& v, const yield_func& yield, output_formatting format = stringify_large_ints_and_doubles );
@@ -80,6 +81,7 @@ namespace fc
          }
    };
 
+   void escape_string( const string& str, std::ostream& os, const json::yield_func& yield );
 } // fc
 
 #undef DEFAULT_MAX_RECURSION_DEPTH

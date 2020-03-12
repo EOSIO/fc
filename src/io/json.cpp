@@ -495,7 +495,7 @@ namespace fc
       size_t i = 0;
       for( auto itr = str.begin(); itr != str.end(); ++i,++itr )
       {
-         if( i % 128 == 0 ) yield(os);
+         if( i % json::escape_string_yeild_check_count == 0 ) yield(os);
          switch( *itr )
          {
             case '\b':        // \x08
