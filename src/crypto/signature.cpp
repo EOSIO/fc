@@ -53,10 +53,10 @@ namespace fc { namespace crypto {
       });
    }
 
-   std::string signature::to_string(const fc::time_point& deadline) const
+   std::string signature::to_string(const fc::yield_function_t& yield) const
    {
-      auto data_str = _storage.visit(base58str_visitor<storage_type, config::signature_prefix>(deadline));
-      FC_CHECK_DEADLINE(deadline);
+      auto data_str = _storage.visit(base58str_visitor<storage_type, config::signature_prefix>(yield));
+      yield();
       return std::string(config::signature_base_prefix) + "_" + data_str;
    }
 
@@ -85,9 +85,9 @@ namespace fc { namespace crypto {
 
 namespace fc
 {
-   void to_variant(const fc::crypto::signature& var, fc::variant& vo, const fc::time_point& deadline)
+   void to_variant(const fc::crypto::signature& var, fc::variant& vo, const fc::yield_function_t& yield)
    {
-      vo = var.to_string(deadline);
+      vo = var.to_string(yield);
    }
 
    void from_variant(const fc::variant& var, fc::crypto::signature& vo)
