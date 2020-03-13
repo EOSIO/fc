@@ -12,7 +12,7 @@ namespace json_test_util {
    constexpr size_t exception_limit_size = 250;
 
    const json::yield_func yield_deadline_exception_at_start = [](std::ostream& os) {
-      throw fc::timeout_exception(fc::exception_code::timeout_exception_code, "timeout_exception", "execution timed out" );
+      FC_CHECK_DEADLINE(fc::time_point::now() - fc::milliseconds(1));
    };
 
    const json::yield_func yield_deadline_exception_in_mid = [](std::ostream& os) {
@@ -270,6 +270,22 @@ BOOST_AUTO_TEST_CASE(to_string_test)
          BOOST_CHECK_EQUAL(no_exception_str, "\"" + json_test_util::repeat_chars + "\"");
       }
    }
+   { // to_string template call
+      const uint16_t id = 1000;
+      const uint64_t len = 3;
+      const std::string id_ret_1 = json::to_string( id, fc::time_point::maximum());
+      BOOST_CHECK_EQUAL(std::to_string(id), id_ret_1);
+
+      // exceed length
+      std::string id_ret_2;
+      BOOST_REQUIRE_THROW(id_ret_2 = json::to_string( id, fc::time_point::maximum(), len), fc::assert_exception);
+      BOOST_CHECK_EQUAL(id_ret_2.empty(), true);
+
+      // time_out
+      std::string id_ret_3;
+      BOOST_REQUIRE_THROW(id_ret_3 = json::to_string( id, fc::time_point::now() - fc::milliseconds(1) ), fc::timeout_exception);
+      BOOST_CHECK_EQUAL(id_ret_3.empty(), true);
+   }
 }
 
 BOOST_AUTO_TEST_CASE(to_pretty_string_test)
@@ -329,6 +345,22 @@ BOOST_AUTO_TEST_CASE(to_pretty_string_test)
          BOOST_CHECK_NO_THROW(no_exception_str = json::to_pretty_string( v, json_test_util::yield_no_limitation));
          BOOST_CHECK_EQUAL(no_exception_str, "\"" + json_test_util::repeat_chars + "\"");
       }
+   }
+   { // to_pretty_string template call
+      const uint16_t id = 1000;
+      const uint64_t len = 3;
+      const std::string id_ret_1 = json::to_pretty_string( id, fc::time_point::maximum());
+      BOOST_CHECK_EQUAL(std::to_string(id), id_ret_1);
+
+      // exceed length
+      std::string id_ret_2;
+      BOOST_REQUIRE_THROW(id_ret_2 = json::to_pretty_string( id, fc::time_point::maximum(), len), fc::assert_exception);
+      BOOST_CHECK_EQUAL(id_ret_2.empty(), true);
+
+      // time_out
+      std::string id_ret_3;
+      BOOST_REQUIRE_THROW(id_ret_3 = json::to_pretty_string( id, fc::time_point::now() - fc::milliseconds(1) ), fc::timeout_exception);
+      BOOST_CHECK_EQUAL(id_ret_3.empty(), true);
    }
 }
 

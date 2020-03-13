@@ -665,15 +665,6 @@ namespace fc
       }
    }
 
-   std::string   json::to_string( const variant& v, const fc::time_point& deadline, const uint64_t max_len, output_formatting format )
-   {
-      const auto yield = [&](std::ostream& os) {
-         FC_CHECK_DEADLINE(deadline);
-         FC_ASSERT( os.tellp() <= max_len );
-      };
-      return to_string( v, yield, format );
-   }
-
    std::string   json::to_string( const variant& v, const json::yield_func& yield, output_formatting format )
    {
       std::stringstream ss;
@@ -774,16 +765,6 @@ namespace fc
       }
       return ss.str();
     }
-
-
-
-   std::string json::to_pretty_string( const variant& v, const fc::time_point& deadline, const uint64_t max_len, output_formatting format ) {
-      const auto yield = [&](std::ostream& os) {
-         FC_CHECK_DEADLINE(deadline);
-         FC_ASSERT( os.tellp() <= max_len );
-      };
-      return to_pretty_string(v, yield, format);
-   }
 
    std::string json::to_pretty_string( const variant& v, const json::yield_func& yield, output_formatting format ) {
 
