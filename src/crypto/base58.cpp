@@ -502,7 +502,7 @@ inline bool operator>(const CBigNum& a, const CBigNum& b)  { return (BN_cmp(a.to
 static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 // Encode a byte sequence as a base58-encoded string
-inline std::string EncodeBase58(const unsigned char* pbegin, const unsigned char* pend, const fc::time_point& deadline)
+inline std::string EncodeBase58(const unsigned char* pbegin, const unsigned char* pend, const fc::yield_function_t& yield)
 {
     CAutoBN_CTX pctx;
     CBigNum bn58 = 58;
@@ -511,9 +511,9 @@ inline std::string EncodeBase58(const unsigned char* pbegin, const unsigned char
     // Convert big endian data to little endian
     // Extra zero at the end make sure bignum will interpret as a positive number
     std::vector<unsigned char> vchTmp(pend-pbegin+1, 0);
-    FC_CHECK_DEADLINE(deadline);
+    yield();
     reverse_copy(pbegin, pend, vchTmp.begin());
-    FC_CHECK_DEADLINE(deadline);
+    yield();
 
     // Convert little endian data to bignum
     CBigNum bn;
@@ -528,7 +528,7 @@ inline std::string EncodeBase58(const unsigned char* pbegin, const unsigned char
     CBigNum rem;
     while (bn > bn0)
     {
-        FC_CHECK_DEADLINE(deadline);
+        yield();
         if (!BN_div(dv.to_bignum(), rem.to_bignum(), bn.to_bignum(), bn58.to_bignum(), pctx))
             throw bignum_error("EncodeBase58 : BN_div failed");
         bn = dv;
@@ -540,19 +540,19 @@ inline std::string EncodeBase58(const unsigned char* pbegin, const unsigned char
     for (const unsigned char* p = pbegin; p < pend && *p == 0; p++)
         str += pszBase58[0];
 
-    FC_CHECK_DEADLINE(deadline);
+    yield();
     // Convert little endian std::string to big endian
     reverse(str.begin(), str.end());
 //    slog( "Encode '%s'", str.c_str() );
-    FC_CHECK_DEADLINE(deadline);
+    yield();
 
     return str;
 }
 
 // Encode a byte vector as a base58-encoded string
-inline std::string EncodeBase58(const std::vector<unsigned char>& vch, const fc::time_point& deadline)
+inline std::string EncodeBase58(const std::vector<unsigned char>& vch, const fc::yield_function_t& yield)
 {
-    return EncodeBase58(&vch[0], &vch[0] + vch.size(), deadline);
+    return EncodeBase58(&vch[0], &vch[0] + vch.size(), yield);
 }
 
 // Decode a base58-encoded string psz into byte vector vchRet
@@ -615,14 +615,14 @@ inline bool DecodeBase58(const std::string& str, std::vector<unsigned char>& vch
 
 namespace fc {
 
-std::string to_base58( const char* d, size_t s, const fc::time_point& deadline ) {
-  return EncodeBase58( (const unsigned char*)d, (const unsigned char*)d+s, deadline );
+std::string to_base58( const char* d, size_t s, const fc::yield_function_t& yield ) {
+  return EncodeBase58( (const unsigned char*)d, (const unsigned char*)d+s, yield );
 }
 
-std::string to_base58( const std::vector<char>& d, const fc::time_point& deadline )
+std::string to_base58( const std::vector<char>& d, const fc::yield_function_t& yield )
 {
   if( d.size() )
-     return to_base58( d.data(), d.size(), deadline );
+     return to_base58( d.data(), d.size(), yield );
   return std::string();
 }
 std::vector<char> from_base58( const std::string& base58_str ) {
