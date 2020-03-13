@@ -187,22 +187,17 @@ namespace fc {
   public:
      using std::function<R(Args...)>::function;
 
-     /**
-      * overloaded call operator to ignore unset functions
-      */
-     template<typename U = R>
-     auto operator()( Args... args ) const -> std::enable_if_t<!std::is_void_v<U>, R> {
+     auto operator()( Args... args ) const -> R {
         if (static_cast<bool>(*this)) {
-           return std::function<R(Args...)>::operator()(std::move(args)...);
+           if constexpr( std::is_move_constructible_v<R> ) {
+              return std::function<R(Args...)>::operator()(std::move(args)...);
+           } else {
+              return std::function<R(Args...)>::operator()(args...);
+           }
         } else {
-           return {};
-        }
-     }
-
-     template<typename U = R>
-     auto operator()( Args... args ) const -> std::enable_if_t<std::is_void_v<U>> {
-        if (static_cast<bool>(*this)) {
-           std::function<R(Args...)>::operator()(std::move(args)...);
+           if constexpr( !std::is_void_v<R> ) {
+              return {};
+           }
         }
      }
   };
