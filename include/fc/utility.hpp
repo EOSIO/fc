@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <algorithm>
+#include <functional>
 #include <new>
 #include <vector>
 #include <type_traits>
@@ -174,6 +175,40 @@ namespace fc {
       entries.erase( itr, entries.end() );
     }
   }
+
+  /**
+   * std::function type that verifies std::function is set before invocation
+   */
+  template<typename Signature>
+  class optional_delegate;
+
+  template<typename R, typename ...Args>
+  class optional_delegate<R(Args...)> : private std::function<R(Args...)> {
+  public:
+     using std::function<R(Args...)>::function;
+
+     /**
+      * overloaded call operator to ignore unset functions
+      */
+     template<typename U = R>
+     auto operator()( Args... args ) const -> std::enable_if_t<!std::is_void_v<U>, R> {
+        if (static_cast<bool>(*this)) {
+           return std::function<R(Args...)>::operator()(std::move(args)...);
+        } else {
+           return {};
+        }
+     }
+
+     template<typename U = R>
+     auto operator()( Args... args ) const -> std::enable_if_t<std::is_void_v<U>> {
+        if (static_cast<bool>(*this)) {
+           std::function<R(Args...)>::operator()(std::move(args)...);
+        }
+     }
+  };
+
+  using yield_function_t = optional_delegate<void()>;
+
 }
 
   // outside of namespace fc becuase of VC++ conflict with std::swap
