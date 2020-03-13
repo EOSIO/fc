@@ -2,6 +2,7 @@
 #include <fc/variant.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/time.hpp>
+#include <fc/utility.hpp>
 #include <fc/exception/exception.hpp>
 
 #define DEFAULT_MAX_RECURSION_DEPTH 200
@@ -30,7 +31,7 @@ namespace fc
             stringify_large_ints_and_doubles = 0,
             legacy_generator = 1
          };
-         using yield_function_t = std::function<void(std::ostream&)>;
+         using yield_function_t = fc::optional_delegate<void(std::ostream&)>;
          static constexpr uint64_t max_length_limit = std::numeric_limits<uint64_t>::max();
          static constexpr size_t escape_string_yeild_check_count = 128;
          static ostream& to_stream( ostream& out, const fc::string&, const yield_function_t& yield );
