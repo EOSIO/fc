@@ -150,7 +150,7 @@ namespace fc
 
     string gelf_message_as_string = json::to_string(gelf_message,
           fc::time_point::now() + fc::exception::format_time_limit,
-          json::legacy_generator); // GELF 1.1 specifies unstringified numbers
+          json::output_formatting::legacy_generator); // GELF 1.1 specifies unstringified numbers
     //unsigned uncompressed_size = gelf_message_as_string.size();
     gelf_message_as_string = zlib_compress(gelf_message_as_string);
 
