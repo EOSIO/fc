@@ -134,7 +134,7 @@ namespace fc { namespace ecc {
       array<char, 37> data;
       memcpy(data.data, key.begin(), key.size());
       memcpy(data.begin() + key.size(), (const char*)&check, sizeof(check));
-      return fc::to_base58(data.begin(), data.size(), fc::time_point::maximum());
+      return fc::to_base58(data.begin(), data.size(), fc::yield_function_t());
     }
 
     public_key public_key::from_base58( const std::string& b58 )
