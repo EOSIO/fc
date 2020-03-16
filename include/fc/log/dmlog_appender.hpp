@@ -3,10 +3,15 @@
 
 namespace fc {
 
+   /**
+    * Specialized appender for deep mind tracer that sends log messages
+    * through `stdout` correctly formatted for latter consumption by
+    * deep mind postprocessing tools from dfuse.
+    */
    class dmlog_appender : public appender
    {
        public:
-            dmlog_appender( const variant& args );
+            explicit dmlog_appender( const variant& args );
             dmlog_appender();
 
             virtual ~dmlog_appender();
