@@ -356,7 +356,7 @@ namespace fc
         explicit variant( const T& val );
 
         template<typename T>
-        explicit variant( const T& val, const fc::time_point& deadline );
+        explicit variant( const T& val, const fc::yield_function_t& yield );
 
         void    clear();
       private:
@@ -594,10 +594,10 @@ namespace fc
    }
 
    template<typename T>
-   variant::variant( const T& val, const fc::time_point& deadline )
+   variant::variant( const T& val, const fc::yield_function_t& yield )
    {
       memset( this, 0, sizeof(*this) );
-      to_variant( val, *this, deadline );
+      to_variant( val, *this, yield );
    }
 
    #ifdef __APPLE__
