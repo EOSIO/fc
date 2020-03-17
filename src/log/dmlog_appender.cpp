@@ -6,6 +6,7 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif
+#include <boost/asio/io_context.hpp>
 #include <boost/thread/mutex.hpp>
 #include <fc/exception/exception.hpp>
 #include <iomanip>
@@ -15,6 +16,7 @@
 namespace fc {
    class dmlog_appender::impl {
       public:
+         boost::asio::io_service* io_service;
          boost::mutex log_mutex;
    };
 
@@ -25,6 +27,10 @@ namespace fc {
    :my(new impl){}
 
    dmlog_appender::~dmlog_appender() {}
+
+   void dmlog_appender::initialize( boost::asio::io_service& io_service ) {
+      my->io_service = &io_service;
+   }
 
    void dmlog_appender::log( const log_message& m ) {
       FILE* out = stdout;
@@ -41,12 +47,11 @@ namespace fc {
             break;
          }
 
-         int errval = ferror(out);
-         fprintf(stderr, "DMLOG FPRINTF_FAILED failed written=%lu remaining=%lu %d %d %s\n", written, remaining_size, ferror(out), errval, strerror(errno));
+         fprintf(stderr, "DMLOG FPRINTF_FAILED failed written=%lu remaining=%lu %d %s\n", written, remaining_size, ferror(out), strerror(errno));
 
          if (retries++ > 5) {
             fprintf(stderr, "DMLOG FPRINTF_FAILED enough is enough\n");
-            exit(1);
+            my->io_service->stop();
          }
 
          message_ptr = &message_ptr[written];

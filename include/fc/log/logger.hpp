@@ -133,10 +133,6 @@ namespace fc
       (fc::logger::get(DEFAULT_LOGGER)).log( FC_LOG_MESSAGE( error, FORMAT, __VA_ARGS__ ) ); \
   FC_MULTILINE_MACRO_END
 
-// Deep mind specialized logging statement, assumes received LOGGER is NOT nullptr!
-#define dmlog( LOGGER, FORMAT, ... ) \
-  (LOGGER)->log( FC_LOG_MESSAGE( info, FORMAT, __VA_ARGS__ ) )
-
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/enum.hpp>
 #include <boost/preprocessor/seq/size.hpp>

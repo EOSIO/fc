@@ -15,11 +15,9 @@ namespace fc {
             dmlog_appender();
 
             virtual ~dmlog_appender();
-            void initialize( boost::asio::io_service& io_service ) {
-                 setbuf(stdout, NULL);
-            }
+            virtual void initialize( boost::asio::io_service& io_service ) override;
 
-            virtual void log( const log_message& m );
+            virtual void log( const log_message& m ) override;
 
        private:
             class impl;

@@ -125,22 +125,11 @@ namespace fc {
                      ( "level_colors", c )
                  ) );
 
-      cfg.appenders.push_back(
-             appender_config( "deep-mind", "dmlog" )
-      );
-
       logger_config dlc;
       dlc.name = DEFAULT_LOGGER;
       dlc.level = log_level::info;
       dlc.appenders.push_back("stderr");
       cfg.loggers.push_back( dlc );
-
-      logger_config dmlc;
-      dmlc.name = "deep-mind";
-      dmlc.level = log_level::info;
-      dmlc.enabled = true;
-      dmlc.appenders.push_back("deep-mind");
-      cfg.loggers.push_back( dmlc );
 
       return cfg;
    }
