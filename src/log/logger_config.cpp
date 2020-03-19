@@ -130,7 +130,6 @@ namespace fc {
       dlc.level = log_level::info;
       dlc.appenders.push_back("stderr");
       cfg.loggers.push_back( dlc );
-
       return cfg;
    }
 
