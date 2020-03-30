@@ -168,21 +168,19 @@ namespace fc
             ss << "<- exception in to_detail_string.";
          }
          ss << " " << my->_name << ": " << my->_what << "\n";
-         for( auto itr = my->_elog.begin(); itr != my->_elog.end(); ) {
+         for( auto itr = my->_elog.begin(); itr != my->_elog.end(); ++itr ) {
             try {
                ss << itr->get_message() << "\n"; //fc::format_string( itr->get_format(), itr->get_data() ) <<"\n";
                ss << "    " << json::to_string( itr->get_data(), deadline ) << "\n";
-               ss << "    " << itr->get_context().to_string();
+               ss << "    " << itr->get_context().to_string() << "\n";
             } catch( std::bad_alloc& ) {
                throw;
             } catch( const fc::timeout_exception& e) {
-               ss << "<- timeout exception in to_detail_string: " << e.what();
+               ss << "<- timeout exception in to_detail_string: " << e.what() << "\n";
                break;
             } catch( ... ) {
-               ss << "<- exception in to_detail_string.";
+               ss << "<- exception in to_detail_string.\n";
             }
-            ++itr;
-            if( itr != my->_elog.end()) ss << "\n";
          }
       } catch( std::bad_alloc& ) {
          throw;
