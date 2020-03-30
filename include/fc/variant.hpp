@@ -37,9 +37,6 @@ namespace fc
    class variant;
    class variant_object;
    class mutable_variant_object;
-   class time_point;
-   class time_point_sec;
-   class microseconds;
    template<typename T> struct safe;
    template<typename... Types>
    class static_variant;
@@ -151,9 +148,6 @@ namespace fc
 
    void to_variant( const time_point& var,  variant& vo );
    void from_variant( const variant& var,  time_point& vo );
-
-   void to_variant( const time_point_sec& var,  variant& vo );
-   void from_variant( const variant& var,  time_point_sec& vo );
 
    void to_variant( const microseconds& input_microseconds,  variant& output_variant );
    void from_variant( const variant& input_variant,  microseconds& output_microseconds );

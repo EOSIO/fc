@@ -77,10 +77,10 @@ struct reflector{
      *
      *  @note - this method is not defined for non-reflected types.
      */
-    #ifdef DOXYGEN
+    //#ifdef DOXYGEN
     template<typename Visitor>
     static inline void visit( const Visitor& v );
-    #endif // DOXYGEN
+    //#endif // DOXYGEN
 };
 
 void throw_bad_enum_cast( int64_t i, const char* e );

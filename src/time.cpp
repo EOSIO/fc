@@ -7,7 +7,7 @@
 #include <fc/exception/exception.hpp>
 
 namespace fc {
-
+/*
   namespace bch = boost::chrono;
 
   time_point time_point::now()
@@ -72,8 +72,8 @@ namespace fc {
          return time_point( time_point_sec::from_iso_string( s ) ) + milliseconds( to_int64(ms) - 1000 );
       }
   } FC_RETHROW_EXCEPTIONS( warn, "unable to convert ISO-formatted string to fc::time_point" ) }
-
-  void to_variant( const fc::time_point& t, variant& v ) {
+*/
+/*  void to_variant( const fc::time_point& t, variant& v ) {
     v = fc::string( t );
   }
   void from_variant( const fc::variant& v, fc::time_point& t ) {
@@ -84,14 +84,13 @@ namespace fc {
   }
   void from_variant( const fc::variant& v, fc::time_point_sec& t ) {
     t = fc::time_point_sec::from_iso_string( v.as_string() );
-  }
-
+  }*/
   // inspired by show_date_relative() in git's date.c
-  string get_approximate_relative_time_string(const time_point_sec& event_time,
-                                              const time_point_sec& relative_to_time /* = fc::time_point::now() */,
-                                              const std::string& default_ago /* = " ago" */) {
+  //string get_approximate_relative_time_string(const time_point_sec& event_time,
+  //                                            const time_point_sec& relative_to_time /* = fc::time_point::now() */,
+  //                                            const std::string& default_ago /* = " ago" */) {
 
-
+/*
     string ago = default_ago;
     int32_t seconds_ago = relative_to_time.sec_since_epoch() - event_time.sec_since_epoch();
     if (seconds_ago < 0)
@@ -146,11 +145,11 @@ namespace fc {
     }
     result << ago;
     return result.str();
-  }
+  }*/
   string get_approximate_relative_time_string(const time_point& event_time,
                                               const time_point& relative_to_time /* = fc::time_point::now() */,
                                               const std::string& ago /* = " ago" */) {
-    return get_approximate_relative_time_string(time_point_sec(event_time), time_point_sec(relative_to_time), ago);
+    //return get_approximate_relative_time_string(time_point_sec(event_time), time_point_sec(relative_to_time), ago);
   }
 
   void to_variant( const microseconds& input_microseconds,  variant& output_variant )
