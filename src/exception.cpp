@@ -173,7 +173,6 @@ namespace fc
                ss << itr->get_message() << "\n"; //fc::format_string( itr->get_format(), itr->get_data() ) <<"\n";
                ss << "    " << json::to_string( itr->get_data(), deadline ) << "\n";
                ss << "    " << itr->get_context().to_string();
-               ++itr;
             } catch( std::bad_alloc& ) {
                throw;
             } catch( const fc::timeout_exception& e) {
@@ -182,6 +181,7 @@ namespace fc
             } catch( ... ) {
                ss << "<- exception in to_detail_string.";
             }
+            ++itr;
             if( itr != my->_elog.end()) ss << "\n";
          }
       } catch( std::bad_alloc& ) {
