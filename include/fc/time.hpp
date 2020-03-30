@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include <fc/string.hpp>
 #include <fc/optional.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
+#include <boost/chrono/duration.hpp>
+#include <boost/chrono/system_clocks.hpp>
 
 #ifdef _MSC_VER
   #pragma warning (push)
@@ -9,7 +13,7 @@
 #endif //// _MSC_VER
 
 namespace fc {
-  class microseconds {
+  /*class microseconds {
     public:
         constexpr explicit microseconds( int64_t c = 0) :_count(c){}
         static constexpr microseconds maximum() { return microseconds(0x7fffffffffffffffll); }
@@ -29,7 +33,9 @@ namespace fc {
     private:
         friend class time_point;
         int64_t      _count;
-  };
+  };*/
+  typedef boost::chrono::microseconds  microseconds;
+
   inline constexpr microseconds seconds( int64_t s ) { return microseconds( s * 1000000 ); }
   inline constexpr microseconds milliseconds( int64_t s ) { return microseconds( s * 1000 ); }
   inline constexpr microseconds minutes(int64_t m) { return seconds(60*m); }
@@ -37,14 +43,21 @@ namespace fc {
   inline constexpr microseconds days(int64_t d) { return hours(24*d); }
 
   class variant;
-  void to_variant( const fc::microseconds&,  fc::variant&  );
-  void from_variant( const fc::variant& , fc::microseconds& );
+  void to_variant( const microseconds&,  fc::variant&  );
+  void from_variant( const fc::variant&, microseconds& );
 
-  class time_point {
+  template<class OStream>
+  OStream & operator<<(OStream & os, const microseconds & usec ) {
+    return os << usec.count() << " usec";
+  }
+
+  typedef  boost::chrono::system_clock  clock;
+  typedef  clock::time_point            time_point;
+  /*class time_point {
     public:
         constexpr explicit time_point( microseconds e = microseconds() ) :elapsed(e){}
         static time_point now();
-        static constexpr time_point maximum() { return time_point( microseconds::maximum() ); }
+        static constexpr time_point maximum() { return time_point( microseconds::max() ); }
         static constexpr time_point min() { return time_point();                      }
 
         operator fc::string()const;
@@ -52,7 +65,7 @@ namespace fc {
 
         constexpr const microseconds& time_since_epoch()const { return elapsed; }
         constexpr uint32_t            sec_since_epoch()const  { return elapsed.count() / 1000000; }
-        constexpr bool   operator > ( const time_point& t )const                              { return elapsed._count > t.elapsed._count; }
+        constexpr bool   operator > ( const time_point& t )const                              { return elapsed.count > t.elapsed._count; }
         constexpr bool   operator >=( const time_point& t )const                              { return elapsed._count >=t.elapsed._count; }
         constexpr bool   operator < ( const time_point& t )const                              { return elapsed._count < t.elapsed._count; }
         constexpr bool   operator <=( const time_point& t )const                              { return elapsed._count <=t.elapsed._count; }
@@ -62,15 +75,15 @@ namespace fc {
         constexpr time_point&  operator -= ( const microseconds& m)                           { elapsed-=m; return *this;                 }
         constexpr time_point   operator + (const microseconds& m) const { return time_point(elapsed+m); }
         constexpr time_point   operator - (const microseconds& m) const { return time_point(elapsed-m); }
-       constexpr microseconds operator - (const time_point& m) const { return microseconds(elapsed.count() - m.elapsed.count()); }
+        constexpr microseconds operator - (const time_point& m)   const { return microseconds(elapsed.count() - m.elapsed.count()); }
     private:
         microseconds elapsed;
-  };
+  };*/
 
   /**
    *  A lower resolution time_point accurate only to seconds from 1970
    */
-  class time_point_sec
+  /*class time_point_sec
   {
     public:
         constexpr time_point_sec()
@@ -93,23 +106,23 @@ namespace fc {
           utc_seconds = t.time_since_epoch().count() / 1000000ll;
           return *this;
         }
-        constexpr friend bool      operator < ( const time_point_sec& a, const time_point_sec& b )  { return a.utc_seconds < b.utc_seconds; }
-        constexpr friend bool      operator > ( const time_point_sec& a, const time_point_sec& b )  { return a.utc_seconds > b.utc_seconds; }
+        constexpr friend bool      operator <  ( const time_point_sec& a, const time_point_sec& b )  { return a.utc_seconds <  b.utc_seconds; }
+        constexpr friend bool      operator >  ( const time_point_sec& a, const time_point_sec& b )  { return a.utc_seconds >  b.utc_seconds; }
         constexpr friend bool      operator <= ( const time_point_sec& a, const time_point_sec& b )  { return a.utc_seconds <= b.utc_seconds; }
         constexpr friend bool      operator >= ( const time_point_sec& a, const time_point_sec& b )  { return a.utc_seconds >= b.utc_seconds; }
-        constexpr friend bool      operator == ( const time_point_sec& a, const time_point_sec& b ) { return a.utc_seconds == b.utc_seconds; }
-        constexpr friend bool      operator != ( const time_point_sec& a, const time_point_sec& b ) { return a.utc_seconds != b.utc_seconds; }
+        constexpr friend bool      operator == ( const time_point_sec& a, const time_point_sec& b )  { return a.utc_seconds == b.utc_seconds; }
+        constexpr friend bool      operator != ( const time_point_sec& a, const time_point_sec& b )  { return a.utc_seconds != b.utc_seconds; }
         constexpr time_point_sec&  operator += ( uint32_t m ) { utc_seconds+=m; return *this; }
-        constexpr time_point_sec&  operator += ( microseconds m ) { utc_seconds+=m.to_seconds(); return *this; }
+        constexpr time_point_sec&  operator += ( microseconds m ) { utc_seconds+=boost::chrono::duration_cast<boost::chrono::seconds>(m); return *this; }
         constexpr time_point_sec&  operator -= ( uint32_t m ) { utc_seconds-=m; return *this; }
-        constexpr time_point_sec&  operator -= ( microseconds m ) { utc_seconds-=m.to_seconds(); return *this; }
+        constexpr time_point_sec&  operator -= ( microseconds m ) { utc_seconds-=boost::chrono::duration_cast<boost::chrono::seconds>(m); return *this; }
         constexpr time_point_sec   operator +( uint32_t offset )const { return time_point_sec(utc_seconds + offset); }
         constexpr time_point_sec   operator -( uint32_t offset )const { return time_point_sec(utc_seconds - offset); }
 
         friend constexpr time_point   operator + ( const time_point_sec& t, const microseconds& m )   { return time_point(t) + m;             }
         friend constexpr time_point   operator - ( const time_point_sec& t, const microseconds& m )   { return time_point(t) - m;             }
         friend constexpr microseconds operator - ( const time_point_sec& t, const time_point_sec& m ) { return time_point(t) - time_point(m); }
-        friend constexpr microseconds operator - ( const time_point& t, const time_point_sec& m ) { return time_point(t) - time_point(m); }
+        friend constexpr microseconds operator - ( const time_point&     t, const time_point_sec& m ) { return time_point(t) - time_point(m); }
 
         fc::string to_non_delimited_iso_string()const;
         fc::string to_iso_string()const;
@@ -118,26 +131,38 @@ namespace fc {
         static time_point_sec from_iso_string( const fc::string& s );
 
     private:
-        uint32_t utc_seconds;
-  };
+        boost::chrono::seconds  utc_seconds;
+  };*/
 
+  template<class OStream>
+  OStream & operator<<(OStream & os, const time_point & tp ) {
+    std::time_t epoch_time = boost::chrono::system_clock::to_time_t(tp);
+    const auto ptime = boost::posix_time::from_time_t( epoch_time );
+    return os << boost::posix_time::to_iso_string( ptime );
+  }
+
+/*  template<class OStream>
+  OStream & operator<<(OStream & os, const time_point_sec & tp ) {
+    return os << fc::string(tp);
+  }
+*/
   typedef fc::optional<time_point> otime_point;
 
   /** return a human-readable approximate time, relative to now()
    * e.g., "4 hours ago", "2 months ago", etc.
    */
-  string get_approximate_relative_time_string(const time_point_sec& event_time,
-                                              const time_point_sec& relative_to_time = fc::time_point::now(),
-                                              const std::string& ago = " ago");
+  //string get_approximate_relative_time_string(const time_point_sec& event_time,
+  //                                            const time_point_sec& relative_to_time = fc::time_point::now(),
+  //                                            const std::string& ago = " ago");
   string get_approximate_relative_time_string(const time_point& event_time,
-                                              const time_point& relative_to_time = fc::time_point::now(),
+                                              const time_point& relative_to_time = clock::now(),
                                               const std::string& ago = " ago");
 }
 
 #include <fc/reflect/reflect.hpp>
-FC_REFLECT_TYPENAME( fc::time_point )
 FC_REFLECT_TYPENAME( fc::microseconds )
-FC_REFLECT_TYPENAME( fc::time_point_sec )
+FC_REFLECT_TYPENAME( fc::time_point )
+// FC_REFLECT_TYPENAME( fc::time_point_sec )
 
 #ifdef _MSC_VER
   #pragma warning (pop)
