@@ -178,14 +178,13 @@ namespace fc {
   void to_variant( const fc::time_point_sec& t, variant& v ) {
     v = to_iso_string( t );
   }
-  void from_variant( const fc::variant& v, fc::time_point_sec& tp ) {
+void from_variant( const fc::variant& v, fc::time_point_sec& tp ) {
     fc::from_iso_string( v.as_string(), tp );
   }
   // inspired by show_date_relative() in git's date.c
   string get_approximate_relative_time_string(const time_point_sec& event_time,
                                               const time_point_sec& relative_to_time /* = fc::clock::now() */,
                                               const std::string& default_ago /* = " ago" */) {
-
     string ago = default_ago;
     int32_t seconds_ago = fc::duration_cast<fc::seconds>( relative_to_time.time_since_epoch() - event_time.time_since_epoch() ).count();
     if (seconds_ago < 0)
