@@ -181,4 +181,54 @@ BOOST_AUTO_TEST_SUITE(static_variant_test_suite)
       BOOST_REQUIRE((   static_variant<full_comparable, gte_only>(gte_only{1})        >= static_variant<full_comparable, gte_only>(full_comparable{1})  ));
    }
 
+   enum class selected_op {
+      STRING_LVALUE_REF,
+      STRING_RVALUE_REF,
+      STRING_CONST_REF,
+      VECTOR_LVALUE_REF,
+      VECTOR_RVALUE_REF,
+      VECTOR_CONST_REF
+   };
+
+   struct test_visitor_type {
+      selected_op operator()(string&) const { return selected_op::STRING_LVALUE_REF; }
+      selected_op operator()(string&&) const { return selected_op::STRING_RVALUE_REF; }
+      selected_op operator()(const string&) const { return selected_op::STRING_CONST_REF; }
+      
+      selected_op operator()(std::vector<char>&) const { return selected_op::VECTOR_LVALUE_REF; }
+      selected_op operator()(std::vector<char>&&) const { return selected_op::VECTOR_RVALUE_REF; }
+      selected_op operator()(const std::vector<char>&) const { return selected_op::VECTOR_CONST_REF; }
+   };
+
+   BOOST_AUTO_TEST_CASE(test_visitor) 
+   {
+      test_visitor_type visitor;
+      using var_type = static_variant<string, std::vector<char>>;
+      var_type string_lvalue = string("abcd");
+      const var_type string_const_value = string("abcd");
+
+      BOOST_CHECK(string_lvalue.visit(visitor) == selected_op::STRING_LVALUE_REF);
+      BOOST_CHECK(var_type(string("abcd")).visit(visitor) == selected_op::STRING_RVALUE_REF);
+      BOOST_CHECK(string_const_value.visit(visitor) == selected_op::STRING_CONST_REF);
+
+      var_type vector_lvalue = std::vector<char>{};
+      const var_type vector_const_value = std::vector<char>{};
+
+      BOOST_CHECK(vector_lvalue.visit(visitor) == selected_op::VECTOR_LVALUE_REF);
+      BOOST_CHECK(var_type(std::vector<char>{}).visit(visitor) == selected_op::VECTOR_LVALUE_REF);
+      BOOST_CHECK(vector_const_value.visit(visitor) == selected_op::VECTOR_CONST_REF);
+   }
+
+   BOOST_AUTO_TEST_CASE(test_get) {
+      test_visitor_type visitor;
+
+      using var_type = static_variant<string, std::vector<char>>;
+      var_type lvalue(string("abc"));
+      const var_type const_value(string("abc"));
+
+      BOOST_CHECK(visitor(lvalue.get<string>()) == selected_op::STRING_LVALUE_REF);
+      BOOST_CHECK(visitor(const_value.get<string>()) == selected_op::STRING_CONST_REF);
+      BOOST_CHECK(visitor(var_type(string("abc")).get<string>()) == selected_op::STRING_RVALUE_REF);
+   }
+
 BOOST_AUTO_TEST_SUITE_END()
