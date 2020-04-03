@@ -38,6 +38,9 @@ struct const_result_type_info;
 template< typename Visitor, typename ...Ts>
 struct result_type_info;
 
+template< typename Visitor, typename ...Ts>
+struct rvalue_ref_result_type_info;
+
 template<typename StaticVariant>
 struct copy_construct
 {
@@ -73,6 +76,9 @@ struct storage_ops<R, N, T&, Ts...> {
     template<typename visitor>
     static R apply(int n, const void *data, visitor&& v) {}
 
+    template<typename visitor>
+    static R apply_rvalue_ref(int n, void *data, visitor&& v) {}
+
     template<template<typename> class Op>
     static R apply_binary_operator(int n, const void *lhs, const void *rhs) {}
 };
@@ -97,6 +103,12 @@ struct storage_ops<R, N, T, Ts...> {
     template<typename visitor>
     static R apply(int n, const void *data, visitor&& v) {
         if(n == N) return v(*reinterpret_cast<const T*>(data));
+        else return storage_ops<R, N + 1, Ts...>::apply(n, data, std::forward<visitor>(v));
+    }
+
+    template<typename visitor>
+    static R apply_rvalue_ref(int n, void *data, visitor&& v) {
+        if(n == N) return v(std::move(*reinterpret_cast<T*>(data)));
         else return storage_ops<R, N + 1, Ts...>::apply(n, data, std::forward<visitor>(v));
     }
 
@@ -125,6 +137,11 @@ struct storage_ops<R, N> {
        FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
     }
 
+    template<typename visitor>
+    static R apply_rvalue_ref(int n, void *data, visitor&& v) {
+       FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
+    }
+
     template<template<typename> class Op>
     static R apply_binary_operator(int n, const void *lhs, const void *rhs) {
        FC_THROW_EXCEPTION( fc::assert_exception, "Internal error: static_variant tag is invalid." );
@@ -137,6 +154,8 @@ using storage_ops_auto = storage_ops<typename result_type_info<visitor, Ts...>::
 template<typename visitor, int N, typename... Ts>
 using storage_ops_const_auto = storage_ops<typename const_result_type_info<visitor, Ts...>::result_type, N, Ts...>;
 
+template<typename visitor, int N, typename... Ts>
+using storage_ops_revalue_ref_auto = storage_ops<typename rvalue_ref_result_type_info<visitor, Ts...>::result_type, N, Ts...>;
 
 template<typename X>
 struct position<X> {
@@ -246,6 +265,22 @@ struct result_type_info<Visitor, T, Ts...> {
       "Varying result types are not supported from visitors"
    );
 };
+
+template<typename Visitor, typename T>
+struct rvalue_ref_result_type_info<Visitor, T> {
+   using result_type = decltype(std::declval<std::decay_t<Visitor>>()(std::declval<T&&>()));
+};
+
+template<typename Visitor, typename T, typename ... Ts>
+struct rvalue_ref_result_type_info<Visitor, T, Ts...> {
+   using result_type = typename rvalue_ref_result_type_info<Visitor,T>::result_type;
+
+   static_assert(
+      std::is_same_v<result_type, typename rvalue_ref_result_type_info<Visitor,Ts...>::result_type >,
+      "Varying result types are not supported from visitors"
+   );
+};
+
 
 } // namespace impl
 
@@ -421,7 +456,7 @@ public:
     }
 
     template<typename X>
-    X& get() {
+    X& get() & {
         static_assert(
             impl::position<X, Types...>::pos != -1,
             "Type not in static_variant."
@@ -436,7 +471,7 @@ public:
         }
     }
     template<typename X>
-    const X& get() const {
+    const X& get() const & {
         static_assert(
             impl::position<X, Types...>::pos != -1,
             "Type not in static_variant."
@@ -448,26 +483,49 @@ public:
             FC_THROW_EXCEPTION( fc::assert_exception, "static_variant does not contain a value of type ${t}", ("t",fc::get_typename<X>::name()) );
         }
     }
+    template<typename X>
+    X&& get() && {
+        static_assert(
+            impl::position<X, Types...>::pos != -1,
+            "Type not in static_variant."
+        );
+        if(_tag == impl::position<X, Types...>::pos) {
+            void* tmp(storage);
+            return std::move(*reinterpret_cast<X*>(tmp));
+        } else {
+            FC_THROW_EXCEPTION( fc::assert_exception, "static_variant does not contain a value of type ${t}", ("t",fc::get_typename<X>::name()) );
+        }
+    }
     template<typename visitor>
-    auto visit(visitor&& v) {
+    auto visit(visitor&& v) & {
         return impl::storage_ops_auto<visitor, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
     }
 
 
     template<typename visitor>
-    auto visit(visitor&& v)const {
+    auto visit(visitor&& v) const & {
         return impl::storage_ops_const_auto<visitor, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
     }
 
+    template<typename visitor>
+    auto visit(visitor&& v) && {
+        return impl::storage_ops_revalue_ref_auto<visitor, 0, Types...>::apply_rvalue_ref(_tag, storage, std::forward<visitor>(v));
+    }
+
     template<typename R, typename visitor>
-    auto visit(visitor&& v) {
+    auto visit(visitor&& v) & {
         return impl::storage_ops<R, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
     }
 
 
     template<typename R, typename visitor>
-    auto visit(visitor&& v)const {
+    auto visit(visitor&& v) const & {
         return impl::storage_ops<R, 0, Types...>::apply(_tag, storage, std::forward<visitor>(v));
+    }
+
+    template<typename R, typename visitor>
+    auto visit(visitor&& v) && {
+        return impl::storage_ops<R, 0, Types...>::apply_rvalue_ref(_tag, storage, std::forward<visitor>(v));
     }
 
     static uint32_t count() { return type_info::count; }
