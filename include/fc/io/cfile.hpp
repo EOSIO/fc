@@ -145,8 +145,8 @@ public:
 
    bool get( char& c ) { return read(&c, 1); }
 
-   long tellp() const {
-      return cf.tellp();
+   size_t tellp() const {
+      return static_cast<size_t>(cf.tellp());
    }
 
 private:
