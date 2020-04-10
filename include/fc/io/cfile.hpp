@@ -145,6 +145,10 @@ public:
 
    bool get( char& c ) { return read(&c, 1); }
 
+   long tellp() const {
+      return cf.tellp();
+   }
+
 private:
    cfile& cf;
 };
