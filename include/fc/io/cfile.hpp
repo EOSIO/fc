@@ -54,8 +54,12 @@ public:
       _open = true;
    }
 
-   long tellp() const {
-      return ftell( _file.get() );
+   size_t tellp() const {
+      long result = ftell( _file.get() );
+      if (result == -1)
+         throw std::ios_base::failure("cfile: " + get_file_path().generic_string() +
+                                      " unable to get the current position of the file, error: " + std::to_string( errno ));
+      return static_cast<size_t>(result);
    }
 
    void seek( long loc ) {
@@ -145,7 +149,9 @@ public:
 
    bool get( char& c ) { return read(&c, 1); }
 
-private:
+   size_t tellp() const { return cf.tellp(); }
+
+ private:
    cfile& cf;
 };
 
