@@ -146,7 +146,11 @@ public:
    bool get( char& c ) { return read(&c, 1); }
 
    size_t tellp() const {
-      return static_cast<size_t>(cf.tellp());
+      long result = cf.tellp();
+      if (result == -1)
+         throw std::ios_base::failure("cfile: " + cf.get_file_path().generic_string() +
+                                      " unable to get the current position of the file, error: " + std::to_string( errno ));
+      return static_cast<size_t>(result);
    }
 
 private:
