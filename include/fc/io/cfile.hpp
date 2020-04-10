@@ -149,7 +149,7 @@ public:
 
    bool get( char& c ) { return read(&c, 1); }
 
-   size_t tellp() const { return fp.tellp(); }
+   size_t tellp() const { return cf.tellp(); }
 
  private:
    cfile& cf;
