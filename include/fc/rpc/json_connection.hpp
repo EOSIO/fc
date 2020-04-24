@@ -149,7 +149,7 @@ namespace fc { namespace rpc  {
          template<typename Result>
          Result call( const fc::string& method,
                                const variants& args,
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
              return async_call( method, args ).wait(timeout).as<Result>();
          }
@@ -159,7 +159,7 @@ namespace fc { namespace rpc  {
                                const variant& a1, 
                                const variant& a2, 
                                const variant& a3,
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1, a2, a3 ).wait(timeout).as<Result>();
          }
@@ -170,7 +170,7 @@ namespace fc { namespace rpc  {
                                const variant& a2, 
                                const variant& a3,
                                const variant& a4,
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1, a2, a3, a4).wait(timeout).as<Result>();
          }
@@ -182,7 +182,7 @@ namespace fc { namespace rpc  {
                                const variant& a3,
                                const variant& a4,
                                const variant& a5,
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1, a2, a3, a4, a5).wait(timeout).as<Result>();
          }
@@ -195,7 +195,7 @@ namespace fc { namespace rpc  {
                                const variant& a4,
                                const variant& a5,
                                const variant& a6,
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1, a2, a3, a4, a5, a6).wait(timeout).as<Result>();
          }
@@ -208,7 +208,7 @@ namespace fc { namespace rpc  {
                                const variant& a5,
                                const variant& a6,
                                const variant& a7,
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1, a2, a3, a4, a5, a6, a7).wait(timeout).as<Result>();
          }
@@ -223,7 +223,7 @@ namespace fc { namespace rpc  {
                                const variant& a6,
                                const variant& a7,
                                const variant& a8,
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1, a2, a3, a4, a5, a6, a7, a8).wait(timeout).as<Result>();
          }
@@ -239,7 +239,7 @@ namespace fc { namespace rpc  {
                                const variant& a7,
                                const variant& a8,
                                const variant& a9,
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1, a2, a3, a4, a5, a6, a7, a8, a9).wait(timeout).as<Result>();
          }
@@ -256,7 +256,7 @@ namespace fc { namespace rpc  {
                                const variant& a8,
                                const variant& a9,
                                const variant& a10,
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10).wait(timeout).as<Result>();
          }
@@ -265,7 +265,7 @@ namespace fc { namespace rpc  {
          Result call( const fc::string& method, 
                                const variant& a1, 
                                const variant& a2, 
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1, a2 ).wait(timeout).as<Result>();
          }
@@ -273,7 +273,7 @@ namespace fc { namespace rpc  {
          template<typename Result>
          Result call( const fc::string& method, 
                                const variant& a1, 
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, a1 ).wait(timeout).as<Result>();
          }
@@ -281,21 +281,21 @@ namespace fc { namespace rpc  {
          template<typename Result>
          Result call( const fc::string& method, 
                                variant_object a1, 
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, fc::move(a1) ).wait(timeout).as<Result>();
          }
          template<typename Result>
          Result call( const fc::string& method, 
                                mutable_variant_object a1, 
-                               microseconds timeout = microseconds::maximum())
+                               microseconds timeout = microseconds::max())
          {
             return async_call( method, variant_object( fc::move(a1) ) ).wait(timeout).as<Result>();
          }
 
 
          template<typename Result>
-         Result call( const fc::string& method, microseconds timeout = microseconds::maximum() )
+         Result call( const fc::string& method, microseconds timeout = microseconds::max() )
          {
             return async_call( method ).wait(timeout).as<Result>();
          }

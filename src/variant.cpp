@@ -981,4 +981,5 @@ string format_string( const string& frmt, const variant_object& args, bool minim
       }
       FC_ASSERT( false, "invalid operation ${a} / ${b}", ("a",a)("b",b) );
    }
+
 } // namespace fc

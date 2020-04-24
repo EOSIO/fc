@@ -37,7 +37,7 @@ namespace fc
           /**
            *  @return blocks until the process exits
            */
-          virtual int result(const microseconds& timeout = microseconds::maximum()) = 0;
+          virtual int result(const microseconds& timeout = microseconds::max()) = 0;
 
 
           /**

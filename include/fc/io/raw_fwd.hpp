@@ -4,6 +4,7 @@
 #include <fc/io/varint.hpp>
 #include <fc/array.hpp>
 #include <fc/safe.hpp>
+#include <fc/time.hpp>
 #include <deque>
 #include <vector>
 #include <string>
@@ -12,8 +13,6 @@
 #include <set>
 
 namespace fc {
-   class time_point;
-   class time_point_sec;
    class variant;
    class variant_object;
    class path;
@@ -91,8 +90,8 @@ namespace fc {
 
     template<typename Stream> void unpack( Stream& s, time_point& );
     template<typename Stream> void pack( Stream& s, const time_point& );
-    template<typename Stream> void unpack( Stream& s, time_point_sec& );
-    template<typename Stream> void pack( Stream& s, const time_point_sec& );
+    //template<typename Stream> void unpack( Stream& s, time_point_sec& );
+    //template<typename Stream> void pack( Stream& s, const time_point_sec& );
     template<typename Stream> void unpack( Stream& s, std::string& );
     template<typename Stream> void pack( Stream& s, const std::string& );
     template<typename Stream> void unpack( Stream& s, fc::ecc::public_key& );
