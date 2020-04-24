@@ -74,6 +74,7 @@ set( fc_sources
      src/log/appender.cpp
      src/log/console_appender.cpp
      src/log/gelf_appender.cpp
+     src/log/dmlog_appender.cpp
      src/log/logger_config.cpp
      src/crypto/_digest_common.cpp
      src/crypto/openssl.cpp
@@ -141,7 +142,7 @@ find_package(Boost 1.66 REQUIRED COMPONENTS
     chrono
     unit_test_framework
     iostreams)
-  
+
 IF(APPLE)
   # As of 10.10 yosemite, the OpenSSL static libraries shipped with os x have a dependency
   # on zlib, so any time you link in openssl you also need to link zlib.  .  We really want to detect whether openssl was configured with the --no-zlib
