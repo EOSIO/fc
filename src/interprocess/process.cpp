@@ -182,7 +182,7 @@ fc::buffered_istream_ptr process::err_stream() {
   return my->_err;
 }
 
-int process::result(const microseconds& timeout /* = microseconds::maximum() */) 
+int process::result(const microseconds& timeout /* = microseconds::max() */) 
 {
     return my->_exited.wait(timeout);
 }

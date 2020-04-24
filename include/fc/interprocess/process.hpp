@@ -21,7 +21,7 @@ namespace fc {
                               int              opts     = open_all    );
 
       
-      virtual int                        result(const microseconds& timeout = microseconds::maximum());
+      virtual int                        result(const microseconds& timeout = microseconds::max());
       virtual void                       kill();
       virtual fc::buffered_ostream_ptr   in_stream();
       virtual fc::buffered_istream_ptr   out_stream();

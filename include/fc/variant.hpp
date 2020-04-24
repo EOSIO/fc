@@ -16,6 +16,7 @@
 #include <fc/container/deque_fwd.hpp>
 #include <fc/container/flat_fwd.hpp>
 #include <boost/multi_index_container_fwd.hpp>
+#include <boost/chrono/duration.hpp>
 
 #include <boost/multiprecision/cpp_int.hpp>
 
@@ -145,12 +146,14 @@ namespace fc
    void to_variant( const std::array<T,S>& var,  variant& vo );
    template<typename T, std::size_t S>
    void from_variant( const variant& var,  std::array<T,S>& vo );
-
-   void to_variant( const time_point& var,  variant& vo );
-   void from_variant( const variant& var,  time_point& vo );
-
+/*
    void to_variant( const microseconds& input_microseconds,  variant& output_variant );
    void from_variant( const variant& input_variant,  microseconds& output_microseconds );
+*/
+  template<typename Rep, typename Period>
+  void to_variant( const boost::chrono::duration<Rep, Period>& d, fc::variant& output_variant);
+  template<typename Rep, typename Period>
+  void from_variant( const variant& input_variant, boost::chrono::duration<Rep, Period>& output_microseconds );
 
    #ifdef __APPLE__
    void to_variant( size_t s, variant& v );
@@ -687,6 +690,16 @@ namespace fc
    template<typename T> void from_variant( const variant& v, boost::multiprecision::number<T>& n ) {
       n = boost::multiprecision::number<T>(v.get_string());
    }
+
+  template<typename Rep, typename Period>
+  void to_variant( const std::chrono::duration<Rep, Period>& d, fc::variant& output_variant) {
+    output_variant = std::chrono::duration_cast<microseconds>(d).count();
+  }
+  template<typename Rep, typename Period>
+  void from_variant( const variant& input_variant, std::chrono::duration<Rep, Period>& output_microseconds )
+  {
+    output_microseconds = microseconds(input_variant.as_uint64());
+  }
 
    variant operator + ( const variant& a, const variant& b );
    variant operator - ( const variant& a, const variant& b );

@@ -94,7 +94,7 @@ namespace fc {
        fc::raw::unpack( s, p );
        tp = p;
     }
-
+/*
     template<typename Stream>
     inline void pack( Stream& s, const fc::time_point_sec& tp )
     {
@@ -109,7 +109,7 @@ namespace fc {
        s.read( (char*)&sec, sizeof(sec) );
        tp = fc::time_point() + fc::seconds(sec);
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
-
+*/
     template<typename Stream>
     inline void pack( Stream& s, const fc::time_point& tp )
     {

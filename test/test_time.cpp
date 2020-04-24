@@ -12,11 +12,7 @@ using namespace fc;
 using namespace std::literals;
 using std::numeric_limits;
 
-using fc::days;
-using fc::hours;
 using fc::microseconds;
-using fc::milliseconds;
-using fc::minutes;
 using fc::seconds;
 using fc::time_point;
 using fc::time_point_sec;
@@ -24,8 +20,17 @@ using fc::time_point_sec;
 static constexpr int64_t i64min = numeric_limits<int64_t>::min(); // -9223372036854775808
 static constexpr int64_t i64max = numeric_limits<int64_t>::max(); //  9223372036854775807
 
-static constexpr uint32_t u32min = numeric_limits<uint32_t>::min(); // 0
-static constexpr uint32_t u32max = numeric_limits<uint32_t>::max(); // 4294967295
+const static std::set<std::string> microseconds_suffix = { "us", "usec", "microsec", "microsecond", "microseconds" };
+const static std::set<std::string> milliseconds_suffix = { "ms", "msec", "millisec", "millisecond", "milliseconds" };
+const static std::set<std::string> seconds_suffix      = { "s", "sec", "second", "seconds" };
+const static std::set<std::string> minutes_suffix      = { "m", "min", "minute", "minutes" };
+const static std::set<std::string> hours_suffix        = { "h", "hour", "hours" };
+const static std::set<std::string> days_suffix         = { "d", "day", "days" };
+const static std::set<std::string> weeks_suffix        = { "w", "week", "weeks" };
+
+#ifdef TIME_IS_STD_CHRONO
+   #define sec_since_epoch time_since_epoch
+#endif
 
 BOOST_AUTO_TEST_SUITE(fc_time)
 
@@ -38,7 +43,11 @@ BOOST_AUTO_TEST_CASE(microseconds_type_test) try {
 
    // -----------------------------
    // static microseconds maximum()
-   BOOST_CHECK_EQUAL( microseconds::maximum().count(), microseconds{0x7FFFFFFFFFFFFFFFLL}.count() );
+   #ifdef TIME_IS_STD_CHRONO
+      BOOST_CHECK_EQUAL( microseconds::max().count(), microseconds{0x7FFFFFFFFFFFFFFFLL}.count() );
+   #else
+      BOOST_CHECK_EQUAL( microseconds::maximum(), microseconds{0x7FFFFFFFFFFFFFFFLL}.count() );
+   #endif
 
    // ------------------------------------------------------------------------
    // friend microseconds operator+(const  microseconds&, const microseconds&)
@@ -92,37 +101,40 @@ BOOST_AUTO_TEST_CASE(microseconds_type_test) try {
 
    // --------------------
    // int64_t to_seconds()
-   BOOST_CHECK_EQUAL( (microseconds{i64max}.to_seconds()), i64max / 1000000 );
+   #ifdef TIME_IS_STD_CHRONO
+      BOOST_CHECK_EQUAL( fc::duration_cast<fc::seconds>(microseconds{i64max}).count(), i64max / 1000000 );
+   #else
+      BOOST_CHECK_EQUAL( (microseconds{i64max}.to_seconds()), i64max / 1000000 );
+      // -----------------------------------------
+      // inline microseconds milliseconds(int64_t)
+      BOOST_CHECK_EQUAL( milliseconds(0LL),  microseconds{0LL} );
+      BOOST_CHECK_EQUAL( milliseconds(1LL),  microseconds{1000LL} );
+      BOOST_CHECK_EQUAL( milliseconds(60LL), microseconds{60LL*1000LL} );
 
-   // -----------------------------------------
-   // inline microseconds milliseconds(int64_t)
-   BOOST_CHECK_EQUAL( milliseconds(0LL),  microseconds{0LL} );
-   BOOST_CHECK_EQUAL( milliseconds(1LL),  microseconds{1000LL} );
-   BOOST_CHECK_EQUAL( milliseconds(60LL), microseconds{60LL*1000LL} );
+      // ------------------------------------
+      // inline microseconds seconds(int64_t)
+      BOOST_CHECK_EQUAL( seconds(0LL),  microseconds{0LL} );
+      BOOST_CHECK_EQUAL( seconds(1LL),  microseconds{1000000LL} );
+      BOOST_CHECK_EQUAL( seconds(60LL), microseconds{60LL*1000000LL} );
 
-   // ------------------------------------
-   // inline microseconds seconds(int64_t)
-   BOOST_CHECK_EQUAL( seconds(0LL),  microseconds{0LL} );
-   BOOST_CHECK_EQUAL( seconds(1LL),  microseconds{1000000LL} );
-   BOOST_CHECK_EQUAL( seconds(60LL), microseconds{60LL*1000000LL} );
+      // ------------------------------------
+      // inline microseconds minutes(int64_t)
+      BOOST_CHECK_EQUAL( minutes(0LL),  microseconds{0LL} );
+      BOOST_CHECK_EQUAL( minutes(1LL),  microseconds{60LL*1000000LL} );
+      BOOST_CHECK_EQUAL( minutes(60LL), microseconds{60LL*60LL*1000000LL} );
 
-   // ------------------------------------
-   // inline microseconds minutes(int64_t)
-   BOOST_CHECK_EQUAL( minutes(0LL),  microseconds{0LL} );
-   BOOST_CHECK_EQUAL( minutes(1LL),  microseconds{60LL*1000000LL} );
-   BOOST_CHECK_EQUAL( minutes(60LL), microseconds{60LL*60LL*1000000LL} );
+      // ----------------------------------
+      // inline microseconds hours(int64_t)
+      BOOST_CHECK_EQUAL( hours(0LL),  microseconds{0LL} );
+      BOOST_CHECK_EQUAL( hours(1LL),  microseconds{60LL*60LL*1000000LL} );
+      BOOST_CHECK_EQUAL( hours(60LL), microseconds{60LL*60LL*60LL*1000000LL} );
 
-   // ----------------------------------
-   // inline microseconds hours(int64_t)
-   BOOST_CHECK_EQUAL( hours(0LL),  microseconds{0LL} );
-   BOOST_CHECK_EQUAL( hours(1LL),  microseconds{60LL*60LL*1000000LL} );
-   BOOST_CHECK_EQUAL( hours(60LL), microseconds{60LL*60LL*60LL*1000000LL} );
-
-   // ---------------------------------
-   // inline microseconds days(int64_t)
-   BOOST_CHECK_EQUAL( days(0LL),  microseconds{0LL} );
-   BOOST_CHECK_EQUAL( days(1LL),  microseconds{24LL*60LL*60LL*1000000LL} );
-   BOOST_CHECK_EQUAL( days(60LL), microseconds{24LL*60LL*60LL*60LL*1000000LL} );
+      // ---------------------------------
+      // inline microseconds days(int64_t)
+      BOOST_CHECK_EQUAL( days(0LL),  microseconds{0LL} );
+      BOOST_CHECK_EQUAL( days(1LL),  microseconds{24LL*60LL*60LL*1000000LL} );
+      BOOST_CHECK_EQUAL( days(60LL), microseconds{24LL*60LL*60LL*60LL*1000000LL} );
+   #endif
 } FC_LOG_AND_RETHROW();
 
 // Definitions in `eosio.cdt/libraries/eosio/time.hpp`
@@ -135,18 +147,17 @@ BOOST_AUTO_TEST_CASE(time_point_type_test) try {
 
    //// explicit time_point(microseconds)
    // microseconds& time_since_epoch()
-   BOOST_CHECK_EQUAL( time_point{ms0}.time_since_epoch(), ms0 );
-   BOOST_CHECK_EQUAL( time_point{ms1}.time_since_epoch(), ms1 );
-   BOOST_CHECK_EQUAL( time_point{ms_min}.time_since_epoch(), ms_min );
-   BOOST_CHECK_EQUAL( time_point{ms_max}.time_since_epoch(), ms_max );
+   BOOST_CHECK_EQUAL( time_point{ms0}.sec_since_epoch(), ms0 );
+   BOOST_CHECK_EQUAL( time_point{ms1}.sec_since_epoch(), ms1 );
+   BOOST_CHECK_EQUAL( time_point{ms_min}.sec_since_epoch(), ms_min );
+   BOOST_CHECK_EQUAL( time_point{ms_max}.sec_since_epoch(), ms_max );
 
    // --------------------------
    // uint32_t sec_since_epoch()
-   BOOST_CHECK_EQUAL( time_point{ms0}.sec_since_epoch(), 0 );
-   BOOST_CHECK_EQUAL( time_point{ms1}.sec_since_epoch(), 0 );
-   BOOST_CHECK_EQUAL( time_point{microseconds{1000000}}.sec_since_epoch(),   1 );
-   BOOST_CHECK_EQUAL( time_point{microseconds{10000000}}.sec_since_epoch(), 10 );
-
+   BOOST_CHECK_EQUAL( fc::duration_cast<fc::seconds>(time_point{ms0}.sec_since_epoch()).count(), 0 );
+   BOOST_CHECK_EQUAL( fc::duration_cast<fc::seconds>(time_point{ms1}.sec_since_epoch()).count(), 0 );
+   BOOST_CHECK_EQUAL( fc::duration_cast<fc::seconds>(time_point{microseconds{1000000}}.sec_since_epoch()).count(),   1 );
+   BOOST_CHECK_EQUAL( fc::duration_cast<fc::seconds>(time_point{microseconds{10000000}}.sec_since_epoch()).count(), 10 );
    // -----------------------------------------
    // time_point operator+(const microseconds&)
    BOOST_CHECK_EQUAL( (time_point{ms0}  + ms1), time_point{ms1} );
@@ -197,7 +208,7 @@ BOOST_AUTO_TEST_CASE(time_point_type_test) try {
    BOOST_CHECK_EQUAL( (time_point{ms1} >= time_point{ms1}), true  );
    BOOST_CHECK_EQUAL( (time_point{ms0} >= time_point{ms1}), false );
 } FC_LOG_AND_RETHROW();
-
+/*
 // Definitions in `eosio.cdt/libraries/eosio/time.hpp`
 BOOST_AUTO_TEST_CASE(time_point_sec_type_test) try {
    static const microseconds ms0 { 0LL};
@@ -217,24 +228,46 @@ BOOST_AUTO_TEST_CASE(time_point_sec_type_test) try {
    BOOST_CHECK_EQUAL( time_point_sec{}.sec_since_epoch(), 0 );
 
    //// explicit time_point_sec(uint32_t)
-   BOOST_CHECK_EQUAL( time_point_sec{u32min}.sec_since_epoch(), 0 );
-   BOOST_CHECK_EQUAL( time_point_sec{u32max}.sec_since_epoch(), u32max );
-   BOOST_CHECK_EQUAL( time_point_sec{u32max + 1}.sec_since_epoch(), 0 );
+   #ifdef TIME_IS_STD_CHRONO
+     BOOST_CHECK_EQUAL( time_point_sec{chrono::seconds{u32min}}.sec_since_epoch(), 0 );
+     BOOST_CHECK_EQUAL( time_point_sec{chrono::seconds{u32max}}.sec_since_epoch(), u32max );
+     BOOST_CHECK_EQUAL( time_point_sec{chrono::seconds{u32max + 1}}.sec_since_epoch(), 0 );
+   #else
+     BOOST_CHECK_EQUAL( time_point_sec{u32min}.sec_since_epoch(), 0 );
+     BOOST_CHECK_EQUAL( time_point_sec{u32max}.sec_since_epoch(), u32max );
+     BOOST_CHECK_EQUAL( time_point_sec{u32max + 1}.sec_since_epoch(), 0 );
+   #endif
 
    //// time_point_sec(const time_point&)
-   BOOST_CHECK_EQUAL( time_point_sec{tp0}.sec_since_epoch(), ms0.count() / 1000000 );
-   BOOST_CHECK_EQUAL( time_point_sec{tp1}.sec_since_epoch(), ms1.count() / 1000000 );
-   BOOST_CHECK_EQUAL( time_point_sec{tpn1}.sec_since_epoch(), msn1.count() / 1000000 );
+   #ifdef TIME_IS_STD_CHRONO
+      BOOST_CHECK_EQUAL( time_point_sec{chrono::time_point_cast<chrono::seconds>(tp0)}.sec_since_epoch(), ms0.count() / 1000000 );
+      BOOST_CHECK_EQUAL( time_point_sec{chrono::time_point_cast<chrono::seconds>(tp1)}.sec_since_epoch(), ms1.count() / 1000000 );
+      BOOST_CHECK_EQUAL( time_point_sec{chrono::time_point_cast<chrono::seconds>(tpn1)}.sec_since_epoch(), msn1.count() / 1000000 );
+   #else
+      BOOST_CHECK_EQUAL( time_point_sec{tp0}.sec_since_epoch(), ms0.count() / 1000000 );
+      BOOST_CHECK_EQUAL( time_point_sec{tp1}.sec_since_epoch(), ms1.count() / 1000000 );
+      BOOST_CHECK_EQUAL( time_point_sec{tpn1}.sec_since_epoch(), msn1.count() / 1000000 );
+   #endif
 
    // ---------------------------
    // static time_point_sec min()
-   BOOST_CHECK_EQUAL( time_point_sec{}.min().sec_since_epoch() == 0, true );
-   BOOST_CHECK_EQUAL( time_point_sec{}.min().sec_since_epoch() != 1, true );
+   #ifdef TIME_IS_STD_CHRONO
+      BOOST_CHECK_EQUAL( time_point_sec{}.min().sec_since_epoch().count() == 0, true );
+      BOOST_CHECK_EQUAL( time_point_sec{}.min().sec_since_epoch().count() != 1, true );
+   #else
+      BOOST_CHECK_EQUAL( time_point_sec{}.minimum().sec_since_epoch() == 0, true );
+      BOOST_CHECK_EQUAL( time_point_sec{}.minimum().sec_since_epoch() != 1, true );
+   #endif
 
    // -------------------------------
    // static time_point_sec maximum()
-   BOOST_CHECK_EQUAL( time_point_sec{}.maximum().sec_since_epoch() == 0xFFFFFFFF, true );
-   BOOST_CHECK_EQUAL( time_point_sec{}.maximum().sec_since_epoch() != 1, true );
+   #ifdef TIME_IS_STD_CHRONO
+      BOOST_CHECK_EQUAL( time_point_sec{}.max().sec_since_epoch().count() == 0xFFFFFFFF, true );
+      BOOST_CHECK_EQUAL( time_point_sec{}.max().sec_since_epoch().count() != 1, true );
+   #else
+      BOOST_CHECK_EQUAL( time_point_sec{}.maximum().sec_since_epoch() == 0xFFFFFFFF, true );
+      BOOST_CHECK_EQUAL( time_point_sec{}.maximum().sec_since_epoch() != 1, true );
+   #endif
 
    // --------------------------
    // operator time_point()const
@@ -246,7 +279,6 @@ BOOST_AUTO_TEST_CASE(time_point_sec_type_test) try {
    BOOST_CHECK_EQUAL( (time_point_sec{} = tp0), time_point_sec{} );
    BOOST_CHECK_EQUAL( (time_point_sec{} = tp1), time_point_sec{} );
    BOOST_CHECK_EQUAL( (time_point_sec{} = tp_max), time_point_sec{tp_max} );
-
    // ---------------------------------------
    // time_point_sec operator+(uint32_t)const
    BOOST_CHECK_EQUAL( (time_point_sec{} + u32min), time_point_sec{u32min} );
@@ -345,42 +377,203 @@ BOOST_AUTO_TEST_CASE(time_point_sec_type_test) try {
    // friend bool operator>=(const time_point_sec&, const time_point_sec&)
    BOOST_CHECK_EQUAL( (time_point_sec{1} >= time_point_sec{1}), true  );
    BOOST_CHECK_EQUAL( (time_point_sec{1} >= time_point_sec{2}), false );
+   std::cout << "time_point_sec_type_test is done" << std::endl;
+} FC_LOG_AND_RETHROW();
+*/
+BOOST_AUTO_TEST_CASE(time_point_to_string_test) try {
+    #ifndef TIME_IS_STD_CHRONO
+      #define to_iso_string(tp)  tp.to_iso_string()
+      #define to_non_delimited_iso_string(tp)  tp.to_non_delimited_iso_string()
+      #define chrono::seconds( i ) i
+    #endif
+
+    time_point tp0   {chrono::microseconds(          0  )};
+    time_point tp1   {chrono::microseconds(          1  )};
+    time_point tp256 {chrono::microseconds(      0x100  )};
+    time_point tp64k {chrono::microseconds(    0x10000  )};
+    time_point tp16m {chrono::microseconds(  0x1000000  )};
+    time_point tp2gm1{chrono::microseconds( 0x7fffffffU )};
+    time_point tp2g  {chrono::microseconds( 0x80000000U )};
+    time_point tp3g  {chrono::microseconds( 0xc0000000U )};
+    time_point tp4g  {chrono::microseconds( 0x12345678901234llU )};
+
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.000000", to_iso_string(tp0) );
+    BOOST_CHECK_EQUAL( "19700101T000000.000000", to_non_delimited_iso_string(tp0) );
+
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.000001", to_iso_string(tp1) );
+    BOOST_CHECK_EQUAL( "19700101T000000.000001", to_non_delimited_iso_string(tp1) );
+
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.000256", to_iso_string(tp256) );
+    BOOST_CHECK_EQUAL( "19700101T000000.000256", to_non_delimited_iso_string(tp256) );
+
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.065536", to_iso_string(tp64k) );
+    BOOST_CHECK_EQUAL( "19700101T000000.065536", to_non_delimited_iso_string(tp64k) );
+
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:16.777216", to_iso_string(tp16m) );
+    BOOST_CHECK_EQUAL( "19700101T000016.777216", to_non_delimited_iso_string(tp16m) );
+
+    BOOST_CHECK_EQUAL( "1970-01-01T00:35:47.483647", to_iso_string(tp2gm1) );
+    BOOST_CHECK_EQUAL( "19700101T003547.483647", to_non_delimited_iso_string(tp2gm1) );
+
+    BOOST_CHECK_EQUAL( "1970-01-01T00:35:47.483648", to_iso_string(tp2g) );
+    BOOST_CHECK_EQUAL( "19700101T003547.483648", to_non_delimited_iso_string(tp2g) );
+
+    BOOST_CHECK_EQUAL( "1970-01-01T00:53:41.225472", to_iso_string(tp3g) );
+    BOOST_CHECK_EQUAL( "19700101T005341.225472", to_non_delimited_iso_string(tp3g) );
+
+    BOOST_CHECK_EQUAL( "2132-05-17T15:52:55.331380", to_iso_string(tp4g) );
+    BOOST_CHECK_EQUAL( "21320517T155255.331380", to_non_delimited_iso_string(tp4g) );
 } FC_LOG_AND_RETHROW();
 
-BOOST_AUTO_TEST_CASE(time_point_sec_test) try {
-    time_point_sec tp0(0);
-    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00", tp0.to_iso_string() );
-    BOOST_CHECK_EQUAL( "19700101T000000", tp0.to_non_delimited_iso_string() );
+BOOST_AUTO_TEST_CASE(time_point_sec_to_string_test) try {
+    #ifndef TIME_IS_STD_CHRONO
+      #define to_iso_string(tp)  tp.to_iso_string()
+      #define to_non_delimited_iso_string(tp)  tp.to_non_delimited_iso_string()
+      #define chrono::seconds( i ) i
+    #endif
 
-    time_point_sec tp1(1);
-    BOOST_CHECK_EQUAL( "1970-01-01T00:00:01", tp1.to_iso_string() );
-    BOOST_CHECK_EQUAL( "19700101T000001", tp1.to_non_delimited_iso_string() );
+    time_point_sec tp0   {chrono::seconds(          0  )};
+    time_point_sec tp256 {chrono::seconds(      0x100  )};
+    time_point_sec tp1   {chrono::seconds(          1  )};
+    time_point_sec tp64k {chrono::seconds(    0x10000  )};
+    time_point_sec tp16m {chrono::seconds(  0x1000000  )};
+    time_point_sec tp2gm1{chrono::seconds( 0x7fffffffU )};
+    time_point_sec tp2g  {chrono::seconds( 0x80000000U )};
+    time_point_sec tp3g  {chrono::seconds( 0xc0000000U )};
 
-    time_point_sec tp256(0x100);
-    BOOST_CHECK_EQUAL( "1970-01-01T00:04:16", tp256.to_iso_string() );
-    BOOST_CHECK_EQUAL( "19700101T000416", tp256.to_non_delimited_iso_string() );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00", to_iso_string(tp0) );
+    BOOST_CHECK_EQUAL( "19700101T000000", to_non_delimited_iso_string(tp0) );
 
-    time_point_sec tp64k(0x10000);
-    BOOST_CHECK_EQUAL( "1970-01-01T18:12:16", tp64k.to_iso_string() );
-    BOOST_CHECK_EQUAL( "19700101T181216", tp64k.to_non_delimited_iso_string() );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:01", to_iso_string(tp1) );
+    BOOST_CHECK_EQUAL( "19700101T000001", to_non_delimited_iso_string(tp1) );
 
-    time_point_sec tp16m(0x1000000);
-    BOOST_CHECK_EQUAL( "1970-07-14T04:20:16", tp16m.to_iso_string() );
-    BOOST_CHECK_EQUAL( "19700714T042016", tp16m.to_non_delimited_iso_string() );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:04:16", to_iso_string(tp256) );
+    BOOST_CHECK_EQUAL( "19700101T000416", to_non_delimited_iso_string(tp256) );
 
-    time_point_sec tp2gm1(0x7fffffffU);
-    BOOST_CHECK_EQUAL( "2038-01-19T03:14:07", tp2gm1.to_iso_string() );
-    BOOST_CHECK_EQUAL( "20380119T031407", tp2gm1.to_non_delimited_iso_string() );
+    BOOST_CHECK_EQUAL( "1970-01-01T18:12:16", to_iso_string(tp64k) );
+    BOOST_CHECK_EQUAL( "19700101T181216", to_non_delimited_iso_string(tp64k) );
 
-    time_point_sec tp2g(0x80000000U);
-    BOOST_CHECK_EQUAL( "2038-01-19T03:14:08", tp2g.to_iso_string() );
-    BOOST_CHECK_EQUAL( "20380119T031408", tp2g.to_non_delimited_iso_string() );
+    BOOST_CHECK_EQUAL( "1970-07-14T04:20:16", to_iso_string(tp16m) );
+    BOOST_CHECK_EQUAL( "19700714T042016", to_non_delimited_iso_string(tp16m) );
 
-    time_point_sec tp3g(0xc0000000U);
-    if (BOOST_VERSION >= BOOST_VERSION_NUMBER(1,64,0)) {
-        BOOST_CHECK_EQUAL( "2072-01-28T16:51:12", tp3g.to_iso_string() );
-        BOOST_CHECK_EQUAL( "20720128T165112", tp3g.to_non_delimited_iso_string() );
-    }
+    BOOST_CHECK_EQUAL( "2038-01-19T03:14:07", to_iso_string(tp2gm1) );
+    BOOST_CHECK_EQUAL( "20380119T031407", to_non_delimited_iso_string(tp2gm1) );
+
+    BOOST_CHECK_EQUAL( "2038-01-19T03:14:08", to_iso_string(tp2g) );
+    BOOST_CHECK_EQUAL( "20380119T031408", to_non_delimited_iso_string(tp2g) );
+
+    BOOST_CHECK_EQUAL( "2072-01-28T16:51:12", to_iso_string(tp3g) );
+    BOOST_CHECK_EQUAL( "20720128T165112", to_non_delimited_iso_string(tp3g) );
+} FC_LOG_AND_RETHROW();
+
+BOOST_AUTO_TEST_CASE(duration_to_string_test) try {
+   using namespace std::chrono_literals;
+   #define TIME_OUTPUT_TEST(TIME, OUTPUT) BOOST_CHECK_EQUAL( to_string(TIME), OUTPUT );
+
+   TIME_OUTPUT_TEST( fc::microseconds(   0 ),   "0 microsec" );
+   TIME_OUTPUT_TEST( fc::microseconds(   1 ),   "1 microsec" );
+   TIME_OUTPUT_TEST( fc::microseconds(  10 ),  "10 microsec" );
+   TIME_OUTPUT_TEST( fc::milliseconds(   0 ),   "0 millisec" );
+   TIME_OUTPUT_TEST( fc::milliseconds( 100 ), "100 millisec" );
+   TIME_OUTPUT_TEST( fc::seconds     (   0 ),   "0 sec"      );
+   TIME_OUTPUT_TEST( fc::seconds     ( 222 ), "222 sec"      );
+   TIME_OUTPUT_TEST( fc::minutes     (   0 ),   "0 min"      );
+   TIME_OUTPUT_TEST( fc::minutes     (  17 ),  "17 min"      );
+   TIME_OUTPUT_TEST( fc::hours       (   0 ),   "0 hours"    );
+   TIME_OUTPUT_TEST( fc::hours       (  42 ),  "42 hours"    );
+   TIME_OUTPUT_TEST( fc::days        (   0 ),   "0 days"     );
+   TIME_OUTPUT_TEST( fc::days        ( 256 ), "256 days"     );
+} FC_LOG_AND_RETHROW();
+
+BOOST_AUTO_TEST_CASE(time_point_from_string_test) try {
+   time_point res;
+
+   for (const auto & tp : { time_point{ chrono::microseconds(          0  ) },
+                            time_point{ chrono::microseconds(          1  ) },
+                            time_point{ chrono::microseconds(      0x100  ) },
+                            time_point{ chrono::microseconds(    0x10000  ) },
+                            time_point{ chrono::microseconds(  0x1000000  ) },
+                            time_point{ chrono::microseconds( 0x7fffffffU ) },
+                            time_point{ chrono::microseconds( 0x80000000U ) },
+                            time_point{ chrono::microseconds( 0xc0000000U ) },
+                            time_point{ chrono::microseconds( 0x12345678901234llU ) } } )
+   {
+      BOOST_CHECK_EQUAL(tp, from_iso_string<fc::time_point>( to_iso_string(tp) ));
+      from_iso_string( to_iso_string(tp), res );
+      BOOST_CHECK_EQUAL(tp, res);
+   }
+} FC_LOG_AND_RETHROW();
+
+BOOST_AUTO_TEST_CASE(time_point_sec_from_string_test) try {
+   time_point_sec res;
+
+   for (const auto & tp : { time_point_sec{ chrono::seconds(          0  ) },
+                            time_point_sec{ chrono::seconds(      0x100  ) },
+                            time_point_sec{ chrono::seconds(          1  ) },
+                            time_point_sec{ chrono::seconds(    0x10000  ) },
+                            time_point_sec{ chrono::seconds(  0x1000000  ) },
+                            time_point_sec{ chrono::seconds( 0x7fffffffU ) },
+                            time_point_sec{ chrono::seconds( 0x80000000U ) },
+                            time_point_sec{ chrono::seconds( 0xc0000000U ) } } )
+   {
+      BOOST_CHECK_EQUAL(tp, from_iso_string<fc::time_point_sec>( to_iso_string(tp) ));
+      from_iso_string( to_iso_string(tp), res );
+      BOOST_CHECK_EQUAL(tp, res);
+   }
+} FC_LOG_AND_RETHROW();
+
+BOOST_AUTO_TEST_CASE(duration_from_string_test) try {
+   using namespace std::chrono_literals;
+
+   #define TIME_INPUT_TEST(TYPE, VALUE, SUFFIX, SPACE) \
+      BOOST_CHECK_EQUAL( \
+         from_string<TYPE>(SPACE + to_string(VALUE) + SPACE + SUFFIX + SPACE), \
+         TYPE{VALUE} );
+
+   #define TIME_INPUT_TEST_WRAPPER(TYPE, VALUE, SPACE) \
+      for (auto & suffix : TYPE ## _suffix) { TIME_INPUT_TEST( TYPE, VALUE, suffix, SPACE ); }
+
+   uint64_t values[] = {0, 1, 10, 12345};
+   std::string  spaces[] = {"", " ", "\t", "\t\t",  " \t  "};
+
+   for (auto & space : spaces) {
+      for (auto & value : values) {
+         TIME_INPUT_TEST_WRAPPER( microseconds, value, space );
+         TIME_INPUT_TEST_WRAPPER( milliseconds, value, space );
+         TIME_INPUT_TEST_WRAPPER( seconds,      value, space );
+         TIME_INPUT_TEST_WRAPPER( minutes,      value, space );
+         TIME_INPUT_TEST_WRAPPER( hours,        value, space );
+         TIME_INPUT_TEST_WRAPPER( days,         value, space );
+         TIME_INPUT_TEST_WRAPPER( weeks,        value, space );
+      }
+   }
+   /*
+   TIME_INPUT_TEST( fc::microseconds,   0,   "microsec" );
+   TIME_INPUT_TEST( fc::microseconds,   5,   " microsec" );
+   TIME_INPUT_TEST( fc::microseconds,   1,   " microsec" );
+   TIME_INPUT_TEST( fc::microseconds,  10,  " microsec" );
+   TIME_INPUT_TEST( fc::milliseconds,   0,   " millisec" );
+   TIME_INPUT_TEST( fc::milliseconds, 100, " millisec" );
+   TIME_INPUT_TEST( fc::seconds,        0,   " sec"      );
+   TIME_INPUT_TEST( fc::seconds,      222, " sec"      );
+   TIME_INPUT_TEST( fc::minutes,        0,   " min"      );
+   TIME_INPUT_TEST( fc::minutes,       17,  " min"      );
+   TIME_INPUT_TEST( fc::hours,          0,   " hours"    );
+   TIME_INPUT_TEST( fc::hours,         42,  " hours"    );
+   TIME_INPUT_TEST( fc::days,           0,   " days"     );
+   TIME_INPUT_TEST( fc::days,         256, " days"     );
+   */
+} FC_LOG_AND_RETHROW();
+
+BOOST_AUTO_TEST_CASE(time_point_sec_comparison_test) try {
+    time_point_sec tp0   {chrono::seconds(          0  )};
+    time_point_sec tp256 {chrono::seconds(      0x100  )};
+    time_point_sec tp1   {chrono::seconds(          1  )};
+    time_point_sec tp64k {chrono::seconds(    0x10000  )};
+    time_point_sec tp16m {chrono::seconds(  0x1000000  )};
+    time_point_sec tp2gm1{chrono::seconds( 0x7fffffffU )};
+    time_point_sec tp2g  {chrono::seconds( 0x80000000U )};
+    time_point_sec tp3g  {chrono::seconds( 0xc0000000U )};
 
     BOOST_CHECK( tp0 == time_point_sec() );
     BOOST_CHECK( tp0 < tp1 );
@@ -441,19 +634,5 @@ BOOST_AUTO_TEST_CASE(time_point_sec_test) try {
     BOOST_CHECK( tp3g > tp16m );
 } FC_LOG_AND_RETHROW();
 
+
 BOOST_AUTO_TEST_SUITE_END()
-
-/*
-int main(int argc, char* argv[]) {
-   bool verbose = false;
-   if( argc >= 2 && std::strcmp( argv[1], "-v" ) == 0 ) {
-      verbose = true;
-   }
-   silence_output(!verbose);
-
-   EOSIO_TEST(microseconds_type_test);
-   EOSIO_TEST(time_point_type_test);
-   EOSIO_TEST(time_point_sec_type_test);
-   EOSIO_TEST(block_timestamp_type_test);
-   return has_failed();
-}*/
