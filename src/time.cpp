@@ -178,7 +178,7 @@ namespace fc {
   void to_variant( const fc::time_point_sec& t, variant& v ) {
     v = to_iso_string( t );
   }
-void from_variant( const fc::variant& v, fc::time_point_sec& tp ) {
+  void from_variant( const fc::variant& v, fc::time_point_sec& tp ) {
     fc::from_iso_string( v.as_string(), tp );
   }
   // inspired by show_date_relative() in git's date.c

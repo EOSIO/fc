@@ -2,19 +2,13 @@
 #include <stdint.h>
 #include <fc/string.hpp>
 #include <fc/optional.hpp>
-<<<<<<< HEAD
-#include <boost/date_time/gregorian/gregorian.hpp>
-=======
->>>>>>> dd7ba1c... Initial changes. It doesn't compile
+//#include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <boost/chrono/duration.hpp>
 #include <boost/chrono/system_clocks.hpp>
-<<<<<<< HEAD
 #include <boost/convert.hpp>
 #include <boost/convert/stream.hpp>
-=======
->>>>>>> dd7ba1c... Initial changes. It doesn't compile
 
 #ifdef _MSC_VER
   #pragma warning (push)
@@ -24,7 +18,6 @@
 #define TIME_IS_STD_CHRONO
 
 namespace fc {
-<<<<<<< HEAD
 #ifdef TIME_IS_STD_CHRONO
   namespace chrono = std::chrono;
   using     chrono::microseconds;
@@ -46,9 +39,6 @@ namespace fc {
   auto now() { return fc::time_point_cast<Duration>( fc::clock::now() ); }
 #else
   class microseconds {
-=======
-  /*class microseconds {
->>>>>>> dd7ba1c... Initial changes. It doesn't compile
     public:
         constexpr explicit microseconds( int64_t c = 0) :_count(c){}
         static constexpr microseconds maximum() { return microseconds(0x7fffffffffffffffll); }
@@ -68,12 +58,7 @@ namespace fc {
     private:
         friend class time_point;
         int64_t      _count;
-<<<<<<< HEAD
   };
-=======
-  };*/
-  typedef boost::chrono::microseconds  microseconds;
->>>>>>> dd7ba1c... Initial changes. It doesn't compile
 
   inline constexpr microseconds seconds( int64_t s ) { return microseconds( s * 1000000 ); }
   inline constexpr microseconds milliseconds( int64_t s ) { return microseconds( s * 1000 ); }
@@ -81,9 +66,6 @@ namespace fc {
   inline constexpr microseconds hours(int64_t h) { return minutes(60*h); }
   inline constexpr microseconds days(int64_t d) { return hours(24*d); }
 
-<<<<<<< HEAD
-  class time_point {
-=======
   class variant;
   void to_variant( const microseconds&,  fc::variant&  );
   void from_variant( const fc::variant&, microseconds& );
@@ -95,8 +77,7 @@ namespace fc {
 
   typedef  boost::chrono::system_clock  clock;
   typedef  clock::time_point            time_point;
-  /*class time_point {
->>>>>>> dd7ba1c... Initial changes. It doesn't compile
+  class time_point {
     public:
         constexpr explicit time_point( microseconds e = microseconds() ) :elapsed(e){}
         static time_point now();
@@ -121,12 +102,12 @@ namespace fc {
         constexpr microseconds operator - (const time_point& m)   const { return microseconds(elapsed.count() - m.elapsed.count()); }
     private:
         microseconds elapsed;
-  };*/
+  };
 
   /**
    *  A lower resolution time_point accurate only to seconds from 1970
    */
-  /*class time_point_sec
+  class time_point_sec
   {
     public:
         constexpr time_point_sec()
@@ -259,7 +240,6 @@ namespace fc {
                                               const std::string& ago = " ago");
   string get_approximate_relative_time_string(const time_point& event_time,
                                               const time_point& relative_to_time = fc::clock::now(),
-
                                               const std::string& ago = " ago");
 }
 
