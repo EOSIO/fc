@@ -104,7 +104,7 @@ namespace fc {
            static private_key generate();
            static private_key regenerate( const fc::sha256& secret );
 
-           private_key child( const fc::sha256& offset )const;
+           //private_key child( const fc::sha256& offset )const;
 
            /**
             *  This method of generation enables creating a new private key in a deterministic manner relative to
@@ -145,8 +145,8 @@ namespace fc {
            unsigned int fingerprint() const { return get_public_key().fingerprint(); }
 
         private:
-           private_key( EC_KEY* k );
-           static fc::sha256 get_secret( const EC_KEY * const k );
+           //private_key( EC_KEY* k );
+           //static fc::sha256 get_secret( const EC_KEY * const k );
            fc::fwd<detail::private_key_impl,32> my;
     };
 

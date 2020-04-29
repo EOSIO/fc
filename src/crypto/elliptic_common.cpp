@@ -61,7 +61,7 @@ namespace fc { namespace ecc {
             return _derive_message( *key.begin(), key.begin() + 1, i );
         }
 
-
+#if 0
         const ec_group& get_curve()
         {
             static const ec_group secp256k1( EC_GROUP_new_by_curve_name( NID_secp256k1 ) );
@@ -104,6 +104,7 @@ namespace fc { namespace ecc {
             static private_key_secret half_order = _get_half_curve_order();
             return half_order;
         }
+#endif
     }
 
     public_key public_key::from_key_data( const public_key_data &data ) {
@@ -119,6 +120,7 @@ namespace fc { namespace ecc {
        return add( enc.result() );
     }
 
+#if 0
     private_key private_key::child( const fc::sha256& offset )const
     {
        fc::sha256::encoder enc;
@@ -126,6 +128,7 @@ namespace fc { namespace ecc {
        fc::raw::pack( enc, offset );
        return generate_from_seed( get_secret(), enc.result() );
     }
+#endif
 
     std::string public_key::to_base58( const public_key_data &key )
     {
@@ -165,6 +168,7 @@ namespace fc { namespace ecc {
                && !(c.data[33] == 0 && !(c.data[34] & 0x80));
     }
 
+#if 0
     private_key private_key::generate_from_seed( const fc::sha256& seed, const fc::sha256& offset )
     {
         ssl_bignum z;
@@ -188,6 +192,7 @@ namespace fc { namespace ecc {
         return regenerate( secret );
     }
 
+
     fc::sha256 private_key::get_secret( const EC_KEY * const k )
     {
        if( !k )
@@ -205,20 +210,7 @@ namespace fc { namespace ecc {
        BN_bn2bin(bn, &((unsigned char*)&sec)[32-nbytes] );
        return sec;
     }
-
-    private_key private_key::generate()
-    {
-       EC_KEY* k = EC_KEY_new_by_curve_name( NID_secp256k1 );
-       if( !k ) FC_THROW_EXCEPTION( exception, "Unable to generate EC key" );
-       if( !EC_KEY_generate_key( k ) )
-       {
-          FC_THROW_EXCEPTION( exception, "ecc key generation error" );
-
-       }
-
-       return private_key( k );
-    }
-
+    #endif
 
 }
 

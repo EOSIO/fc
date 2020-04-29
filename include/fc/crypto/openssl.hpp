@@ -8,6 +8,7 @@
 #include <openssl/ecdh.h>
 #include <openssl/sha.h>
 #include <openssl/obj_mac.h>
+#include <openssl/bn.h>
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps);

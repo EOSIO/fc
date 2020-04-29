@@ -9,6 +9,8 @@
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>
 
+#include <openssl/rand.h>
+
 #include <secp256k1.h>
 
 #if _WIN32
@@ -57,9 +59,12 @@ namespace fc { namespace ecc {
         chr37 _derive_message( const public_key_data& key, int i );
         fc::sha256 _left( const fc::sha512& v );
         fc::sha256 _right( const fc::sha512& v );
+
+#if 0
         const ec_group& get_curve();
         const private_key_secret& get_curve_order();
         const private_key_secret& get_half_curve_order();
+#endif
     }
 
     static const public_key_data empty_pub;
@@ -72,6 +77,15 @@ namespace fc { namespace ecc {
       public_key_data pub(other.my->_key);
       FC_ASSERT( secp256k1_ec_pubkey_tweak_mul( detail::_get_context(), (unsigned char*) pub.begin(), pub.size(), (unsigned char*) my->_key.data() ) );
       return fc::sha512::hash( pub.begin() + 1, pub.size() - 1 );
+    }
+
+    private_key private_key::generate()
+    {
+       private_key ret;
+       do {
+         RAND_bytes((uint8_t*)ret.my->_key.data(), sizeof(ret.my->_key.data()));
+       } while(!secp256k1_ec_seckey_verify(detail::_get_context(), (const uint8_t*)ret.my->_key.data()));
+       return ret;
     }
 
 
@@ -132,6 +146,7 @@ namespace fc { namespace ecc {
         return dat;
     }
 
+#if 0
     public_key::public_key( const public_key_point_data& dat )
     {
         const char* front = &dat.data[0];
@@ -147,6 +162,7 @@ namespace fc { namespace ecc {
             EC_KEY_free( key );
         }
     }
+#endif
 
     public_key::public_key( const public_key_data& dat )
     {

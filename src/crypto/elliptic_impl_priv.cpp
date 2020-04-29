@@ -60,12 +60,13 @@ namespace fc { namespace ecc {
     {
         return my->_key;
     }
-
+#if 0
     private_key::private_key( EC_KEY* k )
     {
        my->_key = get_secret( k );
        EC_KEY_free(k);
     }
+#endif
 
     public_key private_key::get_public_key()const
     {

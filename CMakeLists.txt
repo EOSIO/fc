@@ -26,6 +26,7 @@ elseif(NOT CMAKE_CXX_STANDARD)
 endif()
 
 add_subdirectory( secp256k1 )
+add_subdirectory( external )
 
 IF( ECC_IMPL STREQUAL openssl )
   SET( ECC_REST src/crypto/elliptic_impl_pub.cpp )
@@ -43,14 +44,6 @@ MESSAGE(STATUS "Configuring fc to build on Unix/Apple")
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads)
-
-IF(NOT "$ENV{OPENSSL_ROOT_DIR}" STREQUAL "")
-  set(OPENSSL_ROOT_DIR $ENV{OPENSSL_ROOT_DIR} )
-  set(OPENSSL_INCLUDE_DIR ${OPENSSL_ROOT_DIR}/include)
-  message(STATUS "Setting up OpenSSL root and include vars to ${OPENSSL_ROOT_DIR}, ${OPENSSL_INCLUDE_DIR}")
-ENDIF()
-
-find_package(OpenSSL REQUIRED)
 
 set( fc_sources
      src/uint128.cpp
@@ -166,7 +159,6 @@ add_definitions(-DWEBSOCKETPP_STRICT_MASKING -DBOOST_ASIO_HAS_STD_CHRONO)
 
 target_include_directories(fc
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
   )
 
@@ -191,15 +183,8 @@ IF(APPLE)
 ENDIF()
 target_link_libraries( fc PUBLIC ${LINK_USR_LOCAL_LIB}
                                  Boost::date_time Boost::filesystem Boost::chrono Boost::iostreams Threads::Threads
-                                 ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${readline_libraries} ${ECC_LIB} ${security_framework} ${corefoundation_framework} )
+                                 boringssl ${ZLIB_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${readline_libraries} ${ECC_LIB} ${security_framework} ${corefoundation_framework} )
 
-
-SET(OPENSSL_CONF_TARGET )
-IF(DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
-  SET (OPENSSL_CONF_TARGET ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-ELSE()
-  SET (OPENSSL_CONF_TARGET ${CMAKE_CURRENT_BINARY_DIR})
-ENDIF()
 
 IF(NOT DEFINED SKIP_FC_TESTS)
   add_subdirectory( test )
