@@ -7,7 +7,10 @@
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>
 
+#define RAPIDJSON_NAMESPACE_BEGIN namespace fc::crypto::webauthn::detail::rapidjson {
+#define RAPIDJSON_NAMESPACE_END }
 #include "rapidjson/reader.h"
+
 #include <string>
 
 namespace fc { namespace crypto { namespace webauthn {
@@ -185,9 +188,9 @@ struct webauthn_json_handler : public rapidjson::BaseReaderHandler<rapidjson::UT
 
 public_key::public_key(const signature& c, const fc::sha256& digest, bool) {
    detail::webauthn_json_handler handler;
-   rapidjson::Reader reader;
-   rapidjson::StringStream ss(c.client_json.c_str());
-   FC_ASSERT(reader.Parse<rapidjson::kParseIterativeFlag>(ss, handler), "Failed to parse client data JSON");
+   detail::rapidjson::Reader reader;
+   detail::rapidjson::StringStream ss(c.client_json.c_str());
+   FC_ASSERT(reader.Parse<detail::rapidjson::kParseIterativeFlag>(ss, handler), "Failed to parse client data JSON");
 
    FC_ASSERT(handler.found_type == "webauthn.get", "webauthn signature type not an assertion");
 
