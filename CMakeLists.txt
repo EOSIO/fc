@@ -174,7 +174,7 @@ target_include_directories(fc
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.11.0)
    set_source_files_properties(src/crypto/elliptic_webauthn.cpp PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/include/fc/crypto/webauthn_json/include)
 else()
-   target_include_directories(fc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/fc/crypto/webauthn_json/include)
+   set_source_files_properties(src/crypto/elliptic_webauthn.cpp PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}/include/fc/crypto/webauthn_json/include")
 endif()
 
 IF(NOT WIN32)
