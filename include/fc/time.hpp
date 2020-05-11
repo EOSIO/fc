@@ -45,7 +45,7 @@ namespace fc {
   typedef   chrono::time_point<chrono::system_clock, fc::microseconds>  time_point;
   typedef   chrono::time_point<chrono::system_clock, fc::seconds>       time_point_sec;
 
-  template<typename Duration>
+  template<typename Duration = fc::microseconds>
   auto now() { return fc::time_point_cast<Duration>( chrono::system_clock::now() ); }
 #else
   class microseconds {
