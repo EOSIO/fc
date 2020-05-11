@@ -44,7 +44,9 @@ BOOST_AUTO_TEST_CASE(microseconds_type_test) try {
    // -----------------------------
    // static microseconds maximum()
    #ifdef TIME_IS_STD_CHRONO
-      BOOST_CHECK_EQUAL( microseconds::max().count(), microseconds{0x7FFFFFFFFFFFFFFFLL}.count() );
+      BOOST_CHECK_EQUAL( microseconds::max().count(),  i64max );
+      BOOST_CHECK_EQUAL( microseconds::min().count(),  i64min );
+      BOOST_CHECK_EQUAL( microseconds::zero().count(), 0 );
    #else
       BOOST_CHECK_EQUAL( microseconds::maximum(), microseconds{0x7FFFFFFFFFFFFFFFLL}.count() );
    #endif
@@ -397,32 +399,32 @@ BOOST_AUTO_TEST_CASE(time_point_to_string_test) try {
     time_point tp3g  {chrono::microseconds( 0xc0000000U )};
     time_point tp4g  {chrono::microseconds( 0x12345678901234llU )};
 
-    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.000000", to_iso_string(tp0) );
-    BOOST_CHECK_EQUAL( "19700101T000000.000000", to_non_delimited_iso_string(tp0) );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.000", to_iso_string(tp0) );
+    BOOST_CHECK_EQUAL( "19700101T000000.000", to_non_delimited_iso_string(tp0) );
 
-    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.000001", to_iso_string(tp1) );
-    BOOST_CHECK_EQUAL( "19700101T000000.000001", to_non_delimited_iso_string(tp1) );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.000", to_iso_string(tp1) );
+    BOOST_CHECK_EQUAL( "19700101T000000.000", to_non_delimited_iso_string(tp1) );
 
-    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.000256", to_iso_string(tp256) );
-    BOOST_CHECK_EQUAL( "19700101T000000.000256", to_non_delimited_iso_string(tp256) );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.000", to_iso_string(tp256) );
+    BOOST_CHECK_EQUAL( "19700101T000000.000", to_non_delimited_iso_string(tp256) );
 
-    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.065536", to_iso_string(tp64k) );
-    BOOST_CHECK_EQUAL( "19700101T000000.065536", to_non_delimited_iso_string(tp64k) );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:00.065", to_iso_string(tp64k) );
+    BOOST_CHECK_EQUAL( "19700101T000000.065", to_non_delimited_iso_string(tp64k) );
 
-    BOOST_CHECK_EQUAL( "1970-01-01T00:00:16.777216", to_iso_string(tp16m) );
-    BOOST_CHECK_EQUAL( "19700101T000016.777216", to_non_delimited_iso_string(tp16m) );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:00:16.777", to_iso_string(tp16m) );
+    BOOST_CHECK_EQUAL( "19700101T000016.777", to_non_delimited_iso_string(tp16m) );
 
-    BOOST_CHECK_EQUAL( "1970-01-01T00:35:47.483647", to_iso_string(tp2gm1) );
-    BOOST_CHECK_EQUAL( "19700101T003547.483647", to_non_delimited_iso_string(tp2gm1) );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:35:47.483", to_iso_string(tp2gm1) );
+    BOOST_CHECK_EQUAL( "19700101T003547.483", to_non_delimited_iso_string(tp2gm1) );
 
-    BOOST_CHECK_EQUAL( "1970-01-01T00:35:47.483648", to_iso_string(tp2g) );
-    BOOST_CHECK_EQUAL( "19700101T003547.483648", to_non_delimited_iso_string(tp2g) );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:35:47.483", to_iso_string(tp2g) );
+    BOOST_CHECK_EQUAL( "19700101T003547.483", to_non_delimited_iso_string(tp2g) );
 
-    BOOST_CHECK_EQUAL( "1970-01-01T00:53:41.225472", to_iso_string(tp3g) );
-    BOOST_CHECK_EQUAL( "19700101T005341.225472", to_non_delimited_iso_string(tp3g) );
+    BOOST_CHECK_EQUAL( "1970-01-01T00:53:41.225", to_iso_string(tp3g) );
+    BOOST_CHECK_EQUAL( "19700101T005341.225", to_non_delimited_iso_string(tp3g) );
 
-    BOOST_CHECK_EQUAL( "2132-05-17T15:52:55.331380", to_iso_string(tp4g) );
-    BOOST_CHECK_EQUAL( "21320517T155255.331380", to_non_delimited_iso_string(tp4g) );
+    BOOST_CHECK_EQUAL( "2132-05-17T15:52:55.331", to_iso_string(tp4g) );
+    BOOST_CHECK_EQUAL( "21320517T155255.331", to_non_delimited_iso_string(tp4g) );
 } FC_LOG_AND_RETHROW();
 
 BOOST_AUTO_TEST_CASE(time_point_sec_to_string_test) try {
@@ -498,9 +500,10 @@ BOOST_AUTO_TEST_CASE(time_point_from_string_test) try {
                             time_point{ chrono::microseconds( 0xc0000000U ) },
                             time_point{ chrono::microseconds( 0x12345678901234llU ) } } )
    {
-      BOOST_CHECK_EQUAL(tp, from_iso_string<fc::time_point>( to_iso_string(tp) ));
+      auto tp_msec = fc::time_point_cast<fc::milliseconds>(tp);
+      BOOST_CHECK_EQUAL( tp_msec, from_iso_string<fc::time_point>( to_iso_string(tp) ) );
       from_iso_string( to_iso_string(tp), res );
-      BOOST_CHECK_EQUAL(tp, res);
+      BOOST_CHECK_EQUAL(tp_msec, res);
    }
 } FC_LOG_AND_RETHROW();
 
@@ -564,7 +567,39 @@ BOOST_AUTO_TEST_CASE(duration_from_string_test) try {
    TIME_INPUT_TEST( fc::days,         256, " days"     );
    */
 } FC_LOG_AND_RETHROW();
+/*
+BOOST_AUTO_TEST_CASE(time_point_shift_operators_test) try {
+   #define CHECK_SHIFT(TIME_POINT, VALUE, LITERAL) {\
+      std::stringstream ss, orig; \
+      auto dur = TIME_POINT::duration(0x ## VALUE ## LITERAL); \
+      orig << std::hex << std::setw( sizeof( typename TIME_POINT::rep ) * 2 ) << dur.count(); \
+      BOOST_CHECK_EQUAL( ( ss << ( TIME_POINT(dur) ) ).str(), orig.str() ); \
+      std::cout << orig.str(); \
+      TIME_POINT res_tp; \
+      ss >> res_tp; \
+      BOOST_CHECK_EQUAL( dur, res_tp.time_since_epoch() ); \
+   }
 
+   std::chrono::hours::rep
+
+   CHECK_SHIFT(fc::time_point, 100, us);
+   CHECK_SHIFT(fc::time_point, 100, s);
+   CHECK_SHIFT(fc::time_point, 100, h);
+   CHECK_SHIFT(fc::time_point, 12345, h);
+   CHECK_SHIFT(fc::time_point, fffffffffffffff, us);
+   CHECK_SHIFT(fc::time_point, 1fffffffffffffff, us);
+   CHECK_SHIFT(fc::time_point, efffffffffffffff, us);
+   CHECK_SHIFT(fc::time_point, fffffffffffffffe, us);
+   CHECK_SHIFT(fc::time_point, ffffffffffffffff, us);
+
+   CHECK_SHIFT(fc::time_point_sec, 100, s);
+   CHECK_SHIFT(fc::time_point_sec, 100, h);
+   CHECK_SHIFT(fc::time_point_sec, 12345, h);
+   CHECK_SHIFT(fc::time_point_sec, ffffffffffffffff, s);
+
+} FC_LOG_AND_RETHROW();
+
+*/
 BOOST_AUTO_TEST_CASE(time_point_sec_comparison_test) try {
     time_point_sec tp0   {chrono::seconds(          0  )};
     time_point_sec tp256 {chrono::seconds(      0x100  )};

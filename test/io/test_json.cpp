@@ -12,7 +12,7 @@ namespace json_test_util {
    constexpr size_t exception_limit_size = 250;
 
    const json::yield_function_t yield_deadline_exception_at_start = [](std::ostream& os) {
-      FC_CHECK_DEADLINE(fc::clock::now() - fc::milliseconds(1));
+      FC_CHECK_DEADLINE(fc::now<fc::microseconds>() - fc::milliseconds(1));
    };
 
    const json::yield_function_t yield_deadline_exception_in_mid = [](std::ostream& os) {
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(to_stream_test)
       {
          variant v(json_test_util::escape_input_str);
          std::stringstream deadline_exception_at_start_ss;
-         BOOST_CHECK_EXCEPTION(json::to_stream( deadline_exception_at_start_ss, v, fc::time_point::min(), json::output_formatting::stringify_large_ints_and_doubles, json::max_length_limit),
+         BOOST_CHECK_EXCEPTION(json::to_stream( deadline_exception_at_start_ss, v, fc::time_point(), json::output_formatting::stringify_large_ints_and_doubles, json::max_length_limit),
                                fc::timeout_exception,
                                json_test_util::time_except_verf_func);
          BOOST_CHECK_EQUAL(deadline_exception_at_start_ss.str().empty(), true);
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(to_string_test)
       {
          variant v(json_test_util::escape_input_str);
          std::string deadline_exception_at_start_str;
-         BOOST_CHECK_EXCEPTION(deadline_exception_at_start_str = json::to_string( v, fc::time_point::min(), json::output_formatting::stringify_large_ints_and_doubles, json::max_length_limit),
+         BOOST_CHECK_EXCEPTION(deadline_exception_at_start_str = json::to_string( v, fc::time_point(), json::output_formatting::stringify_large_ints_and_doubles, json::max_length_limit),
                                fc::timeout_exception,
                                json_test_util::time_except_verf_func);
          BOOST_CHECK_EQUAL(deadline_exception_at_start_str.empty(), true);
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(to_string_test)
 
       // time_out
       std::string id_ret_3;
-      BOOST_REQUIRE_THROW(id_ret_3 = json::to_string( id, fc::clock::now() - fc::milliseconds(1) ), fc::timeout_exception);
+      BOOST_REQUIRE_THROW(id_ret_3 = json::to_string( id, fc::now<fc::microseconds>() - fc::milliseconds(1) ), fc::timeout_exception);
       BOOST_CHECK_EQUAL(id_ret_3.empty(), true);
    }
 }
@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(to_pretty_string_test)
       {
          variant v(json_test_util::escape_input_str);
          std::string deadline_exception_at_start_str;
-         BOOST_CHECK_EXCEPTION(deadline_exception_at_start_str = json::to_pretty_string( v, fc::time_point::min(), json::output_formatting::stringify_large_ints_and_doubles, json::max_length_limit),
+         BOOST_CHECK_EXCEPTION(deadline_exception_at_start_str = json::to_pretty_string( v, fc::time_point(), json::output_formatting::stringify_large_ints_and_doubles, json::max_length_limit),
          fc::timeout_exception,
          json_test_util::time_except_verf_func);
          BOOST_CHECK_EQUAL(deadline_exception_at_start_str.empty(), true);
@@ -359,7 +359,7 @@ BOOST_AUTO_TEST_CASE(to_pretty_string_test)
 
       // time_out
       std::string id_ret_3;
-      BOOST_REQUIRE_THROW(id_ret_3 = json::to_pretty_string( id, fc::clock::now() - fc::milliseconds(1) ), fc::timeout_exception);
+      BOOST_REQUIRE_THROW(id_ret_3 = json::to_pretty_string( id, fc::now<fc::microseconds>() - fc::milliseconds(1) ), fc::timeout_exception);
       BOOST_CHECK_EQUAL(id_ret_3.empty(), true);
    }
 }

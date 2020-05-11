@@ -50,7 +50,7 @@ namespace fc
       my->file        = fc::path(file).filename().generic_string(); // TODO truncate filename
       my->line        = line;
       my->method      = method;
-      my->timestamp   = clock::now();
+      my->timestamp   = fc::now<fc::microseconds>();
       my->thread_name = fc::get_thread_name();
    }
 

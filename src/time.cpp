@@ -13,7 +13,7 @@ namespace fc {
 /*
   namespace bch = boost::chrono;
 
-  time_point fc::clock::now()
+  time_point fc::now<fc::microseconds>()
   {
      return time_point( microseconds( bch::duration_cast<bch::microseconds>( bch::system_clock::now().time_since_epoch() ).count() ) );
   }
@@ -86,7 +86,6 @@ namespace fc {
       else
           pt = boost::posix_time::from_iso_string( s );
       tp = fc::time_point_sec( fc::time_point_sec::duration( (pt - epoch).total_seconds() ) );
-      //return fc::time_point_sec( (pt - epoch).total_seconds() );
   } FC_RETHROW_EXCEPTIONS( warn, "unable to convert ISO-formatted string to fc::time_point_sec" ) }
 
   void from_iso_string( const fc::string& s, time_point &  tp )
@@ -128,13 +127,6 @@ namespace fc {
                                boost::algorithm::join(day,      "|") + '|' +
                                boost::algorithm::join(week,     "|") +
                                ")\\s*$" };
-/*                "(us|usec|microsec|microsecond|microseconds"
-                "|ms|msec|millisec|millisecond|milliseconds"
-                "|s|sec|second|seconds"
-                "|m|min|minute|minutes"
-                "|h|hour|hours"
-                "|d|day|days"
-                "|w|week|weeks)?"*/
 
     std::smatch m;
     std::regex_search(str, m, r);
@@ -183,7 +175,7 @@ namespace fc {
   }
   // inspired by show_date_relative() in git's date.c
   string get_approximate_relative_time_string(const time_point_sec& event_time,
-                                              const time_point_sec& relative_to_time /* = fc::clock::now() */,
+                                              const time_point_sec& relative_to_time /* = fc::now<fc::microseconds>() */,
                                               const std::string& default_ago /* = " ago" */) {
     string ago = default_ago;
     int32_t seconds_ago = fc::duration_cast<fc::seconds>( relative_to_time.time_since_epoch() - event_time.time_since_epoch() ).count();
@@ -250,7 +242,7 @@ namespace fc {
   }
 */
   string get_approximate_relative_time_string(const time_point& event_time,
-                                              const time_point& relative_to_time /* = fc::clock::now() */,
+                                              const time_point& relative_to_time /* = fc::now<fc::microseconds>() */,
                                               const std::string& ago /* = " ago" */) {
     return get_approximate_relative_time_string(
       fc::time_point_cast<fc::seconds>(event_time),

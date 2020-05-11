@@ -20,23 +20,33 @@
 namespace fc {
 #ifdef TIME_IS_STD_CHRONO
   namespace chrono = std::chrono;
+
   using     chrono::microseconds;
   using     chrono::milliseconds;
-  using     chrono::seconds;
-  using     chrono::minutes;
-  using     chrono::hours;
-  typedef   chrono::duration<int, std::ratio<60 * 60 * 24>>  days;
-  typedef   chrono::duration<int, std::ratio<60 * 60 * 24 * 7>>  weeks;
-
+  //using     chrono::seconds;
+  typedef chrono::duration<int32_t, std::ratio<1, 1>> seconds;
+  using chrono::hours;
+  using chrono::minutes;
+  typedef   chrono::duration<int16_t, std::ratio<60 * 60 * 24>>      days;
+  typedef   chrono::duration<int16_t, std::ratio<60 * 60 * 24 * 7>>  weeks;
+/*/
+  typedef   duration<uint64_t, std::ratio<1, 1000000>> microseconds;  // at least 55 bits needed
+  typedef   duration<uint64_t, std::ratio<1,    1000>> milliseconds;  // at least 45 bits needed
+  typedef   duration<uint64_t, std::ratio<1,       1>> seconds;       // at least 35 bits needed
+  typedef   duration<uint32_t, std::ratio<  60> >      minutes;       // at least 29 bits needed
+  typedef   duration<uint32_t, std::ratio<3600> >      hours;         // at least 23 bits needed
+  typedef   duration<uint16_t, std::ratio<60 * 60 * 24>>      days;
+  typedef   duration<uint16_t, std::ratio<60 * 60 * 24 * 7>>  weeks;
+*/
   using     chrono::duration_cast;
   using     chrono::time_point_cast;
 
-  typedef   chrono::system_clock  clock;
-  typedef   chrono::time_point<fc::clock, fc::microseconds>  time_point;
-  typedef   chrono::time_point<fc::clock, fc::seconds>       time_point_sec;
+  //typedef   chrono::system_clock  clock;
+  typedef   chrono::time_point<chrono::system_clock, fc::microseconds>  time_point;
+  typedef   chrono::time_point<chrono::system_clock, fc::seconds>       time_point_sec;
 
   template<typename Duration>
-  auto now() { return fc::time_point_cast<Duration>( fc::clock::now() ); }
+  auto now() { return fc::time_point_cast<Duration>( chrono::system_clock::now() ); }
 #else
   class microseconds {
     public:
@@ -159,47 +169,65 @@ namespace fc {
   };
 #endif
   template <class Clock, class Duration>
-  inline boost::posix_time::ptime  to_ptime(const chrono::time_point<Clock, Duration> &  tp)
-  {
+  inline boost::posix_time::ptime  to_ptime(const chrono::time_point<Clock, Duration> &  tp) {
     namespace posix = boost::posix_time;
     posix::microseconds  usec( chrono::duration_cast<fc::microseconds>( tp.time_since_epoch() ).count() );
     return  posix::from_time_t(0) + usec;
   }
 
   template <class Clock, class Duration>
-  inline std::string to_iso_string(const chrono::time_point<Clock, Duration> &  tp)
+  inline std::string to_iso_string(const chrono::time_point<Clock, Duration> &  tp, bool extend_to_usec = false)
   {
     std::string res = boost::posix_time::to_iso_extended_string( to_ptime(tp) );
-    if ( std::is_same<Duration, fc::microseconds>() && res.length() < 20 )
-      return res + ".000000" ;
-    else
+    if ( std::is_same<Duration, fc::microseconds>() ) {
+      if ( res.length() < 20 )
+        return res + (extend_to_usec ? ".000000" :  ".000") ;
+      else {
+        // 1970-01-01T00:00:00.000000
+        // ^    ^    ^    ^    ^    ^
+        // 1    6    11   16   21   25
+        if ( !extend_to_usec )  res.resize( 23 );
+        return res;
+      }
+    }
+    else {
       return res;
+    }
   }
 
   template <class Clock, class Duration>
   inline std::string to_non_delimited_iso_string(const chrono::time_point<Clock, Duration> &  tp)
   {
     std::string res = boost::posix_time::to_iso_string( to_ptime(tp) );
-    if ( std::is_same<Duration, fc::microseconds>() && res.length() < 16 )
-      return res + ".000000" ;
-    else
+    if ( std::is_same<Duration, fc::microseconds>() ) {
+      if ( res.length() < 16 )
+        return res + ".000";
+      else {
+        // 19700101T000000.000
+        // ^    ^    ^    ^  ^
+        // 1    6    11   16 19
+        res.resize( 19 );
+        return res;
+      }
+    }
+    else {
       return res;
+    }
   }
 
   template <class Duration>
-  inline std::string to_string(const Duration &  time)
-  {
-    #define TIME_TO_STRING(TYPE, TOKEN) \
+  inline std::string to_string(const Duration &  time) {
+    #define TRY_TO_STRING(TYPE, TOKEN) \
       if (std::is_same<Duration, TYPE>::value) \
-        return to_string( (uint64_t)time.count() ) + TOKEN;
+        return to_string( (int64_t)time.count() ) + TOKEN;
 
-    TIME_TO_STRING( fc::microseconds, " microsec" );
-    TIME_TO_STRING( fc::milliseconds, " millisec" );
-    TIME_TO_STRING( fc::seconds,      " sec"      );
-    TIME_TO_STRING( fc::minutes,      " min"      );
-    TIME_TO_STRING( fc::hours,        " hours"    );
-    TIME_TO_STRING( fc::days,         " days"     );
-    TIME_TO_STRING( fc::weeks,        " weeks"    );
+    TRY_TO_STRING( fc::microseconds, " microsec" );
+    TRY_TO_STRING( fc::milliseconds, " millisec" );
+    TRY_TO_STRING( fc::seconds,      " sec"      );
+    TRY_TO_STRING( fc::minutes,      " min"      );
+    TRY_TO_STRING( fc::hours,        " hours"    );
+    TRY_TO_STRING( fc::days,         " days"     );
+    TRY_TO_STRING( fc::weeks,        " weeks"    );
     return to_string( uint64_t(time.count()) );
   }
 
@@ -225,13 +253,6 @@ namespace fc {
   void to_variant( const fc::time_point& t, variant& v );
   void to_variant( const fc::time_point_sec& t, variant& v );
 
-/*  template<class OStream>
-  OStream & operator<<(OStream & os, const time_point_sec & tp ) {
-    return os << fc::string(tp);
-  }
-*/
-  typedef fc::optional<time_point> otime_point;
-
   /** return a human-readable approximate time, relative to now()
    * e.g., "4 hours ago", "2 months ago", etc.
    */
@@ -239,53 +260,23 @@ namespace fc {
                                               const time_point_sec& relative_to_time = fc::now<fc::seconds>(),
                                               const std::string& ago = " ago");
   string get_approximate_relative_time_string(const time_point& event_time,
-                                              const time_point& relative_to_time = fc::clock::now(),
+                                              const time_point& relative_to_time = fc::now<fc::microseconds>(),
                                               const std::string& ago = " ago");
 }
 
 namespace std {
   template <class CharT, class Traits, class Rep, class Period>
-  std::basic_ostream<CharT, Traits>&
-  operator<<( std::basic_ostream<CharT, Traits>& os,
-              const std::chrono::duration<Rep, Period>& d )
-  {
-    std::basic_ostringstream<CharT, Traits> s;
-    s.flags(os.flags());
-    s.imbue(os.getloc());
-    s.precision(os.precision());
-    s << fc::to_string(d);
-    return os << s.str();
-  }
-
-  //template<class CharT, class Traits, class Clock, class Duration>
-  template <class Stream, class Clock, class Duration>
-  Stream &  operator<<(Stream & os, const chrono::time_point<Clock, Duration> & tp ) {
-    boost::cnv::cstream ccnv;
-    size_t len = sizeof( typename Duration::rep ) * 2;
-    fc::string  str = boost::convert<std::string>( tp.time_since_epoch().count(), ccnv(std::hex)(std::setw(len))).value();
-    os.write( str.data(), str.length() );
-    return os;
-  }
-
-  template <class Stream, class Clock, class Duration>
-  Stream &  operator>>(Stream & os, chrono::time_point<Clock, Duration> & tp ) {
-    typedef chrono::time_point<Clock, Duration> TP;
-
-    boost::cnv::cstream ccnv;
-    auto len = sizeof( typename Duration::rep ) * 2;
-    fc::string  str;
-    str.resize(len);
-    os.read( str.data(), str.length() );
-    auto  count = boost::convert<typename Duration::rep>( str, ccnv(std::hex) ).value();
-
-    tp = TP( typename TP::duration(count) );
-    return os;
+  std::basic_ostream<CharT, Traits> &
+  operator<<( std::basic_ostream<CharT, Traits>&        os,
+              const fc::chrono::duration<Rep, Period>&  d ) {
+    return os << fc::to_string(d);
   }
 
   template<class CharT, class Traits, class Clock, class Duration>
-  std::basic_ostream<CharT, Traits> & operator<<(std::basic_ostream<CharT, Traits> & os, const chrono::time_point<Clock, Duration> & tp ) {
-    return os << fc::to_iso_string(tp);
-    //return os << time_fmt(utc, "%Y-%m-%dT%H:%M:%S.%f") << fc::to_iso_string(tp) << time_fmt(utc);
+  std::basic_ostream<CharT, Traits> &
+  operator<<( std::basic_ostream<CharT, Traits>&       os,
+              const fc::chrono::time_point<Clock, Duration> &  tp ) {
+    return os << fc::to_iso_string(tp, true);
   }
 
   template<class Clock, class Duration>
@@ -296,8 +287,6 @@ namespace std {
         return left.time_since_epoch().count() < right.time_since_epoch().count();
       }
   };
-
-  //bool operator <(const fc::time_point_sec & a, const fc::time_point_sec & b) { return less{}(a, b); }
 
 }
 
