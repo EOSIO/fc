@@ -30,11 +30,6 @@ namespace fc
             legacy_generator = 1
          };
 
-         static ostream& to_stream( ostream& out, const fc::string&, const fc::time_point& deadline );
-         static ostream& to_stream( ostream& out, const variant& v, const fc::time_point& deadline, output_formatting format = stringify_large_ints_and_doubles );
-         static ostream& to_stream( ostream& out, const variants& v, const fc::time_point& deadline, output_formatting format = stringify_large_ints_and_doubles );
-         static ostream& to_stream( ostream& out, const variant_object& v, const fc::time_point& deadline, output_formatting format = stringify_large_ints_and_doubles );
-
          static variant  from_string( const string& utf8_str, parse_type ptype = legacy_parser, uint32_t max_depth = DEFAULT_MAX_RECURSION_DEPTH );
          static variants variants_from_string( const string& utf8_str, parse_type ptype = legacy_parser, uint32_t max_depth = DEFAULT_MAX_RECURSION_DEPTH );
          static string   to_string( const variant& v, const fc::time_point& deadline, output_formatting format = stringify_large_ints_and_doubles );
@@ -75,6 +70,8 @@ namespace fc
             return save_to_file( variant(v), fc::path(p), pretty, format );
          }
    };
+
+   std::string escape_string( const std::string_view& str, const fc::time_point& deadline, bool escape_control_chars = true );
 
 } // fc
 
