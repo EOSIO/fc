@@ -599,6 +599,7 @@ namespace fc {
     inline void unpack( Stream& s, std::set<T>& value ) {
       unsigned_int size; fc::raw::unpack( s, size );
       FC_ASSERT( size.value <= MAX_NUM_ARRAY_ELEMENTS );
+      value.clear();
       for( uint64_t i = 0; i < size.value; ++i )
       {
         T tmp;
