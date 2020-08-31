@@ -163,6 +163,21 @@ namespace fc
    }
 
 
+   bool operator ==( const variant_object& obj1, const variant_object& obj2 ) {
+      auto it1 = obj1.begin();
+      auto it2 = obj2.begin();
+      for ( ; it1 != obj1.end() && it2 != obj2.end(); ++it1, ++it2 ) {
+         if ( *it1 != *it2 )
+            return false;
+      }
+
+      if ( it1 != obj1.end() || it2 != obj2.end() )
+         return false;
+
+      return true;
+   }
+
+
    void to_variant( const variant_object& var,  variant& vo )
    {
       vo = variant(var);

@@ -848,6 +848,7 @@ string format_string( const string& frmt, const variant_object& args, bool minim
       if( a.is_int64()   || b.is_int64() )  return a.as_int64() == b.as_int64();
       if( a.is_uint64()  || b.is_uint64() ) return a.as_uint64() == b.as_uint64();
       if( a.is_array()   || b.is_array() )  return a.get_array() == b.get_array();
+      if( a.is_object()  || b.is_object() ) return a.get_object() == b.get_object();
       return false;
    }
 
