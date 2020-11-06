@@ -205,6 +205,4 @@ zipkin_span::~zipkin_span() {
    } catch( ... ) {}
 }
 
-
-
 } // fc
