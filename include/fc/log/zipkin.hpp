@@ -134,7 +134,7 @@ struct zipkin_span {
       span_data( const span_data& ) = delete;
       span_data& operator=( const span_data& ) = delete;
       span_data& operator=( span_data&& ) = delete;
-      span_data( span_data&& rhs ) noexcept = default;
+      span_data( span_data&& rhs ) = default;
 
       uint64_t id;
       // zipkin traceId and parentId are same (when parent_id set) since only allowing trace with span children.
