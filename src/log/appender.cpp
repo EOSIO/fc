@@ -11,4 +11,5 @@ namespace fc {
    static bool reg_gelf_appender = log_config::register_appender<gelf_appender>( "gelf" );
    static bool reg_dmlog_appender = log_config::register_appender<dmlog_appender>( "dmlog" );
 
+
 } // namespace fc
