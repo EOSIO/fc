@@ -66,7 +66,6 @@ namespace fc {
       log_config::get().logger_map.clear();
       log_config::get().appender_map.clear();
 
-      //slog( "\n%s", fc::json::to_pretty_string(cfg).c_str() );
       for( size_t i = 0; i < cfg.appenders.size(); ++i ) {
          // create appender
          auto fact_itr = log_config::get().appender_factory_map.find( cfg.appenders[i].type );
@@ -91,7 +90,7 @@ namespace fc {
          for( auto a = cfg.loggers[i].appenders.begin(); a != cfg.loggers[i].appenders.end(); ++a ){
             auto ap_it = log_config::get().appender_map.find(*a);
             if( ap_it != log_config::get().appender_map.end() ) {
-               lgr.add_appender(ap_it->second);
+               lgr.add_appender( ap_it->second );
             }
          }
       }
