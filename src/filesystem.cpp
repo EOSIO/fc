@@ -248,10 +248,20 @@ namespace fc {
      boost::system::error_code ec;
      try {
         #if (BOOST_VERSION/100000) == 1 && ((BOOST_VERSION/100)%1000) > 73
-  	      boost::filesystem::copy( boost::filesystem::path(f), 
-                                   boost::filesystem::path(t), 
-                                   boost::filesystem::copy_options::directories_only, 
-                                   ec );
+          if (exists(t)){
+            throw boost::system::system_error(boost::system::errc::make_error_code(boost::system::errc::errc_t::file_exists));
+          }
+          if ( boost::filesystem::is_directory( f ) ) {
+            boost::filesystem::copy(boost::filesystem::path(f), 
+                                    boost::filesystem::path(t), 
+                                    boost::filesystem::copy_options::directories_only, 
+                                    ec );
+          } else {
+            boost::filesystem::copy(boost::filesystem::path(f), 
+                                    boost::filesystem::path(t), 
+                                    boost::filesystem::copy_options::none, 
+                                    ec );
+          }
         #else
   	      boost::filesystem::copy( boost::filesystem::path(f), boost::filesystem::path(t), ec );
         #endif

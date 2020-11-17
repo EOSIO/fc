@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(dir_copy) try {
    // check not copied recursively
    BOOST_CHECK_EQUAL(fc::exists(tgt_dir + "/" + test_file_name), false);
    
-   // 2. check whether exception be thrown (no overwrite) when target dir does exist, 
+   // 2. check whether exception be thrown (no overwritten) when target dir does exist, 
    BOOST_CHECK_EQUAL(fc::exists(tgt_dir), true);
    BOOST_CHECK_EXCEPTION(fc::copy(src_dir, tgt_dir), fc::exception,  [](const fc::exception& e) {
       return e.code() == fc::unspecified_exception_code;
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(file_copy) try {
    const string tgt_file_content = getFileContent(tgt_dir + "/" + test_file_name);
    BOOST_CHECK_EQUAL(src_file_content, tgt_file_content);
 
-   // 2. check whether exception be thrown (no overwrite) when target file does exist, 
+   // 2. check whether exception be thrown (no overwritten) when target file does exist, 
    BOOST_CHECK_EQUAL(fc::exists(tgt_dir + "/" + test_file_name), true);
    BOOST_CHECK_EXCEPTION(fc::copy(src_dir + "/" + test_file_name, tgt_dir + "/" + test_file_name), 
                          fc::exception,  
