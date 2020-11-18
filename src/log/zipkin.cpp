@@ -58,7 +58,7 @@ public:
    std::optional<url> endpoint;
    std::thread thread;
    boost::asio::io_context ctx;
-   boost::asio::strand<boost::asio::io_context::executor_type> work_strand = boost::asio::make_strand(ctx);
+   boost::asio::io_context::strand work_strand{ctx};
    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard = boost::asio::make_work_guard(ctx);
 
    impl( std::string url, std::string service_name, uint32_t timeout_us )

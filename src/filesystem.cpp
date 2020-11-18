@@ -273,8 +273,8 @@ namespace fc {
 	         ("srcfile",f)("dstfile",t)("inner", fc::except_str() ) );
      }
      if( ec ) {
-        FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}",
-              ("srcfile",f)("dstfile",t)("reason", ec.category().name() ) );
+        FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}, category: ${cat}",
+              ("srcfile",f)("dstfile",t)("reason", ec.message())("cat", ec.category().name()) );
      }
   }
   void resize_file( const path& f, size_t t )
