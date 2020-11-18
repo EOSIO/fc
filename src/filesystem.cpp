@@ -247,7 +247,7 @@ namespace fc {
   void copy( const path& f, const path& t ) {
      boost::system::error_code ec;
      try {
-        #if (BOOST_VERSION/100000) == 1 && ((BOOST_VERSION/100)%1000) > 73
+        #if BOOST_VERSION > 107300
           if (exists(t)){
             throw boost::system::system_error(boost::system::errc::make_error_code(boost::system::errc::errc_t::file_exists));
           }
