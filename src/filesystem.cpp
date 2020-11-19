@@ -247,7 +247,24 @@ namespace fc {
   void copy( const path& f, const path& t ) {
      boost::system::error_code ec;
      try {
+        #if BOOST_VERSION > 107300
+          if (exists(t)){
+            throw boost::system::system_error(boost::system::errc::make_error_code(boost::system::errc::errc_t::file_exists));
+          }
+          if ( boost::filesystem::is_directory( f ) ) {
+            boost::filesystem::copy(boost::filesystem::path(f), 
+                                    boost::filesystem::path(t), 
+                                    boost::filesystem::copy_options::directories_only, 
+                                    ec );
+          } else {
+            boost::filesystem::copy(boost::filesystem::path(f), 
+                                    boost::filesystem::path(t), 
+                                    boost::filesystem::copy_options::none, 
+                                    ec );
+          }
+        #else
   	      boost::filesystem::copy( boost::filesystem::path(f), boost::filesystem::path(t), ec );
+        #endif
      } catch ( boost::system::system_error& e ) {
      	FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}",
 	         ("srcfile",f)("dstfile",t)("reason",e.what() ) );
