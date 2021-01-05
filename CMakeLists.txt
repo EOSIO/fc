@@ -25,7 +25,10 @@ elseif(NOT CMAKE_CXX_STANDARD)
    set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
+# Suppress warnings on 3rdParty Library
+add_definitions( -w )
 add_subdirectory( secp256k1 )
+remove_definitions( -w )
 
 IF( ECC_IMPL STREQUAL openssl )
   SET( ECC_REST src/crypto/elliptic_impl_pub.cpp )
