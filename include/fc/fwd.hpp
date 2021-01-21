@@ -12,7 +12,8 @@ class fwd {
   public:
     template<typename U> fwd( U&& u );
     template<typename U, typename V> fwd( U&& u, V&& v );
-    template<typename U, typename V, typename X, typename Y> fwd( U&& u, V&& v, X&&, Y&& );
+    template<typename U, typename V, typename X> fwd( U&& u, V&& v, X&& x);
+    template<typename U, typename V, typename X, typename Y> fwd( U&& u, V&& v, X&& x, Y&& y);
     fwd();
 
     fwd( const fwd& f );
