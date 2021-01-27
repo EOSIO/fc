@@ -10,6 +10,7 @@
 #include <fc/log/logger.hpp>
 
 #include <secp256k1.h>
+#include <secp256k1_recovery.h>
 
 #if _WIN32
 # include <malloc.h>
@@ -24,13 +25,13 @@
 namespace fc { namespace ecc {
     namespace detail
     {
-        const secp256k1_context_t* _get_context() {
-            static secp256k1_context_t* ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_RANGEPROOF | SECP256K1_CONTEXT_COMMIT );
+        const secp256k1_context* _get_context() {
+            static secp256k1_context* ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
             return ctx;
         }
 
         void _init_lib() {
-            static const secp256k1_context_t* ctx = _get_context();
+            static const secp256k1_context* ctx = _get_context();
             static int init_o = init_openssl();
             (void)ctx;
             (void)init_o;
@@ -70,9 +71,14 @@ namespace fc { namespace ecc {
       static const private_key_secret empty_priv;
       FC_ASSERT( my->_key != empty_priv );
       FC_ASSERT( other.my->_key != empty_pub );
-      public_key_data pub(other.my->_key);
-      FC_ASSERT( secp256k1_ec_pubkey_tweak_mul( detail::_get_context(), (unsigned char*) pub.begin(), pub.size(), (unsigned char*) my->_key.data() ) );
-      return fc::sha512::hash( pub.begin() + 1, pub.size() - 1 );
+      secp256k1_pubkey secp_pubkey;
+      FC_ASSERT( secp256k1_ec_pubkey_parse( detail::_get_context(), &secp_pubkey, (unsigned char*)other.serialize().data, other.serialize().size() ) );
+      FC_ASSERT( secp256k1_ec_pubkey_tweak_mul( detail::_get_context(), &secp_pubkey, (unsigned char*) my->_key.data() ) );
+      public_key_data serialized_result;
+      size_t serialized_result_sz = sizeof(serialized_result);
+      secp256k1_ec_pubkey_serialize(detail::_get_context(), (unsigned char*)&serialized_result.data, &serialized_result_sz, &secp_pubkey, SECP256K1_EC_COMPRESSED );
+      FC_ASSERT( serialized_result_sz == sizeof(serialized_result) );
+      return fc::sha512::hash( serialized_result.begin() + 1, serialized_result.size() - 1 );
     }
 
 
@@ -101,15 +107,6 @@ namespace fc { namespace ecc {
       return my->_key != empty_pub;
     }
 
-    public_key public_key::add( const fc::sha256& digest )const
-    {
-        FC_ASSERT( my->_key != empty_pub );
-        public_key_data new_key;
-        memcpy( new_key.begin(), my->_key.begin(), new_key.size() );
-        FC_ASSERT( secp256k1_ec_pubkey_tweak_add( detail::_get_context(), (unsigned char*) new_key.begin(), new_key.size(), (unsigned char*) digest.data() ) );
-        return public_key( new_key );
-    }
-
     std::string public_key::to_base58() const
     {
         FC_ASSERT( my->_key != empty_pub );
@@ -120,17 +117,6 @@ namespace fc { namespace ecc {
     {
         FC_ASSERT( my->_key != empty_pub );
         return my->_key;
-    }
-
-    public_key_point_data public_key::serialize_ecc_point()const
-    {
-        FC_ASSERT( my->_key != empty_pub );
-        public_key_point_data dat;
-        unsigned int pk_len = my->_key.size();
-        memcpy( dat.begin(), my->_key.begin(), pk_len );
-        FC_ASSERT( secp256k1_ec_pubkey_decompress( detail::_get_context(), (unsigned char *) dat.begin(), (int*) &pk_len ) );
-        FC_ASSERT( pk_len == dat.size() );
-        return dat;
     }
 
     public_key::public_key( const public_key_point_data& dat )
@@ -165,108 +151,15 @@ namespace fc { namespace ecc {
             FC_ASSERT( is_canonical( c ), "signature is not canonical" );
         }
 
-        unsigned int pk_len;
-        FC_ASSERT( secp256k1_ecdsa_recover_compact( detail::_get_context(), (unsigned char*) digest.data(), (unsigned char*) c.begin() + 1, (unsigned char*) my->_key.begin(), (int*) &pk_len, 1, (*c.begin() - 27) & 3 ) );
-        FC_ASSERT( pk_len == my->_key.size() );
+        secp256k1_pubkey secp_pub;
+        secp256k1_ecdsa_recoverable_signature secp_sig;
+
+        FC_ASSERT( secp256k1_ecdsa_recoverable_signature_parse_compact( detail::_get_context(), &secp_sig, (unsigned char*)c.begin() + 1, (*c.begin() - 27) & 3) );
+        FC_ASSERT( secp256k1_ecdsa_recover( detail::_get_context(), &secp_pub, &secp_sig, (unsigned char*) digest.data() ) );
+
+        size_t serialized_result_sz = my->_key.size();
+        secp256k1_ec_pubkey_serialize( detail::_get_context(), (unsigned char*)&my->_key.data, &serialized_result_sz, &secp_pub, SECP256K1_EC_COMPRESSED );
+        FC_ASSERT( serialized_result_sz == my->_key.size() );
     }
-
-
-     commitment_type blind( const blind_factor_type& blind, uint64_t value )
-     {
-        commitment_type result;
-        FC_ASSERT( secp256k1_pedersen_commit( detail::_get_context(), (unsigned char*)&result, (unsigned char*)&blind, value ) );
-        return result;
-     }
-
-     blind_factor_type blind_sum( const std::vector<blind_factor_type>& blinds_in, uint32_t non_neg )
-     {
-        blind_factor_type result;
-        std::vector<const unsigned char*> blinds(blinds_in.size());
-        for( uint32_t i = 0; i < blinds_in.size(); ++i ) blinds[i] = (const unsigned char*)&blinds_in[i];
-        FC_ASSERT( secp256k1_pedersen_blind_sum( detail::_get_context(), (unsigned char*)&result, blinds.data(), blinds_in.size(), non_neg ) );
-        return result;
-     }
-
-     /**  verifies taht commnits + neg_commits + excess == 0 */
-     bool            verify_sum( const std::vector<commitment_type>& commits_in, const std::vector<commitment_type>& neg_commits_in, int64_t excess )
-     {
-        std::vector<const unsigned char*> commits(commits_in.size());
-        for( uint32_t i = 0; i < commits_in.size(); ++i ) commits[i] = (const unsigned char*)&commits_in[i];
-        std::vector<const unsigned char*> neg_commits(neg_commits_in.size());
-        for( uint32_t i = 0; i < neg_commits_in.size(); ++i ) neg_commits[i] = (const unsigned char*)&neg_commits_in[i];
-
-        return secp256k1_pedersen_verify_tally( detail::_get_context(), commits.data(), commits.size(), neg_commits.data(), neg_commits.size(), excess  );
-     }
-
-     bool            verify_range( uint64_t& min_val, uint64_t& max_val, const commitment_type& commit, const std::vector<char>& proof )
-     {
-        return secp256k1_rangeproof_verify( detail::_get_context(), &min_val, &max_val, (const unsigned char*)&commit, (const unsigned char*)proof.data(), proof.size() );
-     }
-
-     std::vector<char>    range_proof_sign( uint64_t min_value, 
-                                       const commitment_type& commit, 
-                                       const blind_factor_type& commit_blind, 
-                                       const blind_factor_type& nonce,
-                                       int8_t base10_exp,
-                                       uint8_t min_bits,
-                                       uint64_t actual_value
-                                     )
-     {
-        int proof_len = 5134; 
-        std::vector<char> proof(proof_len);
-
-        FC_ASSERT( secp256k1_rangeproof_sign( detail::_get_context(), 
-                                              (unsigned char*)proof.data(), 
-                                              &proof_len, min_value, 
-                                              (const unsigned char*)&commit, 
-                                              (const unsigned char*)&commit_blind, 
-                                              (const unsigned char*)&nonce, 
-                                              base10_exp, min_bits, actual_value ) );
-        proof.resize(proof_len);
-        return proof;
-     }
-
-
-     bool            verify_range_proof_rewind( blind_factor_type& blind_out,
-                                                uint64_t& value_out,
-                                                string& message_out, 
-                                                const blind_factor_type& nonce,
-                                                uint64_t& min_val, 
-                                                uint64_t& max_val, 
-                                                commitment_type commit, 
-                                                const std::vector<char>& proof )
-     {
-        char msg[4096];
-        int  mlen = 0;
-        FC_ASSERT( secp256k1_rangeproof_rewind( detail::_get_context(), 
-                                                (unsigned char*)&blind_out,
-                                                &value_out,
-                                                (unsigned char*)msg,
-                                                &mlen,
-                                                (const unsigned char*)&nonce,
-                                                &min_val,
-                                                &max_val,
-                                                (const unsigned char*)&commit,
-                                                (const unsigned char*)proof.data(),
-                                                proof.size() ) );
-
-        message_out = std::string( msg, mlen );
-        return true;
-     }
-
-     range_proof_info range_get_info( const std::vector<char>& proof )
-     {
-        range_proof_info result;
-        FC_ASSERT( secp256k1_rangeproof_info( detail::_get_context(), 
-                                              (int*)&result.exp, 
-                                              (int*)&result.mantissa, 
-                                              (uint64_t*)&result.min_value, 
-                                              (uint64_t*)&result.max_value, 
-                                              (const unsigned char*)proof.data(), 
-                                              (int)proof.size() ) );
-
-        return result;
-     }
-
 
 } }
