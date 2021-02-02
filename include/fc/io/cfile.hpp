@@ -56,8 +56,10 @@ public:
    ///         "ab+" - open for binary update - create if does not exist
    ///         "rb+" - open for binary update - file must exist
    void open( const char* mode ) {
-       if(_open)
+       if(_open) {
            fclose(_file.get());
+           _open = false;
+       }
 
       _file.reset( FC_FOPEN( _file_path.generic_string().c_str(), mode ) );
       if( !_file ) {
