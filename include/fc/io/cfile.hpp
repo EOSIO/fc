@@ -32,11 +32,6 @@ public:
        _file(nullptr, &fclose)
    {}
 
-   ~cfile() {
-       if(_open)
-           fclose(_file.get());
-   }
-
    void set_file_path( fc::path file_path ) {
       _file_path = std::move( file_path );
    }
@@ -167,11 +162,6 @@ public:
             throw std::ios_base::failure("cfile is not open");
 
         if(feof(_file.get()))return true;
-
-        int c = fgetc(_file.get());
-        if(EOF == c)return true;
-
-        return (EOF == ungetc(c, _file.get()));
     }
 
    int getc() {
