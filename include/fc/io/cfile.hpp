@@ -32,7 +32,12 @@ public:
        _file(nullptr, &fclose)
    {}
 
-   void set_file_path( const fc::path &file_path ) {
+   ~cfile() {
+       if(_open)
+           fclose(_file.get());
+   }
+
+   void set_file_path( fc::path file_path ) {
       _file_path = std::move( file_path );
    }
 
