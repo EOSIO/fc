@@ -14,10 +14,6 @@
 
 namespace fc {
 
-namespace detail {
-   using unique_file = std::unique_ptr<FILE>;
-}
-
 class cfile_datastream;
 
 /**
@@ -34,7 +30,7 @@ public:
    cfile():
       _open(false),
       _file_path(""),
-      _file(nullptr)
+      _file_ptr(nullptr)
    {}
 
    ~cfile() {
@@ -62,8 +58,8 @@ public:
    void open( const char* mode ) {
       close();
 
-      _file.reset( FC_FOPEN( _file_path.generic_string().c_str(), mode ) );
-      if( !_file ) {
+      _file_ptr = FC_FOPEN( _file_path.generic_string().c_str(), mode );
+      if( !_file_ptr ) {
          throw std::ios_base::failure( "cfile unable to open: " +  _file_path.generic_string() + " in mode: " + std::string( mode ) );
       }
       _open = true;
@@ -73,7 +69,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      long result = ftell( _file.get() );
+      long result = ftell( _file_ptr );
       if (result == -1)
          throw std::ios_base::failure("cfile: " + get_file_path().generic_string() +
                                       " unable to get the current position of the file, error: " + std::to_string( errno ));
@@ -81,7 +77,7 @@ public:
    }
 
    void seek( long loc ) {
-      if( 0 != fseek( _file.get(), loc, SEEK_SET ) ) {
+      if( 0 != fseek( _file_ptr, loc, SEEK_SET ) ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
                                       " unable to SEEK_SET to: " + std::to_string(loc) );
       }
@@ -91,7 +87,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      if( 0 != fseek( _file.get(), loc, SEEK_END ) ) {
+      if( 0 != fseek( _file_ptr, loc, SEEK_END ) ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
                                        " unable to SEEK_END to: " + std::to_string(loc) );
       }
@@ -101,7 +97,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      if( 0 != fseek( _file.get(), loc, SEEK_CUR ) ) {
+      if( 0 != fseek( _file_ptr, loc, SEEK_CUR ) ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
                                        " unable to SEEK_CUR to: " + std::to_string(loc) );
       }
@@ -111,7 +107,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      size_t result = fread( d, 1, n, _file.get() );
+      size_t result = fread( d, 1, n, _file_ptr );
 
       if( result != n ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
@@ -123,7 +119,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      size_t result = fwrite( d, 1, n, _file.get() );
+      size_t result = fwrite( d, 1, n, _file_ptr );
 
       if( result != n ) {
           throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
@@ -135,8 +131,8 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      if( 0 != fflush( _file.get() ) ) {
-         int ec = ferror( _file.get() );
+      if( 0 != fflush( _file_ptr ) ) {
+         int ec = ferror( _file_ptr );
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
                                       " unable to flush file, ferror: " + std::to_string( ec ) );
       }
@@ -146,7 +142,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      const int fd = fileno(_file.get() );
+      const int fd = fileno(_file_ptr );
 
       if( -1 == fd ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
@@ -164,7 +160,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      if(feof(_file.get()))
+      if(feof(_file_ptr))
          return true;
     }
 
@@ -172,7 +168,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      int ret = fgetc(_file.get());
+      int ret = fgetc(_file_ptr);
 
       if (ret == EOF) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
@@ -183,7 +179,7 @@ public:
 
    void close() {
       if(is_open()) {
-         fclose(_file.get());
+         fclose(_file_ptr);
          _open = false;
       }
    }
@@ -193,7 +189,7 @@ public:
 private:
    bool                  _open;
    fc::path              _file_path;
-   detail::unique_file   _file;
+   FILE                  *_file_ptr;
 };
 
 /*
