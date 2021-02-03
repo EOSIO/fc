@@ -15,7 +15,7 @@
 namespace fc {
 
 namespace detail {
-   using unique_file = std::unique_ptr<FILE, decltype( &fclose )>;
+   using unique_file = std::unique_ptr<FILE>;
 }
 
 class cfile_datastream;
@@ -25,15 +25,24 @@ class cfile_datastream;
  * std::ios_base::failure exception thrown for errors.
  */
 class cfile {
+private:
+   cfile(const cfile &) = delete;
+   cfile(const cfile &&) = delete;
+   const cfile& operator=(const cfile &) = delete;
+   const cfile&& operator=(const cfile &&) = delete;
 public:
    cfile():
       _open(false),
       _file_path(""),
-      _file(nullptr, &fclose)
+      _file(nullptr)
    {}
 
-   void set_file_path( fc::path file_path ) {
-      _file_path = std::move( file_path );
+   ~cfile() {
+      close();
+   }
+
+   void set_file_path( const fc::path& file_path ) {
+      _file_path = file_path;
    }
 
    const fc::path& get_file_path() const {
@@ -51,10 +60,7 @@ public:
    ///         "ab+" - open for binary update - create if does not exist
    ///         "rb+" - open for binary update - file must exist
    void open( const char* mode ) {
-      if(is_open()) {
-         fclose(_file.get());
-         _open = false;
-      }
+      close();
 
       _file.reset( FC_FOPEN( _file_path.generic_string().c_str(), mode ) );
       if( !_file ) {
@@ -177,7 +183,7 @@ public:
 
    void close() {
       if(is_open()) {
-         _file.reset();
+         fclose(_file.get());
          _open = false;
       }
    }
