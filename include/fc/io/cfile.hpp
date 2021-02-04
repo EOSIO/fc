@@ -227,6 +227,8 @@ inline cfile_datastream cfile::create_datastream() {
 
 template <>
 class datastream<fc::cfile, void> : public fc::cfile {
+private:
+   char mCurrentChar = 'EOF';
  public:
    using fc::cfile::cfile;
 
@@ -234,10 +236,13 @@ class datastream<fc::cfile, void> : public fc::cfile {
 
    bool get(char& c) {
       c = this->getc();
+      mCurrentChar = c;
       return true;
    }
 
-   bool remaining() { return !this->eof(); }
+   bool remaining() const {
+      return (mCurrentChar != EOF);
+   }
 
    fc::cfile&       storage() { return *this; }
    const fc::cfile& storage() const { return *this; }
