@@ -53,8 +53,21 @@ public:
       if( !_file ) {
          throw std::ios_base::failure( "cfile unable to open: " +  _file_path.generic_string() + " in mode: " + std::string( mode ) );
       }
+
+      fseek(_file.get(), 0L, SEEK_END);
+      _size = ftell(_file.get());
+      fseek(_file.get(), 0L, SEEK_SET);
+
       _open = true;
    }
+
+   bool remaining()const {
+      if(!is_open())
+         throw std::ios_base::failure("cfile is not open");
+
+      return (ftell(_file.get()) < _size);
+   }
+
 
    size_t tellp() const {
       if(!is_open())
@@ -178,6 +191,7 @@ private:
    bool                  _open = false;
    fc::path              _file_path;
    detail::unique_file   _file;
+   long                  _size;
 };
 
 /*
@@ -230,8 +244,6 @@ class datastream<fc::cfile, void> : public fc::cfile {
       _current_c = c;
       return true;
    }
-
-   bool remaining() { return (EOF != _current_c); }
 
    fc::cfile&       storage() { return *this; }
    const fc::cfile& storage() const { return *this; }
