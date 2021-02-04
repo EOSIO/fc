@@ -119,14 +119,18 @@ public:
    }
 
    void write( const char* d, size_t n ) {
+      const size_t WRITE_SIZE = 1;
+
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      size_t result = fwrite( d, 1, n, _file.get() );
+      size_t result = fwrite( d, WRITE_SIZE, n, _file.get() );
       if( result != n ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
                                        " unable to write " + std::to_string( n ) + " bytes; only wrote " + std::to_string( result ) );
       }
+      // Keep up with the size  of the file.
+      _size +=  (WRITE_SIZE * n);
    }
 
    void flush() {
@@ -191,7 +195,7 @@ private:
    bool                  _open = false;
    fc::path              _file_path;
    detail::unique_file   _file;
-   long                  _size;
+   size_t                _size =  0;
 };
 
 /*
