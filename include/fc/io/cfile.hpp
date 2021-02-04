@@ -14,6 +14,10 @@
 
 namespace fc {
 
+namespace detail {
+   using unique_file = std::unique_ptr<FILE, decltype( &fclose )>;
+}
+
 class cfile_datastream;
 
 /**
@@ -21,21 +25,10 @@ class cfile_datastream;
  * std::ios_base::failure exception thrown for errors.
  */
 class cfile {
-private:
-   cfile(const cfile &) = delete;
-   cfile(const cfile &&) = delete;
-   const cfile& operator=(const cfile &) = delete;
-   const cfile&& operator=(const cfile &&) = delete;
 public:
-   cfile():
-      _open(false),
-      _file_path(""),
-      _file_ptr(nullptr)
+   cfile()
+     : _file(nullptr, &fclose)
    {}
-
-   ~cfile() {
-      close();
-   }
 
    void set_file_path( const fc::path& file_path ) {
       _file_path = file_path;
@@ -56,10 +49,8 @@ public:
    ///         "ab+" - open for binary update - create if does not exist
    ///         "rb+" - open for binary update - file must exist
    void open( const char* mode ) {
-      close();
-
-      _file_ptr = FC_FOPEN( _file_path.generic_string().c_str(), mode );
-      if( !_file_ptr ) {
+      _file.reset( FC_FOPEN( _file_path.generic_string().c_str(), mode ) );
+      if( !_file ) {
          throw std::ios_base::failure( "cfile unable to open: " +  _file_path.generic_string() + " in mode: " + std::string( mode ) );
       }
       _open = true;
@@ -69,7 +60,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      long result = ftell( _file_ptr );
+      long result = ftell( _file.get() );
       if (result == -1)
          throw std::ios_base::failure("cfile: " + get_file_path().generic_string() +
                                       " unable to get the current position of the file, error: " + std::to_string( errno ));
@@ -77,9 +68,9 @@ public:
    }
 
    void seek( long loc ) {
-      if( 0 != fseek( _file_ptr, loc, SEEK_SET ) ) {
+      if( 0 != fseek( _file.get(), loc, SEEK_SET ) ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
-                                      " unable to SEEK_SET to: " + std::to_string(loc) );
+                                       " unable to SEEK_SET to: " + std::to_string(loc) );
       }
    }
 
@@ -87,7 +78,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      if( 0 != fseek( _file_ptr, loc, SEEK_END ) ) {
+      if( 0 != fseek( _file.get(), loc, SEEK_END ) ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
                                        " unable to SEEK_END to: " + std::to_string(loc) );
       }
@@ -97,7 +88,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      if( 0 != fseek( _file_ptr, loc, SEEK_CUR ) ) {
+      if( 0 != fseek( _file.get(), loc, SEEK_CUR ) ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
                                        " unable to SEEK_CUR to: " + std::to_string(loc) );
       }
@@ -107,11 +98,10 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      size_t result = fread( d, 1, n, _file_ptr );
-
+      size_t result = fread( d, 1, n, _file.get() );
       if( result != n ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
-                                      " unable to read " + std::to_string( n ) + " bytes; only read " + std::to_string( result ) );
+                                       " unable to read " + std::to_string( n ) + " bytes; only read " + std::to_string( result ) );
       }
    }
 
@@ -119,11 +109,10 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      size_t result = fwrite( d, 1, n, _file_ptr );
-
+      size_t result = fwrite( d, 1, n, _file.get() );
       if( result != n ) {
-          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
-                                      " unable to write " + std::to_string( n ) + " bytes; only wrote " + std::to_string( result ) );
+         throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
+                                       " unable to write " + std::to_string( n ) + " bytes; only wrote " + std::to_string( result ) );
       }
    }
 
@@ -131,10 +120,10 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      if( 0 != fflush( _file_ptr ) ) {
-         int ec = ferror( _file_ptr );
+      if( 0 != fflush( _file.get() ) ) {
+         int ec = ferror( _file.get() );
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
-                                      " unable to flush file, ferror: " + std::to_string( ec ) );
+                                       " unable to flush file, ferror: " + std::to_string( ec ) );
       }
    }
 
@@ -142,54 +131,53 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      const int fd = fileno(_file_ptr );
-
+      const int fd = fileno(_file.get() );
       if( -1 == fd ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
-                                      " unable to convert file pointer to file descriptor, error: " +
-                                      std::to_string( errno ) );
+                                       " unable to convert file pointer to file descriptor, error: " +
+                                       std::to_string( errno ) );
       }
-
       if( -1 == fsync( fd ) ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
-                                      " unable to sync file, error: " + std::to_string( errno ) );
+                                       " unable to sync file, error: " + std::to_string( errno ) );
       }
    }
 
-    bool eof() const  {
+   bool eof() const {
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      if(feof(_file_ptr))
-         return true;
-    }
+      return feof(_file.get()) != 0;
+   }
 
    int getc() {
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      int ret = fgetc(_file_ptr);
-
+      int ret = fgetc(_file.get());
       if (ret == EOF) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
-                                      " unable to read 1 byte");
+                                       " unable to read 1 byte");
       }
       return ret;
    }
 
    void close() {
-      if(is_open()) {
-         fclose(_file_ptr);
-         _open = false;
-      }
+      _file.reset();
+      _open = false;
    }
 
    cfile_datastream create_datastream();
 
 private:
-   bool                  _open;
+   cfile(const cfile &) = delete;
+   cfile(const cfile &&) = delete;
+   const cfile& operator=(const cfile &) = delete;
+   const cfile&& operator=(const cfile &&) = delete;
+
+   bool                  _open = false;
    fc::path              _file_path;
-   FILE                  *_file_ptr;
+   detail::unique_file   _file;
 };
 
 /*
@@ -217,7 +205,12 @@ public:
 
    size_t tellp() const { return cf.tellp(); }
 
- private:
+private:
+   cfile_datastream(const cfile_datastream &) = delete;
+   cfile_datastream(const cfile_datastream &&) = delete;
+   const cfile_datastream& operator=(const cfile_datastream &) = delete;
+   const cfile_datastream&& operator=(const cfile_datastream &&) = delete;
+
    cfile& cf;
 };
 
@@ -227,8 +220,6 @@ inline cfile_datastream cfile::create_datastream() {
 
 template <>
 class datastream<fc::cfile, void> : public fc::cfile {
-private:
-   char mCurrentChar = 'EOF';
  public:
    using fc::cfile::cfile;
 
@@ -236,16 +227,21 @@ private:
 
    bool get(char& c) {
       c = this->getc();
-      mCurrentChar = c;
+      _current_c = c;
       return true;
    }
 
-   bool remaining() const {
-      return (mCurrentChar != EOF);
-   }
+   bool remaining() { return (EOF != _current_c); }
 
    fc::cfile&       storage() { return *this; }
    const fc::cfile& storage() const { return *this; }
+private:
+   datastream(const datastream &) = delete;
+   datastream(const datastream &&) = delete;
+   const datastream& operator=(const datastream &) = delete;
+   const datastream&& operator=(const datastream &&) = delete;
+
+   char _current_c = EOF;
 };
 
 
