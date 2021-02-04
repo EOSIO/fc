@@ -62,10 +62,7 @@ public:
    }
 
    bool remaining()const {
-      if(!is_open())
-         throw std::ios_base::failure("cfile is not open");
-
-      return (ftell(_file.get()) < _size);
+      return (tellp() < _size);
    }
 
 
@@ -245,7 +242,6 @@ class datastream<fc::cfile, void> : public fc::cfile {
 
    bool get(char& c) {
       c = this->getc();
-      _current_c = c;
       return true;
    }
 
@@ -256,8 +252,6 @@ private:
    datastream(const datastream &&) = delete;
    const datastream& operator=(const datastream &) = delete;
    const datastream&& operator=(const datastream &&) = delete;
-
-   char _current_c = EOF;
 };
 
 
