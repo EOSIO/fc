@@ -59,6 +59,9 @@ public:
    }
 
    bool remaining(){
+      if(!is_open() || eof())
+         return false;
+
       int c(getc());
       bool isEOF(eof());
       ungetc(c, _file.get());
@@ -115,8 +118,6 @@ public:
    }
 
    void write( const char* d, size_t n ) {
-      const size_t WRITE_SIZE = 1;
-
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
