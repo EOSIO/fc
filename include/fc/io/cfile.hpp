@@ -64,7 +64,10 @@ public:
 
       int c = getc();
       bool isEOF = eof();
-      ungetc(c, _file.get());
+      int result = ungetc(c, _file.get());
+      if(EOF == result)
+         throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
+                                       " unable to ungetc" );
 
       return isEOF;
    }
