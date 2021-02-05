@@ -54,17 +54,16 @@ public:
          throw std::ios_base::failure( "cfile unable to open: " +  _file_path.generic_string() + " in mode: " + std::string( mode ) );
       }
 
-      fseek(_file.get(), 0L, SEEK_END);
-      _size = ftell(_file.get());
-      fseek(_file.get(), 0L, SEEK_SET);
 
       _open = true;
    }
 
-   bool remaining()const {
-      return (tellp() < _size);
+   bool remaining(){
+      int c(getc());
+      bool isEOF(eof());
+      ungetc(c, _file.get());
+      return isEOF;
    }
-
 
    size_t tellp() const {
       if(!is_open())
@@ -126,8 +125,6 @@ public:
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
                                        " unable to write " + std::to_string( n ) + " bytes; only wrote " + std::to_string( result ) );
       }
-      // Keep up with the size  of the file.
-      _size +=  (WRITE_SIZE * n);
    }
 
    void flush() {
@@ -192,7 +189,6 @@ private:
    bool                  _open = false;
    fc::path              _file_path;
    detail::unique_file   _file;
-   size_t                _size =  0;
 };
 
 /*
