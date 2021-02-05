@@ -62,9 +62,10 @@ public:
       if(!is_open() || eof())
          return false;
 
-      int c(getc());
-      bool isEOF(eof());
+      int c = getc();
+      bool isEOF = eof();
       ungetc(c, _file.get());
+
       return isEOF;
    }
 
@@ -121,7 +122,7 @@ public:
       if(!is_open())
          throw std::ios_base::failure("cfile is not open");
 
-      size_t result = fwrite( d, WRITE_SIZE, n, _file.get() );
+      size_t result = fwrite( d, 1, n, _file.get() );
       if( result != n ) {
          throw std::ios_base::failure( "cfile: " + _file_path.generic_string() +
                                        " unable to write " + std::to_string( n ) + " bytes; only wrote " + std::to_string( result ) );
@@ -183,9 +184,9 @@ public:
 
 private:
    cfile(const cfile &) = delete;
-   cfile(const cfile &&) = delete;
+   cfile(cfile &&) = delete;
    const cfile& operator=(const cfile &) = delete;
-   const cfile&& operator=(const cfile &&) = delete;
+   cfile& operator=(cfile &&) = delete;
 
    bool                  _open = false;
    fc::path              _file_path;
@@ -219,9 +220,9 @@ public:
 
 private:
    cfile_datastream(const cfile_datastream &) = delete;
-   cfile_datastream(const cfile_datastream &&) = delete;
+   cfile_datastream(cfile_datastream &&) = delete;
    const cfile_datastream& operator=(const cfile_datastream &) = delete;
-   const cfile_datastream&& operator=(const cfile_datastream &&) = delete;
+   cfile_datastream& operator=(cfile_datastream &&) = delete;
 
    cfile& cf;
 };
@@ -246,9 +247,9 @@ class datastream<fc::cfile, void> : public fc::cfile {
    const fc::cfile& storage() const { return *this; }
 private:
    datastream(const datastream &) = delete;
-   datastream(const datastream &&) = delete;
+   datastream(datastream &&) = delete;
    const datastream& operator=(const datastream &) = delete;
-   const datastream&& operator=(const datastream &&) = delete;
+   datastream& operator=(datastream &&) = delete;
 };
 
 
