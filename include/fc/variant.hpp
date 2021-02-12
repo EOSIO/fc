@@ -604,11 +604,16 @@ namespace fc
    template<typename A, typename B>
    void from_variant( const fc::variant& v, std::pair<A,B>& p )
    {
-      const variants& vars = v.get_array();
-      if( vars.size() > 0 )
-         vars[0].as<A>( p.first );
-      if( vars.size() > 1 )
-         vars[1].as<B>( p.second );
+      try {
+         const variants& vars = v.get_array();
+         if( vars.size() > 0 )
+            vars[0].as<A>( p.first );
+         if( vars.size() > 1 )
+            vars[1].as<B>( p.second );
+      } catch( ... ) {
+         v["first"].as<A>( p.first );
+         v["second"].as<B>( p.second );
+      }
    }
 
    template<typename T>
