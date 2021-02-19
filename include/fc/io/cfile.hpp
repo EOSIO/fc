@@ -179,6 +179,11 @@ inline cfile_datastream cfile::create_datastream() {
    return cfile_datastream(*this);
 }
 
+/*
+ *  @brief datastream adapter that adapts cfile for use with fc pack
+ *
+ *  This class supports pack functionality but not unpack.
+ */
 template <>
 class datastream<fc::cfile, void> : public fc::cfile {
  public:
@@ -190,8 +195,6 @@ class datastream<fc::cfile, void> : public fc::cfile {
       c = this->getc();
       return true;
    }
-
-   bool remaining() { return !this->eof(); }
 
    fc::cfile&       storage() { return *this; }
    const fc::cfile& storage() const { return *this; }
