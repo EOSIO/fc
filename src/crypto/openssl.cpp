@@ -37,8 +37,10 @@ namespace  fc
        }
        openssl_scope()
        {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
           ERR_load_crypto_strings(); 
           OpenSSL_add_all_algorithms();
+#endif
 
           const boost::filesystem::path& boostPath = config_path();
           if(boostPath.empty() == false)
@@ -52,13 +54,17 @@ namespace  fc
 #endif
           }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
           OPENSSL_config(nullptr);
+#endif
        }
 
        ~openssl_scope()
        {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
           EVP_cleanup();
           ERR_free_strings();
+#endif
        }
     };
 
