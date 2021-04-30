@@ -42,7 +42,7 @@ class datastream<T, std::enable_if_t<std::is_same_v<T, char*> || std::is_same_v<
       }
 
       inline bool write( const char* d, size_t s ) {
-        if( _end - _pos >= (int32_t)s ) {
+        if( size_t(_end - _pos) >= (size_t)s ) {
           memcpy( _pos, d, s );
           _pos += s;
           return true;
