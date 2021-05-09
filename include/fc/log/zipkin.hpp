@@ -63,11 +63,14 @@ private:
 };
 
 struct zipkin_span {
-   explicit zipkin_span( std::string name, uint64_t parent_id = 0 )
-         : data( std::move( name ), parent_id ) {}
+   explicit zipkin_span( std::string name, uint64_t trace_id = 0, uint64_t parent_id = 0 )
+         : data( std::move( name ), trace_id, parent_id ) {}
 
-   explicit zipkin_span( uint64_t id, std::string name, uint64_t parent_id = 0 )
-         : data( id, std::move( name ), parent_id ) {}
+   explicit zipkin_span( uint64_t id, std::string name, uint64_t trace_id = 0, uint64_t parent_id = 0 )
+         : data( id, std::move( name ), trace_id, parent_id ) {}
+
+   explicit zipkin_span( std::string name, fc::time_point start )
+         : data( std::move( name ), start ) {}
 
    zipkin_span( const zipkin_span& ) = delete;
    zipkin_span& operator=( const zipkin_span& ) = delete;
@@ -112,29 +115,28 @@ struct zipkin_span {
       friend struct zipkin_trace;
       friend struct optional_trace;
       constexpr explicit operator bool() const noexcept { return id != 0; }
+      token( uint64_t id, uint64_t trace_id )
+            : id( id ), trace_id( trace_id ) {}
    private:
-      explicit token( uint64_t id )
-            : id( id ) {}
       uint64_t id;
+      uint64_t trace_id;
    };
 
-   token get_token() const { return token{data.id}; };
+   token get_token() const { return token{data.id, data.trace_id }; };
 
    static uint64_t to_id( const fc::sha256& id );
 
-   template<typename T>
-   static uint64_t to_id( const T& id ) {
-      static_assert( std::is_same_v<decltype( id.data() ), const uint64_t*>, "expected uint64_t" );
-      return id.data()[3];
-   }
-
    struct span_data {
-      explicit span_data( std::string name, uint64_t parent_id = 0 )
-            : id( zipkin_config::get_next_unique_id() ), parent_id( parent_id ),
+      explicit span_data( std::string name, uint64_t trace_id, uint64_t parent_id )
+            : id( zipkin_config::get_next_unique_id() ), trace_id( trace_id ), parent_id( parent_id ),
               start( time_point::now() ), name( std::move( name ) ) {}
 
-      explicit span_data( uint64_t id, std::string name, uint64_t parent_id = 0 )
-            : id( id ), parent_id( parent_id ), start( time_point::now() ), name( std::move( name ) ) {}
+      explicit span_data( uint64_t id, std::string name, uint64_t trace_id, uint64_t parent_id )
+            : id( id ), trace_id( trace_id == 0 ? id : trace_id ), parent_id( parent_id ), start( time_point::now() ), name( std::move( name ) ) {}
+
+      explicit span_data( std::string name, fc::time_point start) 
+         : id( zipkin_config::get_next_unique_id() ), trace_id( zipkin_config::get_next_unique_id() ), parent_id( 0 ),
+              start( start), name( std::move( name ) ) {}
 
       span_data( const span_data& ) = delete;
       span_data& operator=( const span_data& ) = delete;
@@ -142,39 +144,26 @@ struct zipkin_span {
       span_data( span_data&& rhs ) = default;
 
       uint64_t id;
-      // zipkin traceId and parentId are same (when parent_id set) since only allowing trace with span children.
-      // Not currently supporting spans with children, only trace with children spans.
-      const uint64_t parent_id;
-      const fc::time_point start;
+      const uint64_t             trace_id;
+      const uint64_t             parent_id;
+      const fc::time_point       start;
       fc::time_point stop;
       std::string name;
       fc::mutable_variant_object tags;
    };
 
-   span_data data;
-};
-
-struct zipkin_trace : public zipkin_span {
-   using zipkin_span::zipkin_span;
-
    [[nodiscard]] std::optional<zipkin_span> create_span( std::string name ) const {
-      return zipkin_span{std::move( name ), get_token().id};
+      return create_span_from_token(get_token(), std::move(name));
    }
 
    [[nodiscard]] static std::optional<zipkin_span>
    create_span_from_token( zipkin_span::token token, std::string name ) {
-      return zipkin_span{std::move( name ), token.id};
+      return zipkin_span{std::move( name ), token.trace_id, token.id};
    }
-};
 
-struct optional_trace {
-   std::optional<zipkin_trace> opt;
+   std::string trace_id_string() const;
 
-   constexpr explicit operator bool() const noexcept { return opt.has_value(); }
-
-   [[nodiscard]] zipkin_span::token get_token() const {
-      return opt ? opt->get_token() : zipkin_span::token( 0 );
-   }
+   span_data data;
 };
 
 class zipkin {
