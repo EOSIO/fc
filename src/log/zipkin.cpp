@@ -127,16 +127,9 @@ fc::variant create_zipkin_variant( zipkin_span::span_data&& span, const std::str
    //   int64_t     timestamp // epoch microseconds of start of span
    //   int64_t     duration  // microseconds of span
 
-   uint64_t trace_id;
-   if( span.parent_id != 0 ) {
-      trace_id = span.parent_id;
-   } else {
-      trace_id = span.id;
-   }
-
    fc::mutable_variant_object mvo;
    mvo( "id", fc::to_hex( reinterpret_cast<const char*>(&span.id), sizeof( span.id ) ) );
-   mvo( "traceId", fc::to_hex( reinterpret_cast<const char*>(&trace_id), sizeof( trace_id ) ) );
+   mvo( "traceId", fc::to_hex( reinterpret_cast<const char*>(&span.trace_id), sizeof( span.trace_id ) ) );
    if( span.parent_id != 0 ) {
       mvo( "parentId", fc::to_hex( reinterpret_cast<const char*>(&span.parent_id), sizeof( span.parent_id ) ) );
    }
