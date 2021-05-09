@@ -127,16 +127,9 @@ fc::variant create_zipkin_variant( zipkin_span::span_data&& span, const std::str
    //   int64_t     timestamp // epoch microseconds of start of span
    //   int64_t     duration  // microseconds of span
 
-   uint64_t trace_id;
-   if( span.parent_id != 0 ) {
-      trace_id = span.parent_id;
-   } else {
-      trace_id = span.id;
-   }
-
    fc::mutable_variant_object mvo;
    mvo( "id", fc::to_hex( reinterpret_cast<const char*>(&span.id), sizeof( span.id ) ) );
-   mvo( "traceId", fc::to_hex( reinterpret_cast<const char*>(&trace_id), sizeof( trace_id ) ) );
+   mvo( "traceId", fc::to_hex( reinterpret_cast<const char*>(&span.trace_id), sizeof( span.trace_id ) ) );
    if( span.parent_id != 0 ) {
       mvo( "parentId", fc::to_hex( reinterpret_cast<const char*>(&span.parent_id), sizeof( span.parent_id ) ) );
    }
@@ -165,8 +158,13 @@ void zipkin::log( zipkin_span::span_data&& span ) {
 }
 
 void zipkin::impl::log( zipkin_span::span_data&& span ) {
-   if( consecutive_errors > max_consecutive_errors )
-      return;
+  if (consecutive_errors > max_consecutive_errors) {
+    wlog("consecutive_errors=${consecutive_errors} exceeds "
+         "limit($max_consecutive_errors)",
+         ("consecutive_errors", consecutive_errors.load())("max_consecutive_errors",
+                                                    max_consecutive_errors));
+    return;
+  }
 
    try {
       auto deadline = fc::time_point::now() + fc::microseconds( timeout_us );
@@ -175,7 +173,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
          dlog( "connecting to zipkin: ${p}", ("p", *endpoint) );
       }
 
-      http.post_sync( *endpoint, create_zipkin_variant( std::move( span ), service_name ), deadline );
+      http.post_sync(*endpoint, create_zipkin_variant(std::move(span), service_name), deadline, fc::json::output_formatting::legacy_generator);
 
       consecutive_errors = 0;
       return;
@@ -203,6 +201,10 @@ zipkin_span::~zipkin_span() {
          zipkin_config::get_zipkin().log( std::move( data ) );
       }
    } catch( ... ) {}
+}
+
+std::string zipkin_span::trace_id_string() const {
+   return fc::to_hex(reinterpret_cast<const char *>(&data.trace_id), sizeof(data.trace_id));
 }
 
 } // fc
