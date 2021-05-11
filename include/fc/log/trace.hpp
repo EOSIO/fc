@@ -7,7 +7,7 @@
 /// @return implementation defined type RAII object that submits trace on exit of scope
 #define fc_create_trace( TRACE_STR ) \
       ::fc::zipkin_config::is_enabled() ? \
-        ::std::optional<::fc::zipkin_span>( ::std::in_place, (TRACE_STR) ) \
+        ::std::optional<::fc::zipkin_span>( ::std::in_place, ::fc::zipkin_config::get_next_unique_id(), (TRACE_STR) ) \
         : ::std::optional<::fc::zipkin_span>{};
 
 /// @param TRACE_STR const char* identifier for trace
