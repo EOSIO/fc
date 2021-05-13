@@ -118,12 +118,6 @@ struct zipkin_span {
 
    static uint64_t to_id( const fc::sha256& id );
 
-   template<typename T>
-   static uint64_t to_id( const T& id ) {
-      static_assert( std::is_same_v<decltype( id.data() ), const uint64_t*>, "expected uint64_t" );
-      return id.data()[3];
-   }
-
    struct span_data {
       explicit span_data( std::string name, uint64_t trace_id, uint64_t parent_id )
             : id( zipkin_config::get_next_unique_id() ), trace_id( trace_id ), parent_id( parent_id ),
