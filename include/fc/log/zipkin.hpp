@@ -64,6 +64,9 @@ struct zipkin_span {
    explicit zipkin_span( uint64_t id, std::string name, uint64_t trace_id = 0, uint64_t parent_id = 0 )
          : data( id, std::move( name ), trace_id, parent_id ) {}
 
+   explicit zipkin_span( std::string name, fc::time_point start )
+         : data( std::move( name ), start ) {}
+
    zipkin_span( const zipkin_span& ) = delete;
    zipkin_span& operator=( const zipkin_span& ) = delete;
    zipkin_span& operator=( zipkin_span&& ) = delete;
@@ -125,6 +128,10 @@ struct zipkin_span {
 
       explicit span_data( uint64_t id, std::string name, uint64_t trace_id, uint64_t parent_id )
             : id( id ), trace_id( trace_id == 0 ? id : trace_id ), parent_id( parent_id ), start( time_point::now() ), name( std::move( name ) ) {}
+
+      explicit span_data( std::string name, fc::time_point start) 
+         : id( zipkin_config::get_next_unique_id() ), trace_id( zipkin_config::get_next_unique_id() ), parent_id( 0 ),
+              start( start), name( std::move( name ) ) {}
 
       span_data( const span_data& ) = delete;
       span_data& operator=( const span_data& ) = delete;

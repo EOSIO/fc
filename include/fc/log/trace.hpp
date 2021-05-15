@@ -28,6 +28,12 @@ inline ::std::optional<::fc::zipkin_span> fc_create_span_with_id(const char* spa
               : ::std::optional<::fc::zipkin_span>{};
 }
 
+inline ::std::optional<::fc::zipkin_span> fc_create_trace_with_start_time(const char* trace_str, fc::time_point start) {
+   return ::fc::zipkin_config::is_enabled()
+              ? ::std::optional<::fc::zipkin_span>(::std::in_place, trace_str, start)
+              : ::std::optional<::fc::zipkin_span>{};
+}
+
 /// @param trace variable returned from fc_create_trace
 /// @param span_str const char* indentifier
 /// @return implementation defined type RAII object that submits span on exit of scope
