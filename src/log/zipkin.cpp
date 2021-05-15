@@ -158,8 +158,13 @@ void zipkin::log( zipkin_span::span_data&& span ) {
 }
 
 void zipkin::impl::log( zipkin_span::span_data&& span ) {
-   if( consecutive_errors > max_consecutive_errors )
-      return;
+  if (consecutive_errors > max_consecutive_errors) {
+    wlog("consecutive_errors=${consecutive_errors} exceeds "
+         "limit($max_consecutive_errors)",
+         ("consecutive_errors", consecutive_errors.load())("max_consecutive_errors",
+                                                    max_consecutive_errors));
+    return;
+  }
 
    try {
       auto deadline = fc::time_point::now() + fc::microseconds( timeout_us );
