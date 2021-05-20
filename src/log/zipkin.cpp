@@ -173,7 +173,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
          dlog( "connecting to zipkin: ${p}", ("p", *endpoint) );
       }
 
-      http.post_sync( *endpoint, create_zipkin_variant( std::move( span ), service_name ), deadline );
+      http.post_sync(*endpoint, create_zipkin_variant(std::move(span), service_name), deadline, fc::json::output_formatting::legacy_generator);
 
       consecutive_errors = 0;
       return;
