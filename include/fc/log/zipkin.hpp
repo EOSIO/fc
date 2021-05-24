@@ -156,6 +156,8 @@ struct zipkin_span {
       return zipkin_span{std::move( name ), token.trace_id, token.id};
    }
 
+   std::string trace_id_string() const;
+
    span_data data;
 };
 

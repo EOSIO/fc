@@ -203,4 +203,8 @@ zipkin_span::~zipkin_span() {
    } catch( ... ) {}
 }
 
+std::string zipkin_span::trace_id_string() const {
+   return fc::to_hex(reinterpret_cast<const char *>(&data.trace_id), sizeof(data.trace_id));
+}
+
 } // fc
