@@ -34,7 +34,8 @@ public:
    /// @param timeout_us the timeout in microseconds for each http call
    ///        (9 consecutive failures and zipkin is disabled, SIGHUP will reset the failure counter and re-enable zipkin)
    /// @param retry_interval_us the interval in microseconds for connecting to zipkin
-   static void init( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us );
+   /// @param wait_time_seconds the initial wait time in seconds for connecting to zipkin, an exception is thrown when the connection is not established within the wait time. 
+   static void init( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us, uint32_t wait_time_seconds = 0 );
 
    /// Thread safe only if init() called from main thread before spawning of any threads
    /// @throw assert_exception if called before init()
@@ -168,7 +169,7 @@ struct zipkin_span {
 
 class zipkin {
 public:
-   zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us );
+   zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us , uint32_t wait_time_seconds );
 
    /// finishes logging all queued up spans
    ~zipkin() = default;
