@@ -32,7 +32,7 @@ public:
    /// @param url the url endpoint of zipkin server. e.g. http://127.0.0.1:9411/api/v2/spans
    /// @param service_name the service name to include in each zipkin span
    /// @param timeout_us the timeout in microseconds for each http call (9 consecutive failures and zipkin is disabled)
-   static void init( const std::string& url, const std::string& service_name, uint32_t timeout_us );
+   static void init( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t wait_time_seconds = 0);
 
    /// Thread safe only if init() called from main thread before spawning of any threads
    /// @throw assert_exception if called before init()
@@ -163,7 +163,7 @@ struct zipkin_span {
 
 class zipkin {
 public:
-   zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us );
+   zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t wait_time_seconds );
 
    /// finishes logging all queued up spans
    ~zipkin() = default;

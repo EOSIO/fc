@@ -14,13 +14,57 @@
 
 namespace fc {
 
+struct local_endpoint_resolver {
+  using tcp = boost::asio::ip::tcp;
+  using error_code = boost::system::error_code;
+
+  local_endpoint_resolver(boost::asio::io_context &ctx)
+      : resolver(ctx), sock(ctx), timer(ctx) {}
+  tcp::resolver resolver;
+  tcp::socket sock;
+  boost::asio::deadline_timer timer;
+  std::string remote;
+  tcp::resolver::results_type endpoints;
+  std::optional<tcp::endpoint> local_endpoint;
+
+  void async_resolve(std::string remote_host, std::string port) {
+    remote = remote_host + ":" + port;
+    resolver.async_resolve(
+        remote_host, port,
+        [this](const error_code &ec, tcp::resolver::results_type resolved) {
+          if (ec)
+            throw boost::system::system_error(ec);
+          endpoints = resolved;
+          do_connect();
+        });
+  }
+
+  void do_connect() {
+    boost::asio::async_connect(
+        sock, endpoints,
+        [this](const error_code &ec, const tcp::endpoint &endpoint) {
+          if (ec) {
+            std::cout << "failed to connect to " << remote
+                      << ", retry in 5 seconds\n";
+            timer.expires_from_now(boost::posix_time::seconds(5));
+            timer.async_wait([this](const error_code &ec) {
+              if (!ec)
+                do_connect();
+            });
+            return;
+          }
+          local_endpoint = sock.local_endpoint();
+        });
+  }
+};
+
 zipkin_config& zipkin_config::get() {
    static zipkin_config the_one;
    return the_one;
 }
 
-void zipkin_config::init( const std::string& url, const std::string& service_name, uint32_t timeout_us ) {
-   get().zip = std::make_unique<zipkin>( url, service_name, timeout_us );
+void zipkin_config::init( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t wait_time_seconds ) {
+   get().zip = std::make_unique<zipkin>( url, service_name, timeout_us, wait_time_seconds);
 }
 
 zipkin& zipkin_config::get_zipkin() {
@@ -60,6 +104,8 @@ public:
    boost::asio::io_context ctx;
    boost::asio::io_context::strand work_strand{ctx};
    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard = boost::asio::make_work_guard(ctx);
+   std::optional<boost::asio::ip::tcp::endpoint>  local_endpoint;
+
 
    impl( std::string url, std::string service_name, uint32_t timeout_us )
          : zipkin_url( std::move(url) )
@@ -67,7 +113,7 @@ public:
          , timeout_us( timeout_us ) {
    }
 
-   void init();
+   void init(uint32_t wait_time_seconds);
    void shutdown();
 
    void log( zipkin_span::span_data&& span );
@@ -75,7 +121,24 @@ public:
    ~impl();
 };
 
-void zipkin::impl::init() {
+void zipkin::impl::init(uint32_t wait_time_seconds) {
+   if (wait_time_seconds > 0) {
+      endpoint = url( zipkin_url );
+      if (!endpoint->host() || endpoint->host()->empty())
+         FC_THROW("Invalid url ${url}", ("url", zipkin_url));
+
+      local_endpoint_resolver resolver(ctx);
+      resolver.async_resolve(*endpoint->host(), std::to_string(*endpoint->port()));
+      auto deadline =  std::chrono::system_clock::now() + std::chrono::seconds(wait_time_seconds);
+      ctx.run_until(deadline);
+
+      local_endpoint = resolver.local_endpoint;
+
+      if (!local_endpoint) {
+         FC_THROW("Unable to connect to ${url} within ${wait_time_seconds} seconds", ("url", zipkin_url)("wait_time_seconds", wait_time_seconds));
+      }
+   }
+
    thread = std::thread( [this]() {
       fc::set_os_thread_name( "zipkin" );
       while( true ) {
@@ -99,9 +162,9 @@ void zipkin::impl::shutdown() {
    thread.join();
 }
 
-zipkin::zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us ) :
+zipkin::zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t wait_time_seconds ) :
       my( new impl( url, service_name, timeout_us ) ) {
-   my->init();
+   my->init(wait_time_seconds);
 }
 
 uint64_t zipkin::get_next_unique_id() {
@@ -118,7 +181,7 @@ void zipkin::shutdown() {
    my->shutdown();
 }
 
-fc::variant create_zipkin_variant( zipkin_span::span_data&& span, const std::string& service_name ) {
+fc::variant create_zipkin_variant( zipkin_span::span_data&& span, const std::string& service_name, std::optional<boost::asio::ip::tcp::endpoint>& local_endpoint ) {
    // https://zipkin.io/zipkin-api/
    //   std::string traceId;  // [a-f0-9]{16,32} unique id for trace, all children spans shared same id
    //   std::string name;     // logical operation, should have low cardinality
@@ -136,7 +199,13 @@ fc::variant create_zipkin_variant( zipkin_span::span_data&& span, const std::str
    mvo( "name", std::move( span.name ) );
    mvo( "timestamp", span.start.time_since_epoch().count() );
    mvo( "duration", (span.stop - span.start).count() );
-   mvo( "localEndpoint", fc::variant_object( "serviceName", service_name ) );
+
+   mutable_variant_object local_endpoint_mvo("serviceName", service_name);
+   if (local_endpoint) {
+      const auto &address = local_endpoint->address();
+      local_endpoint_mvo( address.is_v4() ? "ipv4": "ipv6", address.to_string());
+   }
+   mvo( "localEndpoint", local_endpoint_mvo );
 
    mvo( "tags", std::move( span.tags ) );
    span.id = 0; // stop destructor of span from calling log again
@@ -173,7 +242,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
          dlog( "connecting to zipkin: ${p}", ("p", *endpoint) );
       }
 
-      http.post_sync(*endpoint, create_zipkin_variant(std::move(span), service_name), deadline, fc::json::output_formatting::legacy_generator);
+      http.post_sync(*endpoint, create_zipkin_variant(std::move(span), service_name, local_endpoint), deadline, fc::json::output_formatting::legacy_generator);
 
       consecutive_errors = 0;
       return;
