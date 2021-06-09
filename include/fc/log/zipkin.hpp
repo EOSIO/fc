@@ -58,10 +58,10 @@ private:
 };
 
 struct zipkin_span {
-   explicit zipkin_span( std::string name, uint64_t trace_id = 0, uint64_t parent_id = 0 )
+   explicit zipkin_span( std::string name, uint64_t trace_id, uint64_t parent_id )
          : data( std::move( name ), trace_id, parent_id ) {}
 
-   explicit zipkin_span( uint64_t id, std::string name, uint64_t trace_id = 0, uint64_t parent_id = 0 )
+   explicit zipkin_span( uint64_t id, std::string name, uint64_t trace_id, uint64_t parent_id )
          : data( id, std::move( name ), trace_id, parent_id ) {}
 
    explicit zipkin_span( std::string name, fc::time_point start )

@@ -9,7 +9,7 @@
 inline ::std::optional<::fc::zipkin_span> fc_create_trace(const char* trace_str) {
    return ::fc::zipkin_config::is_enabled()
               ? ::std::optional<::fc::zipkin_span>(::std::in_place, ::fc::zipkin_config::get_next_unique_id(),
-                                                   (trace_str))
+                                                   (trace_str), 0, 0)
               : ::std::optional<::fc::zipkin_span>{};
 }
 
@@ -18,7 +18,7 @@ inline ::std::optional<::fc::zipkin_span> fc_create_trace(const char* trace_str)
 /// @return implementation defined type RAII object that submits trace on exit of scope
 inline ::std::optional<::fc::zipkin_span> fc_create_trace_with_id(const char* trace_str, const fc::sha256& trace_id) {
    return ::fc::zipkin_config::is_enabled()
-              ? ::std::optional<::fc::zipkin_span>(::std::in_place, ::fc::zipkin_span::to_id(trace_id), (trace_str))
+              ? ::std::optional<::fc::zipkin_span>(::std::in_place, ::fc::zipkin_span::to_id(trace_id), (trace_str), 0 , 0)
               : ::std::optional<::fc::zipkin_span>{};
 }
 
