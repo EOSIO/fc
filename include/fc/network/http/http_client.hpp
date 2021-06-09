@@ -32,7 +32,7 @@ class http_client {
                     json::output_formatting::stringify_large_ints_and_doubles) {
         variant payload_v;
         to_variant(payload, payload_v);
-        return post_sync(dest, payload_v, deadline);
+        return post_sync(dest, payload_v, deadline, formatting);
       }
 
       void add_cert(const std::string& cert_pem_string);
