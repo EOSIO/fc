@@ -314,7 +314,7 @@ public:
       const deadline_type&               deadline;
    };
 
-variant
+   variant
    post_sync(const url &dest, const variant &payload,
              const fc::time_point &_deadline,
              json::output_formatting formatting) {
@@ -453,13 +453,16 @@ http_client::http_client()
 
 }
 
-variant http_client::post_sync(const url& dest, const variant& payload, const fc::time_point& deadline) {
+variant http_client::post_sync(const url &dest, const variant &payload,
+                               const fc::time_point &deadline,
+                               json::output_formatting formatting) {
 #ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
-   if(dest.proto() == "unix")
-      return _my->post_sync(_my->get_unix_url(*dest.host()), payload, deadline);
-   else
+  if (dest.proto() == "unix")
+    return _my->post_sync(_my->get_unix_url(*dest.host()), payload, deadline,
+                          formatting);
 #endif
-      return _my->post_sync(dest, payload, deadline);
+  else
+    return _my->post_sync(dest, payload, deadline, formatting);
 }
 
 void http_client::add_cert(const std::string& cert_pem_string) {
