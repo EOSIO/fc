@@ -15,46 +15,46 @@
 namespace fc {
 
 struct local_endpoint_resolver {
-  using tcp = boost::asio::ip::tcp;
-  using error_code = boost::system::error_code;
+   using tcp        = boost::asio::ip::tcp;
+   using error_code = boost::system::error_code;
 
-  local_endpoint_resolver(boost::asio::io_context &ctx)
-      : resolver(ctx), sock(ctx), timer(ctx) {}
-  tcp::resolver resolver;
-  tcp::socket sock;
-  boost::asio::deadline_timer timer;
-  std::string remote;
-  tcp::resolver::results_type endpoints;
-  std::optional<tcp::endpoint> local_endpoint;
+   local_endpoint_resolver(boost::asio::io_context& ctx)
+       : resolver(ctx)
+       , sock(ctx)
+       , timer(ctx) {}
+   boost::asio::io_context      ctx;
+   tcp::resolver                resolver;
+   tcp::socket                  sock;
+   boost::asio::deadline_timer  timer;
+   std::string                  remote;
+   tcp::resolver::results_type  endpoints;
+   std::optional<tcp::endpoint> local_endpoint;
 
-  void async_resolve(std::string remote_host, std::string port) {
-    remote = remote_host + ":" + port;
-    resolver.async_resolve(
-        remote_host, port,
-        [this](const error_code &ec, tcp::resolver::results_type resolved) {
-          if (ec)
+   void async_resolve(std::string remote_host, std::string port) {
+      remote = remote_host + ":" + port;
+      resolver.async_resolve(remote_host, port, [this](const error_code& ec, tcp::resolver::results_type resolved) {
+         if (ec)
             throw boost::system::system_error(ec);
-          endpoints = resolved;
-          do_connect();
-        });
-  }
+         endpoints = resolved;
+         do_connect();
+      });
+   }
 
-  void do_connect() {
-    boost::asio::async_connect(
-        sock, endpoints,
-        [this](const error_code &ec, const tcp::endpoint &endpoint) {
-          if (ec) {
+   void do_connect() {
+      boost::asio::async_connect(sock, endpoints, [this](const error_code& ec, const tcp::endpoint& endpoint) {
+         if (ec) {
             wlog("failed to connect to ${remote}, retry in 5 seconds", ("remote", remote));
             timer.expires_from_now(boost::posix_time::seconds(5));
-            timer.async_wait([this](const error_code &ec) {
-              if (!ec)
-                do_connect();
+            timer.async_wait([this](const error_code& ec) {
+               if (!ec)
+                  do_connect();
             });
             return;
-          }
-          local_endpoint = sock.local_endpoint();
-        });
-  }
+         }
+         local_endpoint = sock.local_endpoint();
+         ilog("connected to ${remote}", ("remote", remote));
+      });
+   }
 };
 
 zipkin_config& zipkin_config::get() {
@@ -126,10 +126,10 @@ void zipkin::impl::init(uint32_t wait_time_seconds) {
       if (!endpoint->host() || endpoint->host()->empty())
          FC_THROW("Invalid url ${url}", ("url", zipkin_url));
 
-      local_endpoint_resolver resolver(ctx);
+      local_endpoint_resolver resolver;
       resolver.async_resolve(*endpoint->host(), std::to_string(*endpoint->port()));
       auto deadline =  std::chrono::system_clock::now() + std::chrono::seconds(wait_time_seconds);
-      ctx.run_until(deadline);
+      resolver.ctx.run_until(deadline);
 
       local_endpoint = resolver.local_endpoint;
 
@@ -226,13 +226,13 @@ void zipkin::log( zipkin_span::span_data&& span ) {
 }
 
 void zipkin::impl::log( zipkin_span::span_data&& span ) {
-  if (consecutive_errors > max_consecutive_errors) {
-    wlog("consecutive_errors=${consecutive_errors} exceeds "
-         "limit($max_consecutive_errors)",
-         ("consecutive_errors", consecutive_errors.load())("max_consecutive_errors",
-                                                    max_consecutive_errors));
-    return;
-  }
+   if (consecutive_errors > max_consecutive_errors) {
+      wlog("consecutive_errors=${consecutive_errors} exceeds "
+            "limit($max_consecutive_errors)",
+            ("consecutive_errors", consecutive_errors.load())("max_consecutive_errors",
+                                                      max_consecutive_errors));
+      return;
+   }
 
    try {
       auto deadline = fc::time_point::now() + fc::microseconds( timeout_us );
