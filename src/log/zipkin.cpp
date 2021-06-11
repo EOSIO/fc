@@ -44,8 +44,7 @@ struct local_endpoint_resolver {
         sock, endpoints,
         [this](const error_code &ec, const tcp::endpoint &endpoint) {
           if (ec) {
-            std::cout << "failed to connect to " << remote
-                      << ", retry in 5 seconds\n";
+            wlog("failed to connect to ${remote}, retry in 5 seconds", ("remote", remote));
             timer.expires_from_now(boost::posix_time::seconds(5));
             timer.async_wait([this](const error_code &ec) {
               if (!ec)
