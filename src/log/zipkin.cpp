@@ -18,7 +18,7 @@ struct local_endpoint_resolver {
    using tcp        = boost::asio::ip::tcp;
    using error_code = boost::system::error_code;
 
-   local_endpoint_resolver(boost::asio::io_context& ctx)
+   local_endpoint_resolver()
        : resolver(ctx)
        , sock(ctx)
        , timer(ctx) {}
