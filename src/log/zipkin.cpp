@@ -12,6 +12,8 @@
 #include <thread>
 #include <random>
 
+#include <csignal>
+
 namespace fc {
 
 zipkin_config& zipkin_config::get() {
@@ -53,6 +55,7 @@ public:
    std::mutex mtx;
    uint64_t next_id = 0;
    http_client http;
+   bool connected = false;
    std::atomic<uint32_t> consecutive_errors = 0;
    std::atomic<unsigned char> stopped = 0;
    std::optional<url> endpoint;
@@ -178,6 +181,10 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       http.post_sync( *endpoint, create_zipkin_variant( std::move( span ), service_name ), deadline );
 
       consecutive_errors = 0;
+      if (!connected){
+          connected = true;
+          ilog("connected to zipkin: ${u}", ("u", zipkin_url));
+      }
       return;
    } catch( const fc::exception& e ) {
       wlog( "unable to connect to zipkin: ${u}, error: ${e}", ("u", zipkin_url)("e", e.to_detail_string()) );
@@ -187,6 +194,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       wlog( "unable to connect to zipkin: ${u}, error: unknown", ("u", zipkin_url) );
    }
    ++consecutive_errors;
+   connected = false;
 }
 
 uint64_t zipkin_span::to_id( const fc::sha256& id ) {
