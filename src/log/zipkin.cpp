@@ -12,8 +12,6 @@
 #include <thread>
 #include <random>
 
-#include <csignal>
-
 namespace fc {
 
 zipkin_config& zipkin_config::get() {
@@ -195,6 +193,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
    }
    ++consecutive_errors;
    connected = false;
+   sleep(30);
 }
 
 uint64_t zipkin_span::to_id( const fc::sha256& id ) {
