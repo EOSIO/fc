@@ -45,6 +45,11 @@ public:
    /// Starts with a random id and increments on each call, will not return 0
    static uint64_t get_next_unique_id();
 
+   /// Handle SIGHUP signal
+   static void handle_sighup();
+   static void reset_sighup();
+   static bool check_sighup();
+
 private:
    /// Provide access to initialized zipkin endpoint
    /// Thread safe as long as init() called correctly
@@ -55,6 +60,7 @@ private:
 
 private:
    std::unique_ptr<zipkin> zip;
+   static bool received_sighup;
 };
 
 struct zipkin_span {
