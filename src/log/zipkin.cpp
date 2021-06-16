@@ -180,6 +180,10 @@ void zipkin::log( zipkin_span::span_data&& span ) {
       return;
    }
 
+   if (my->consecutive_errors > 0){
+      sleep(30);
+   }
+
    boost::asio::post(my->work_strand, [this, span{std::move(span)}]() mutable {
       my->log( std::move( span ) );
    });
@@ -213,7 +217,6 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
    }
    ++consecutive_errors;
    connected = false;
-   sleep(30);
 }
 
 uint64_t zipkin_span::to_id( const fc::sha256& id ) {
