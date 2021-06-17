@@ -45,7 +45,7 @@ public:
    /// Starts with a random id and increments on each call, will not return 0
    static uint64_t get_next_unique_id();
 
-   /// Handle SIGHUP signal forwarded from net_plugin
+   /// Handle SIGHUP signal
    static void handle_sighup();
 
 private:
@@ -191,10 +191,12 @@ public:
    // Logs zipkin json via http on separate thread
    void log( zipkin_span::span_data&& span );
 
+   /// thread safe
    void on_sighup_flag();
    void off_sighup_flag();
-   bool is_sighup_flag_on() const { return sighup_flag; };
+   bool is_sighup_flag_on() const;
 
+   void post_request(zipkin_span::span_data&& span);
 private:
    class impl;
    std::unique_ptr<impl> my;
