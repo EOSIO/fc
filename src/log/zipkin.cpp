@@ -60,11 +60,13 @@ public:
    uint64_t next_id = 0;
    http_client http;
    bool connected = false;
+   bool timer_expired = true;
    std::atomic<uint32_t> consecutive_errors = 0;
    std::atomic<unsigned char> stopped = 0;
    std::optional<url> endpoint;
    std::thread thread;
    boost::asio::io_context ctx;
+   boost::asio::deadline_timer timer{ctx};
    boost::asio::io_context::strand work_strand{ctx};
    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard = boost::asio::make_work_guard(ctx);
 
@@ -135,6 +137,12 @@ void zipkin::off_sighup_flag() {
    sighup_flag = false;
 }
 
+bool zipkin::is_sighup_flag_on() const
+{
+   std::scoped_lock g( my->mtx );
+   return sighup_flag;
+}
+
 fc::variant create_zipkin_variant( zipkin_span::span_data&& span, const std::string& service_name ) {
    // https://zipkin.io/zipkin-api/
    //   std::string traceId;  // [a-f0-9]{16,32} unique id for trace, all children spans shared same id
@@ -172,23 +180,35 @@ fc::variant create_zipkin_variant( zipkin_span::span_data&& span, const std::str
    return result;
 }
 
+void zipkin::post_request(zipkin_span::span_data&& span) {
+   boost::asio::post(my->work_strand, [this, span{std::move(span)}]() mutable {
+         my->log( std::move( span ) );
+   });
+}
+
 void zipkin::log( zipkin_span::span_data&& span ) {
-   if (my->stopped) {
+   if( my->stopped ) {
       return;
-   } else if( is_sighup_flag_on() ) {
+   }else if( is_sighup_flag_on() ) {
       off_sighup_flag();
       my->consecutive_errors = 0;
-   } else if(my->consecutive_errors > my->max_consecutive_errors) {
+   }else if( my->consecutive_errors > my->max_consecutive_errors ) {
       return;
    }
 
-   if (my->consecutive_errors > 0){
-      sleep(30);
+   if( my->consecutive_errors > 0 ) {
+      if( my->timer_expired ) {
+         my->timer_expired = false;
+         my->timer.expires_from_now(boost::posix_time::seconds(30));
+         my->timer.async_wait([this, span{std::move(span)}](auto&) {
+            ilog("Retry connecting to zipkin: ${u} ...", ("u", my->zipkin_url) );
+            post_request(const_cast<zipkin_span::span_data&&>(span));
+            my->timer_expired = true;
+         });
+      }
+   }else {
+      post_request(std::move(span));
    }
-
-   boost::asio::post(my->work_strand, [this, span{std::move(span)}]() mutable {
-      my->log( std::move( span ) );
-   });
 }
 
 void zipkin::impl::log( zipkin_span::span_data&& span ) {
@@ -207,7 +227,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       consecutive_errors = 0;
       if (!connected){
           connected = true;
-          ilog("connected to zipkin: ${u}", ("u", zipkin_url));
+          ilog("Connected to zipkin: ${u}", ("u", zipkin_url));
       }
       return;
    } catch( const fc::exception& e ) {
