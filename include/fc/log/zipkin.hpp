@@ -45,10 +45,8 @@ public:
    /// Starts with a random id and increments on each call, will not return 0
    static uint64_t get_next_unique_id();
 
-   /// Handle SIGHUP signal
+   /// Handle SIGHUP signal forwarded from net_plugin
    static void handle_sighup();
-   static void reset_sighup();
-   static bool check_sighup();
 
 private:
    /// Provide access to initialized zipkin endpoint
@@ -60,7 +58,6 @@ private:
 
 private:
    std::unique_ptr<zipkin> zip;
-   static bool received_sighup;
 };
 
 struct zipkin_span {
@@ -194,9 +191,14 @@ public:
    // Logs zipkin json via http on separate thread
    void log( zipkin_span::span_data&& span );
 
+   void on_sighup_flag();
+   void off_sighup_flag();
+   bool is_sighup_flag_on() const { return sighup_flag; };
+
 private:
    class impl;
    std::unique_ptr<impl> my;
+   bool sighup_flag;
 };
 
 } // namespace fc
