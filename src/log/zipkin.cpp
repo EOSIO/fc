@@ -44,10 +44,9 @@ uint64_t zipkin_config::get_next_unique_id() {
 }
 
 void zipkin_config::handle_sighup(){
-    if( !get().zip ) {
-        FC_THROW_EXCEPTION(fc::assert_exception, "uninitialized zipkin");
+    if( get().zip ) {
+       get().zip->on_sighup_flag();
     }
-    get().zip->on_sighup_flag();
 }
 
 class zipkin::impl {
