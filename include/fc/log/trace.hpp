@@ -22,6 +22,16 @@ inline ::std::optional<::fc::zipkin_span> fc_create_trace_with_id(const char* tr
               : ::std::optional<::fc::zipkin_span>{};
 }
 
+/// @param condition create the trace only when the condition is true
+/// @param trace_str const char* identifier for trace
+/// @param trace_id fc::sha256 id to use
+/// @return implementation defined type RAII object that submits trace on exit of scope
+inline ::std::optional<::fc::zipkin_span> fc_create_trace_with_id_if(bool condition, const char* trace_str, const fc::sha256& trace_id) {
+   return (condition && ::fc::zipkin_config::is_enabled())
+              ? ::std::optional<::fc::zipkin_span>(::std::in_place, ::fc::zipkin_span::to_id(trace_id), (trace_str), ::fc::zipkin_span::to_id(trace_id) , 0)
+              : ::std::optional<::fc::zipkin_span>{};
+}
+
 inline ::std::optional<::fc::zipkin_span> fc_create_span_with_id(const char* span_str, uint64_t id, const fc::sha256& trace_id) {
    auto tid = ::fc::zipkin_span::to_id(trace_id);
    return ::fc::zipkin_config::is_enabled()
