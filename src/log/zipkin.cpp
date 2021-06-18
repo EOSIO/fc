@@ -200,9 +200,9 @@ void zipkin::log( zipkin_span::span_data&& span ) {
       if( my->timer_expired ) {
          my->timer_expired = false;
          my->timer.expires_from_now(boost::posix_time::seconds(30));
-         my->timer.async_wait([this, span{std::move(span)}](auto&) {
+         my->timer.async_wait([this, span{std::move(span)}](auto&) mutable {
             ilog("Retry connecting to zipkin: ${u} ...", ("u", my->zipkin_url) );
-            post_request(const_cast<zipkin_span::span_data&&>(span));
+            post_request(std::move(span));
             my->timer_expired = true;
          });
       }
