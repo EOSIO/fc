@@ -14,6 +14,11 @@
 
 namespace fc {
 
+//signal safe
+volatile sig_atomic_t do_sighup = 0;
+//thread safe
+std::atomic<bool> sighup_requested = false;
+
 zipkin_config& zipkin_config::get() {
    static zipkin_config the_one;
    return the_one;
@@ -44,9 +49,8 @@ uint64_t zipkin_config::get_next_unique_id() {
 }
 
 void zipkin_config::handle_sighup(){
-    if( get().zip ) {
-       get().zip->on_sighup_flag();
-    }
+    fc::do_sighup = 1;
+    fc::sighup_requested = true;
 }
 
 class zipkin::impl {
@@ -127,22 +131,6 @@ void zipkin::shutdown() {
    my->shutdown();
 }
 
-void zipkin::on_sighup_flag() {
-   std::scoped_lock g( my->mtx );
-   sighup_flag = true;
-}
-
-void zipkin::off_sighup_flag() {
-   std::scoped_lock g( my->mtx );
-   sighup_flag = false;
-}
-
-bool zipkin::is_sighup_flag_on() const
-{
-   std::scoped_lock g( my->mtx );
-   return sighup_flag;
-}
-
 fc::variant create_zipkin_variant( zipkin_span::span_data&& span, const std::string& service_name ) {
    // https://zipkin.io/zipkin-api/
    //   std::string traceId;  // [a-f0-9]{16,32} unique id for trace, all children spans shared same id
@@ -189,8 +177,9 @@ void zipkin::post_request(zipkin_span::span_data&& span) {
 void zipkin::log( zipkin_span::span_data&& span ) {
    if( my->stopped ) {
       return;
-   }else if( is_sighup_flag_on() ) {
-      off_sighup_flag();
+   }else if( fc::do_sighup && fc::sighup_requested.load()) {
+      do_sighup = 0;
+      fc::sighup_requested = false;
       my->consecutive_errors = 0;
    }else if( my->consecutive_errors > my->max_consecutive_errors ) {
       return;
