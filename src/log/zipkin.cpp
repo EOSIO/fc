@@ -178,7 +178,7 @@ void zipkin::log( zipkin_span::span_data&& span ) {
    if( my->stopped ) {
       return;
    }else if( fc::do_sighup && fc::sighup_requested.load()) {
-      do_sighup = 0;
+      fc::do_sighup = 0;
       fc::sighup_requested = false;
       my->consecutive_errors = 0;
    }else if( my->consecutive_errors > my->max_consecutive_errors ) {
