@@ -45,7 +45,8 @@ public:
    /// Starts with a random id and increments on each call, will not return 0
    static uint64_t get_next_unique_id();
 
-   /// Handle SIGHUP signal
+   /// Signal safe
+   /// This is not called directly from the SIGHUP signal handler in the main thread
    static void handle_sighup();
 
 private:
@@ -191,16 +192,12 @@ public:
    // Logs zipkin json via http on separate thread
    void log( zipkin_span::span_data&& span );
 
-   /// thread safe
-   void on_sighup_flag();
-   void off_sighup_flag();
-   bool is_sighup_flag_on() const;
-
+   // Post http request to the boost asio queue
    void post_request(zipkin_span::span_data&& span);
+
 private:
    class impl;
    std::unique_ptr<impl> my;
-   bool sighup_flag;
 };
 
 } // namespace fc
