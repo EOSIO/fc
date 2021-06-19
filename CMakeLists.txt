@@ -1,5 +1,8 @@
 project( fc )
 cmake_minimum_required( VERSION 3.8 )
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif(COMMAND cmake_policy)
 
 SET( DEFAULT_HEADER_INSTALL_DIR usr/include/${target} )
 SET( DEFAULT_LIBRARY_INSTALL_DIR usr/lib )
@@ -26,9 +29,16 @@ elseif(NOT CMAKE_CXX_STANDARD)
 endif()
 
 # Suppress warnings on 3rdParty Library
-add_definitions( -w )
-add_subdirectory( secp256k1 )
-remove_definitions( -w )
+if (_VCPKG_INSTALLED_DIR)
+  find_package(secp256k1 CONFIG REQUIRED)
+  find_package(RapidJSON CONFIG REQUIRED)
+  set(webauthn_json_include_dir ${RAPIDJSON_INCLUDE_DIRS})
+else()
+  add_definitions( -w )
+  add_subdirectory( secp256k1 )
+  remove_definitions( -w )
+  set(webauthn_json_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include/fc/crypto/webauthn_json/include)
+endif()
 
 IF( ECC_IMPL STREQUAL openssl )
   SET( ECC_REST src/crypto/elliptic_impl_pub.cpp )
@@ -169,16 +179,14 @@ endif( ZLIB_FOUND )
 add_definitions(-DWEBSOCKETPP_STRICT_MASKING -DBOOST_ASIO_HAS_STD_CHRONO)
 
 target_include_directories(fc
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
-  )
+  PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include;${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp>"
+)
 
 # try and make this very clear that this json parser is intended only for webauthn parsing..
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.11.0)
-   set_source_files_properties(src/crypto/elliptic_webauthn.cpp PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/include/fc/crypto/webauthn_json/include)
+   set_source_files_properties(src/crypto/elliptic_webauthn.cpp PROPERTIES INCLUDE_DIRECTORIES ${webauthn_json_include_dir})
 else()
-   set_source_files_properties(src/crypto/elliptic_webauthn.cpp PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}/include/fc/crypto/webauthn_json/include")
+   set_source_files_properties(src/crypto/elliptic_webauthn.cpp PROPERTIES COMPILE_FLAGS "-I${webauthn_json_include_dir}")
 endif()
 
 IF(NOT WIN32)
@@ -195,7 +203,7 @@ IF(APPLE)
 ENDIF()
 target_link_libraries( fc PUBLIC ${LINK_USR_LOCAL_LIB}
                                  Boost::date_time Boost::filesystem Boost::chrono Boost::iostreams Threads::Threads
-                                 ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${readline_libraries} ${ECC_LIB} ${security_framework} ${corefoundation_framework} )
+                                 OpenSSL::SSL OpenSSL::Crypto ${ZLIB_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${readline_libraries} ${ECC_LIB} ${security_framework} ${corefoundation_framework} )
 
 
 SET(OPENSSL_CONF_TARGET )
@@ -210,7 +218,18 @@ IF(NOT DEFINED SKIP_FC_TESTS)
 ENDIF()
 
 install(TARGETS fc
-   LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
-   ARCHIVE DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR})
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/fc DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR})
+  LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR})
 
+if (_VCPKG_INSTALLED_DIR)
+  install(TARGETS fc EXPORT fc)
+  install(EXPORT fc
+          DESTINATION "share/fc"
+          FILE fc-targets.cmake)
+
+  install(FILES fc-config.cmake DESTINATION "share/fc")
+  set(INCLUDE_DIR_EXCLUDE_PATTERN PATTERN "webauthn_json" EXCLUDE)  
+endif()
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/fc DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR} ${INCLUDE_DIR_EXCLUDE_PATTERN})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp/websocketpp DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR})
