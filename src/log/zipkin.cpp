@@ -64,7 +64,8 @@ public:
    uint64_t next_id = 0;
    http_client http;
    bool connected = false;
-   bool timer_expired = true;
+   // thread safe
+   std::atomic<bool> timer_expired = true;
    std::atomic<uint32_t> consecutive_errors = 0;
    std::atomic<unsigned char> stopped = 0;
    std::optional<url> endpoint;
