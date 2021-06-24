@@ -14,10 +14,8 @@
 
 namespace fc {
 
-//signal safe
-volatile sig_atomic_t do_sighup = 0;
-//thread safe
-std::atomic<bool> sighup_requested = false;
+// signal safe, thread atomic and lock free
+std::atomic_flag do_sighup = ATOMIC_FLAG_INIT;
 
 zipkin_config& zipkin_config::get() {
    static zipkin_config the_one;
@@ -49,8 +47,7 @@ uint64_t zipkin_config::get_next_unique_id() {
 }
 
 void zipkin_config::handle_sighup(){
-    fc::do_sighup = 1;
-    fc::sighup_requested = true;
+    fc::do_sighup.test_and_set();
 }
 
 class zipkin::impl {
@@ -178,13 +175,15 @@ void zipkin::post_request(zipkin_span::span_data&& span) {
 void zipkin::log( zipkin_span::span_data&& span ) {
    if( my->stopped ) {
       return;
-   }else if( fc::do_sighup && fc::sighup_requested.load()) {
-      fc::do_sighup = 0;
-      fc::sighup_requested = false;
+   }else if( fc::do_sighup.test_and_set()) { // member func .test() is not available until c++20.
+      fc::do_sighup.clear();
       my->consecutive_errors = 0;
    }else if( my->consecutive_errors > my->max_consecutive_errors ) {
+      fc::do_sighup.clear(); // reverse test_and_set()
       return;
    }
+
+   fc::do_sighup.clear(); // reverse test_and_set()
 
    if( my->consecutive_errors > 0 ) {
       if( my->timer_expired ) {
