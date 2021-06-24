@@ -46,7 +46,7 @@ public:
    static uint64_t get_next_unique_id();
 
    /// Signal safe
-   /// This is not called directly from the SIGHUP signal handler in the main thread
+   /// This is not called directly from the SIGHUP signal handler
    static void handle_sighup();
 
 private:
