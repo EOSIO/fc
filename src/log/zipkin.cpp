@@ -21,8 +21,8 @@ zipkin_config& zipkin_config::get() {
    return the_one;
 }
 
-void zipkin_config::init( const std::string& url, const std::string& service_name, uint32_t timeout_us ) {
-   get().zip = std::make_unique<zipkin>( url, service_name, timeout_us );
+void zipkin_config::init( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us ) {
+   get().zip = std::make_unique<zipkin>( url, service_name, timeout_us, retry_interval_us );
 }
 
 zipkin& zipkin_config::get_zipkin() {
@@ -57,6 +57,7 @@ public:
    const std::string zipkin_url;
    const std::string service_name;
    const uint32_t timeout_us;
+   const uint32_t retry_interval_us;
    std::mutex mtx;
    uint64_t next_id = 0;
    http_client http;
@@ -72,10 +73,11 @@ public:
    boost::asio::io_context::strand work_strand{ctx};
    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard = boost::asio::make_work_guard(ctx);
 
-   impl( std::string url, std::string service_name, uint32_t timeout_us )
+   impl( std::string url, std::string service_name, uint32_t timeout_us, uint32_t retry_interval_us )
          : zipkin_url( std::move(url) )
          , service_name( std::move(service_name) )
-         , timeout_us( timeout_us ) {
+         , timeout_us( timeout_us )
+         , retry_interval_us( retry_interval_us ) {
    }
 
    void init();
@@ -110,8 +112,8 @@ void zipkin::impl::shutdown() {
    thread.join();
 }
 
-zipkin::zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us ) :
-      my( new impl( url, service_name, timeout_us ) ) {
+zipkin::zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us ) :
+      my( new impl( url, service_name, timeout_us, retry_interval_us ) ) {
    my->init();
 }
 
@@ -185,7 +187,7 @@ void zipkin::log( zipkin_span::span_data&& span ) {
    if( my->consecutive_errors > 0 ) {
       if( my->timer_expired ) {
          my->timer_expired = false;
-         my->timer.expires_from_now(boost::posix_time::seconds(30));
+         my->timer.expires_from_now(boost::posix_time::microsec(my->retry_interval_us));
          my->timer.async_wait([this, span{std::move(span)}](auto&) mutable {
             ilog("Retry connecting to zipkin: ${u} ...", ("u", my->zipkin_url) );
             post_request(std::move(span));
