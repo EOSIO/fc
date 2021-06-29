@@ -12,9 +12,11 @@
 #include <thread>
 #include <random>
 
-namespace fc {
+namespace {
+   std::atomic<bool> sighup_requested = false;
+}
 
-std::atomic<bool> sighup_requested = false;
+namespace fc {
 
 zipkin_config& zipkin_config::get() {
    static zipkin_config the_one;
@@ -47,7 +49,7 @@ uint64_t zipkin_config::get_next_unique_id() {
 
 void zipkin_config::handle_sighup(){
     static_assert(std::atomic<bool>::is_always_lock_free == true, "expected a lock-free atomic type");
-    fc::sighup_requested = true;
+    sighup_requested = true;
 }
 
 class zipkin::impl {
@@ -177,9 +179,10 @@ void zipkin::post_request(zipkin_span::span_data&& span) {
 void zipkin::log( zipkin_span::span_data&& span ) {
    if( my->stopped ) {
       return;
-   }else if( fc::sighup_requested.load()) {
-      fc::sighup_requested = false;
+   }else if( sighup_requested.load()) {
+      sighup_requested = false;
       my->consecutive_errors = 0;
+      ilog("Retry connecting to zipkin: ${u} ...", ("u", my->zipkin_url) );
    }else if( my->consecutive_errors > my->max_consecutive_errors ) {
       return;
    }
@@ -188,9 +191,8 @@ void zipkin::log( zipkin_span::span_data&& span ) {
       if( my->timer_expired ) {
          my->timer_expired = false;
          my->timer.expires_from_now(boost::posix_time::microsec(my->retry_interval_us));
-         my->timer.async_wait([this, span{std::move(span)}](auto&) mutable {
-            ilog("Retry connecting to zipkin: ${u} ...", ("u", my->zipkin_url) );
-            post_request(std::move(span));
+         my->timer.async_wait([this](auto&) mutable {
+            sighup_requested = true;
             my->timer_expired = true;
          });
       }
