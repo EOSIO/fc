@@ -1,5 +1,4 @@
-#pragma once 
-#include <fc/thread/future.hpp>
+#pragma once
 #include <fc/any.hpp>
 #include <functional>
 #include <boost/config.hpp>
