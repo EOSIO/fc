@@ -31,8 +31,10 @@ public:
    /// Not thread safe, call from main thread before spawning any threads that might use zipkin.
    /// @param url the url endpoint of zipkin server. e.g. http://127.0.0.1:9411/api/v2/spans
    /// @param service_name the service name to include in each zipkin span
-   /// @param timeout_us the timeout in microseconds for each http call (9 consecutive failures and zipkin is disabled)
-   static void init( const std::string& url, const std::string& service_name, uint32_t timeout_us );
+   /// @param timeout_us the timeout in microseconds for each http call
+   ///        (9 consecutive failures and zipkin is disabled, SIGHUP will reset the failure counter and re-enable zipkin)
+   /// @param retry_interval_us the interval in microseconds for connecting to zipkin
+   static void init( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us );
 
    /// Thread safe only if init() called from main thread before spawning of any threads
    /// @throw assert_exception if called before init()
@@ -44,6 +46,9 @@ public:
 
    /// Starts with a random id and increments on each call, will not return 0
    static uint64_t get_next_unique_id();
+
+   /// Signal safe
+   static void handle_sighup();
 
 private:
    /// Provide access to initialized zipkin endpoint
@@ -174,7 +179,7 @@ struct optional_trace {
 
 class zipkin {
 public:
-   zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us );
+   zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us );
 
    /// finishes logging all queued up spans
    ~zipkin() = default;
@@ -187,6 +192,9 @@ public:
 
    // Logs zipkin json via http on separate thread
    void log( zipkin_span::span_data&& span );
+
+   // Post http request to the boost asio queue
+   void post_request(zipkin_span::span_data&& span);
 
 private:
    class impl;
