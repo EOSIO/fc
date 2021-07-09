@@ -12,6 +12,10 @@
 #include <thread>
 #include <random>
 
+namespace {
+   std::atomic<bool> sighup_requested = false;
+}
+
 namespace fc {
 
 zipkin_config& zipkin_config::get() {
@@ -19,8 +23,8 @@ zipkin_config& zipkin_config::get() {
    return the_one;
 }
 
-void zipkin_config::init( const std::string& url, const std::string& service_name, uint32_t timeout_us ) {
-   get().zip = std::make_unique<zipkin>( url, service_name, timeout_us );
+void zipkin_config::init( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us ) {
+   get().zip = std::make_unique<zipkin>( url, service_name, timeout_us, retry_interval_us );
 }
 
 zipkin& zipkin_config::get_zipkin() {
@@ -43,6 +47,11 @@ uint64_t zipkin_config::get_next_unique_id() {
    return get().zip->get_next_unique_id();
 }
 
+void zipkin_config::handle_sighup(){
+    static_assert(std::atomic<bool>::is_always_lock_free == true, "expected a lock-free atomic type");
+    sighup_requested = true;
+}
+
 class zipkin::impl {
 public:
    static constexpr uint32_t max_consecutive_errors = 9;
@@ -50,21 +59,27 @@ public:
    const std::string zipkin_url;
    const std::string service_name;
    const uint32_t timeout_us;
+   const uint32_t retry_interval_us;
    std::mutex mtx;
    uint64_t next_id = 0;
    http_client http;
+   bool connected = false;
+   // thread safe
+   std::atomic<bool> timer_expired = true;
    std::atomic<uint32_t> consecutive_errors = 0;
    std::atomic<unsigned char> stopped = 0;
    std::optional<url> endpoint;
    std::thread thread;
    boost::asio::io_context ctx;
+   boost::asio::deadline_timer timer{ctx};
    boost::asio::io_context::strand work_strand{ctx};
    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard = boost::asio::make_work_guard(ctx);
 
-   impl( std::string url, std::string service_name, uint32_t timeout_us )
+   impl( std::string url, std::string service_name, uint32_t timeout_us, uint32_t retry_interval_us )
          : zipkin_url( std::move(url) )
          , service_name( std::move(service_name) )
-         , timeout_us( timeout_us ) {
+         , timeout_us( timeout_us )
+         , retry_interval_us( retry_interval_us ) {
    }
 
    void init();
@@ -99,8 +114,8 @@ void zipkin::impl::shutdown() {
    thread.join();
 }
 
-zipkin::zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us ) :
-      my( new impl( url, service_name, timeout_us ) ) {
+zipkin::zipkin( const std::string& url, const std::string& service_name, uint32_t timeout_us, uint32_t retry_interval_us ) :
+      my( new impl( url, service_name, timeout_us, retry_interval_us ) ) {
    my->init();
 }
 
@@ -155,13 +170,35 @@ fc::variant create_zipkin_variant( zipkin_span::span_data&& span, const std::str
    return result;
 }
 
-void zipkin::log( zipkin_span::span_data&& span ) {
-   if( my->consecutive_errors > my->max_consecutive_errors || my->stopped )
-      return;
-
+void zipkin::post_request(zipkin_span::span_data&& span) {
    boost::asio::post(my->work_strand, [this, span{std::move(span)}]() mutable {
-      my->log( std::move( span ) );
+         my->log( std::move( span ) );
    });
+}
+
+void zipkin::log( zipkin_span::span_data&& span ) {
+   if( my->stopped ) {
+      return;
+   }else if( sighup_requested.load()) {
+      sighup_requested = false;
+      my->consecutive_errors = 0;
+      ilog("Retry connecting to zipkin: ${u} ...", ("u", my->zipkin_url) );
+   }else if( my->consecutive_errors > my->max_consecutive_errors ) {
+      return;
+   }
+
+   if( my->consecutive_errors > 0 ) {
+      if( my->timer_expired ) {
+         my->timer_expired = false;
+         my->timer.expires_from_now(boost::posix_time::microsec(my->retry_interval_us));
+         my->timer.async_wait([this](auto&) mutable {
+            sighup_requested = true;
+            my->timer_expired = true;
+         });
+      }
+   }else {
+      post_request(std::move(span));
+   }
 }
 
 void zipkin::impl::log( zipkin_span::span_data&& span ) {
@@ -178,6 +215,10 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       http.post_sync( *endpoint, create_zipkin_variant( std::move( span ), service_name ), deadline );
 
       consecutive_errors = 0;
+      if (!connected){
+          connected = true;
+          ilog("Connected to zipkin: ${u}", ("u", zipkin_url));
+      }
       return;
    } catch( const fc::exception& e ) {
       wlog( "unable to connect to zipkin: ${u}, error: ${e}", ("u", zipkin_url)("e", e.to_detail_string()) );
@@ -187,6 +228,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       wlog( "unable to connect to zipkin: ${u}, error: unknown", ("u", zipkin_url) );
    }
    ++consecutive_errors;
+   connected = false;
 }
 
 uint64_t zipkin_span::to_id( const fc::sha256& id ) {
