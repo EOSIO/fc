@@ -14,6 +14,7 @@
 #include <array>
 #include <map>
 #include <deque>
+#include <list>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/interprocess/containers/string.hpp>
