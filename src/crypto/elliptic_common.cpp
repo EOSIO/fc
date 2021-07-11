@@ -110,15 +110,6 @@ namespace fc { namespace ecc {
         return public_key(data);
     }
 
-    public_key public_key::child( const fc::sha256& offset )const
-    {
-       fc::sha256::encoder enc;
-       fc::raw::pack( enc, *this );
-       fc::raw::pack( enc, offset );
-
-       return add( enc.result() );
-    }
-
     private_key private_key::child( const fc::sha256& offset )const
     {
        fc::sha256::encoder enc;

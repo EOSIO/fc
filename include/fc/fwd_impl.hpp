@@ -58,25 +58,11 @@ namespace fc {
     void check_size() { static_assert( (ProvidedSize >= RequiredSize), "Failed to reserve enough space in fc::fwd<T,S>" ); }
 
     template<typename T,unsigned int S,typename A>
-    template<typename U>
-    fwd<T,S,A>::fwd( U&& u ) {
+    template<typename... U>
+    fwd<T,S,A>::fwd( U&&... u ) {
       check_size<sizeof(T),sizeof(_store)>();
-      new (this) T( fc::forward<U>(u) );
+      new (this) T( fc::forward<U>(u)... );
     }
-
-    template<typename T,unsigned int S,typename A>
-    template<typename U,typename V>
-    fwd<T,S,A>::fwd( U&& u, V&& v ) {
-      check_size<sizeof(T),sizeof(_store)>();
-      new (this) T( fc::forward<U>(u), fc::forward<V>(v) );
-    }
-    template<typename T,unsigned int S,typename A>
-    template<typename U,typename V,typename X,typename Y>
-    fwd<T,S,A>::fwd( U&& u, V&& v, X&& x, Y&&  y ) {
-      check_size<sizeof(T),sizeof(_store)>();
-      new (this) T( fc::forward<U>(u), fc::forward<V>(v), fc::forward<X>(x), fc::forward<Y>(y) );
-    }
-
 
     template<typename T,unsigned int S,typename A>
     fwd<T,S,A>::fwd() {

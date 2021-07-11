@@ -714,6 +714,15 @@ void from_variant( const variant& var,  std::vector<char>& vo )
    }
 }
 
+void to_variant( const blob& b, variant& v ) {
+   v = variant(base64_encode(b.data.data(), b.data.size()));
+}
+
+void from_variant( const variant& v, blob& b ) {
+   string _s = base64_decode(v.as_string());
+   b.data = std::vector<char>(_s.begin(), _s.end());
+}
+
 void to_variant( const UInt<8>& n, variant& v ) { v = uint64_t(n); }
 // TODO: warn on overflow?
 void from_variant( const variant& v, UInt<8>& n ) { n = static_cast<uint8_t>(v.as_uint64()); }

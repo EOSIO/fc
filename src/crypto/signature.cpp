@@ -16,7 +16,7 @@ namespace fc { namespace crypto {
       }
    };
 
-   static signature::storage_type parse_base58(const std::string& base58str)
+   static signature::storage_type sig_parse_base58(const std::string& base58str)
    { try {
       constexpr auto prefix = config::signature_base_prefix;
 
@@ -32,30 +32,30 @@ namespace fc { namespace crypto {
    } FC_RETHROW_EXCEPTIONS( warn, "error parsing signature", ("str", base58str ) ) }
 
    signature::signature(const std::string& base58str)
-      :_storage(parse_base58(base58str))
+      :_storage(sig_parse_base58(base58str))
    {}
 
    int signature::which() const {
-      return _storage.which();
+      return _storage.index();
    }
 
    template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
    template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
    size_t signature::variable_size() const {
-      return _storage.visit<size_t>(overloaded {
+      return std::visit(overloaded {
          [&](const auto& k1r1) {
-            return 0;
+            return static_cast<size_t>(0);
          },
          [&](const webauthn::signature& wa) {
-            return wa.variable_size();
+            return static_cast<size_t>(wa.variable_size());
          }
-      });
+      }, _storage);
    }
 
    std::string signature::to_string(const fc::yield_function_t& yield) const
    {
-      auto data_str = _storage.visit(base58str_visitor<storage_type, config::signature_prefix>(yield));
+      auto data_str = std::visit(base58str_visitor<storage_type, config::signature_prefix>(yield), _storage);
       yield();
       return std::string(config::signature_base_prefix) + "_" + data_str;
    }
@@ -79,7 +79,7 @@ namespace fc { namespace crypto {
    }
 
    size_t hash_value(const signature& b) {
-       return b._storage.visit(hash_visitor());
+       return std::visit(hash_visitor(), b._storage);
    }
 } } // eosio::blockchain
 

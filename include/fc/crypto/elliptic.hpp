@@ -24,7 +24,6 @@ namespace fc {
     typedef fc::array<char,65>          public_key_point_data; ///< the full non-compressed version of the ECC point
     typedef fc::array<char,72>          signature;
     typedef fc::array<unsigned char,65> compact_signature;
-    typedef std::vector<char>           range_proof_type;
     typedef fc::array<char,78>          extended_key_data;
     typedef fc::sha256                  blinded_hash;
     typedef fc::sha256                  blind_signature;
@@ -53,11 +52,6 @@ namespace fc {
            public_key child( const fc::sha256& offset )const;
 
            bool valid()const;
-           /** Computes new pubkey = generator * offset + old pubkey ?! */
-//           public_key mult( const fc::sha256& offset )const;
-           /** Computes new pubkey = regenerate(offset).pubkey + old pubkey
-            *                      = offset * G + 1 * old pubkey ?! */
-           public_key add( const fc::sha256& offset )const;
 
            public_key( public_key&& pk );
            public_key& operator=( public_key&& pk );
@@ -150,39 +144,6 @@ namespace fc {
            fc::fwd<detail::private_key_impl,32> my;
     };
 
-     struct range_proof_info
-     {
-         int          exp;
-         int          mantissa;
-         uint64_t     min_value;
-         uint64_t     max_value;
-     };
-
-     commitment_type   blind( const blind_factor_type& blind, uint64_t value );
-     blind_factor_type blind_sum( const std::vector<blind_factor_type>& blinds, uint32_t non_neg );
-     /**  verifies taht commnits + neg_commits + excess == 0 */
-     bool            verify_sum( const std::vector<commitment_type>& commits, const std::vector<commitment_type>& neg_commits, int64_t excess );
-     bool            verify_range( uint64_t& min_val, uint64_t& max_val, const commitment_type& commit, const range_proof_type& proof );
-
-     range_proof_type range_proof_sign( uint64_t min_value,
-                                       const commitment_type& commit,
-                                       const blind_factor_type& commit_blind,
-                                       const blind_factor_type& nonce,
-                                       int8_t base10_exp,
-                                       uint8_t min_bits,
-                                       uint64_t actual_value
-                                     );
-
-     bool            verify_range_proof_rewind( blind_factor_type& blind_out,
-                                          uint64_t& value_out,
-                                          string& message_out,
-                                          const blind_factor_type& nonce,
-                                          uint64_t& min_val,
-                                          uint64_t& max_val,
-                                          commitment_type commit,
-                                          const range_proof_type& proof );
-     range_proof_info range_get_info( const range_proof_type& proof );
-
       /**
        * Shims
        */
@@ -273,7 +234,6 @@ namespace fc {
 
 FC_REFLECT_TYPENAME( fc::ecc::private_key )
 FC_REFLECT_TYPENAME( fc::ecc::public_key )
-FC_REFLECT( fc::ecc::range_proof_info, (exp)(mantissa)(min_value)(max_value) )
 FC_REFLECT_DERIVED( fc::ecc::public_key_shim, (fc::crypto::shim<fc::ecc::public_key_data>), BOOST_PP_SEQ_NIL )
 FC_REFLECT_DERIVED( fc::ecc::signature_shim, (fc::crypto::shim<fc::ecc::compact_signature>), BOOST_PP_SEQ_NIL )
 FC_REFLECT_DERIVED( fc::ecc::private_key_shim, (fc::crypto::shim<fc::ecc::private_key_secret>), BOOST_PP_SEQ_NIL )
