@@ -110,6 +110,8 @@ zipkin::impl::~impl() {
 
 void zipkin::impl::shutdown() {
    if( stopped ^= 1 ) return;
+   boost::system::error_code ec;
+   timer.cancel(ec);
    work_guard.reset(); // drain the queue
    thread.join();
 }
@@ -191,9 +193,10 @@ void zipkin::log( zipkin_span::span_data&& span ) {
       if( my->timer_expired ) {
          my->timer_expired = false;
          my->timer.expires_from_now(boost::posix_time::microsec(my->retry_interval_us));
-         my->timer.async_wait([this](auto&) mutable {
+         my->timer.async_wait([this](const boost::system::error_code& ec) mutable {
             sighup_requested = true;
-            my->timer_expired = true;
+            if(!ec)
+               my->timer_expired = true;
          });
       }
    }else {
