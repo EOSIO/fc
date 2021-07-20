@@ -254,7 +254,7 @@ void zipkin::log( zipkin_span::span_data&& span ) {
       if( my->timer_expired ) {
          my->timer_expired = false;
          my->timer.expires_from_now(boost::posix_time::microsec(my->retry_interval_us));
-         my->timer.async_wait([this](const boost::system::error_code& ec) mutable {
+         my->timer.async_wait([this](const boost::system::error_code& ec) {
             sighup_requested = true;
             if(!ec)
                my->timer_expired = true;
