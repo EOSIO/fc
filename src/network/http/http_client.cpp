@@ -300,7 +300,10 @@ public:
       const deadline_type&               deadline;
    };
 
-   variant post_sync(const url& dest, const variant& payload, const fc::time_point& _deadline) {
+   variant
+   post_sync(const url &dest, const variant &payload,
+             const fc::time_point &_deadline,
+             json::output_formatting formatting) {
       static const deadline_type epoch(boost::gregorian::date(1970, 1, 1));
       auto deadline = epoch + boost::posix_time::microseconds(_deadline.time_since_epoch().count());
       FC_ASSERT(dest.host(), "No host set on URL");
@@ -324,7 +327,7 @@ public:
       req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
       req.set(http::field::content_type, "application/json");
       req.keep_alive(true);
-      req.body() = json::to_string(payload, _deadline);
+      req.body() = json::to_string(payload, _deadline, formatting);
       req.prepare_payload();
 
       auto conn_iter = get_connection(dest, deadline);
@@ -379,6 +382,8 @@ public:
          }
       } else if (res.result() == http::status::not_found) {
          FC_THROW("URL not found: ${url}", ("url", (std::string)dest));
+      } else if (res.result() == http::status::bad_request) {
+         FC_THROW("Received request: ${msg}", ("msg", res.body()));
       }
 
       return result;
@@ -432,11 +437,12 @@ http_client::http_client()
 
 }
 
-variant http_client::post_sync(const url& dest, const variant& payload, const fc::time_point& deadline) {
-   if(dest.proto() == "unix")
-      return _my->post_sync(_my->get_unix_url(*dest.host()), payload, deadline);
+variant http_client::post_sync(const url& dest, const variant& payload, const fc::time_point& deadline,
+                               json::output_formatting formatting) {
+   if (dest.proto() == "unix")
+      return _my->post_sync(_my->get_unix_url(*dest.host()), payload, deadline, formatting);
    else
-      return _my->post_sync(dest, payload, deadline);
+      return _my->post_sync(dest, payload, deadline, formatting);
 }
 
 void http_client::add_cert(const std::string& cert_pem_string) {
