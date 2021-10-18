@@ -119,6 +119,18 @@ namespace fc { namespace ecc {
         return my->_key;
     }
 
+    public_key_point_data public_key::serialize_ecc_point()const
+    {
+        FC_ASSERT( my->_key != empty_pub );
+        secp256k1_pubkey secp_pubkey;
+        FC_ASSERT( secp256k1_ec_pubkey_parse(detail::_get_context(), &secp_pubkey, (unsigned char*)my->_key.begin(), my->_key.size()) );
+        public_key_point_data pubkey_point;
+        size_t pubkey_point_size = pubkey_point.size();
+        secp256k1_ec_pubkey_serialize(detail::_get_context(), (unsigned char*)pubkey_point.begin(), &pubkey_point_size, &secp_pubkey, SECP256K1_EC_UNCOMPRESSED);
+        FC_ASSERT( pubkey_point.size() == pubkey_point_size );
+        return pubkey_point;
+    }
+
     public_key::public_key( const public_key_point_data& dat )
     {
         const char* front = &dat.data[0];

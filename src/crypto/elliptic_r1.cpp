@@ -459,6 +459,18 @@ namespace fc { namespace crypto { namespace r1 {
        */
     }
 
+    public_key_point_data public_key::serialize_ecc_point()const
+    {
+      public_key_point_data dat;
+      if( !my->_key ) return dat;
+      auto key = EC_KEY_dup( my->_key );
+      EC_KEY_set_conv_form( key, POINT_CONVERSION_UNCOMPRESSED );
+      char* front = &dat.data[0];
+      i2o_ECPublicKey( key, (unsigned char**)&front );
+      EC_KEY_free( key );
+      return dat;
+    }
+
     public_key::public_key()
     {
     }
