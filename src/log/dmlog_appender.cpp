@@ -31,6 +31,9 @@ namespace fc {
 
    void dmlog_appender::initialize( boost::asio::io_service& io_service ) {
       my->io_service = &io_service;
+      // Reset in case of resources somehow being held by mutex lock even when nodeos is shutdown
+      // which might cause logger to print wrong DMLOG if is_stopped is true in previous run
+      my->is_stopped = false;
    }
 
    void dmlog_appender::log( const log_message& m ) {
