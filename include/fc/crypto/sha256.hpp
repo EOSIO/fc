@@ -3,6 +3,7 @@
 #include <fc/string.hpp>
 #include <fc/platform_independence.hpp>
 #include <fc/io/raw_fwd.hpp>
+#include <boost/container_hash/hash.hpp>
 
 namespace fc
 {
