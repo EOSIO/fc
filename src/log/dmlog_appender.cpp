@@ -16,9 +16,8 @@
 namespace fc {
    class dmlog_appender::impl {
       public:
-         bool is_stopped;
+         bool is_stopped = false;
          boost::asio::io_service* io_service;
-         boost::mutex log_mutex;
    };
 
    dmlog_appender::dmlog_appender( const variant& args )
@@ -31,16 +30,12 @@ namespace fc {
 
    void dmlog_appender::initialize( boost::asio::io_service& io_service ) {
       my->io_service = &io_service;
-      // Reset in case of resources somehow being held by mutex lock even when nodeos is shutdown
-      // which might cause logger to print wrong DMLOG if is_stopped is true in previous run
-      my->is_stopped = false;
    }
 
    void dmlog_appender::log( const log_message& m ) {
       FILE* out = stdout;
 
       string message = format_string( "DMLOG " + m.get_format() + "\n", m.get_data() );
-      std::unique_lock<boost::mutex> lock(my->log_mutex);
       if (my->is_stopped) {
          // It might happen that `io_server->stop` was called due to printing errors but did not take
          // effect just yet. So if we are stopped, print a line that we are terminated and return.
