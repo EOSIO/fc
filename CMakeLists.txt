@@ -26,6 +26,7 @@ elseif(NOT CMAKE_CXX_STANDARD)
 endif()
 
 add_subdirectory( secp256k1 )
+add_subdirectory( vendor/fmt )
 
 IF( ECC_IMPL STREQUAL openssl )
   SET( ECC_REST src/crypto/elliptic_impl_pub.cpp )
@@ -169,6 +170,7 @@ target_include_directories(fc
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OPENSSL_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/fmt/include
   )
 
 # try and make this very clear that this json parser is intended only for webauthn parsing..
@@ -192,7 +194,7 @@ IF(APPLE)
 ENDIF()
 target_link_libraries( fc PUBLIC ${LINK_USR_LOCAL_LIB}
                                  Boost::date_time Boost::filesystem Boost::chrono Boost::iostreams Threads::Threads
-                                 ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${readline_libraries} ${ECC_LIB} ${security_framework} ${corefoundation_framework} )
+                                 ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${readline_libraries} ${ECC_LIB} ${security_framework} ${corefoundation_framework} fmt::fmt )
 
 
 SET(OPENSSL_CONF_TARGET )

@@ -56,8 +56,9 @@ namespace fc
             return json::from_file(p, ptype, max_depth).as<T>();
          }
 
+         // TODO: remove default arg of deadline. Replace with a to_log_string() method
          template<typename T>
-         static string   to_string( const T& v, const fc::time_point& deadline, const output_formatting format = output_formatting::stringify_large_ints_and_doubles, const uint64_t max_len = max_length_limit )
+         static string   to_string( const T& v, const fc::time_point& deadline = fc::time_point::maximum(), const output_formatting format = output_formatting::stringify_large_ints_and_doubles, const uint64_t max_len = max_length_limit )
          {
             const auto yield = [&](size_t s) {
                FC_CHECK_DEADLINE(deadline);

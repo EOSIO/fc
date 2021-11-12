@@ -373,7 +373,7 @@ namespace fc
 
 #define FC_CAPTURE_AND_THROW( EXCEPTION_TYPE, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
-    throw EXCEPTION_TYPE( FC_LOG_MESSAGE( error, "", FC_FORMAT_ARG_PARAMS(__VA_ARGS__) ) ); \
+    throw EXCEPTION_TYPE( FC_LOG_MESSAGE( error, FC_FORMAT(__VA_ARGS__), FC_FORMAT_ARG_PARAMS(__VA_ARGS__) ) ); \
   FC_MULTILINE_MACRO_END
 
 //#define FC_THROW( FORMAT, ... )
@@ -412,21 +412,21 @@ namespace fc
    catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
    } catch( fc::exception& er ) { \
-      wlog( "${details}", ("details",er.to_detail_string()) ); \
+      wlog( "{details}", ("details",er.to_detail_string()) ); \
       FC_RETHROW_EXCEPTION( er, warn, "rethrow" ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
-                FC_LOG_MESSAGE( warn, "rethrow ${what}: ", ("what",e.what())), \
+                FC_LOG_MESSAGE( warn, "rethrow {what}: ", ("what",e.what())), \
                 std::current_exception(), \
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ) ; \
-      wlog( "${details}", ("details",sew.to_detail_string()) ); \
+      wlog( "{details}", ("details",sew.to_detail_string()) ); \
       throw sew;\
    } catch( ... ) {  \
       fc::unhandled_exception e( \
                 FC_LOG_MESSAGE( warn, "rethrow"), \
                 std::current_exception() ); \
-      wlog( "${details}", ("details",e.to_detail_string()) ); \
+      wlog( "{details}", ("details",e.to_detail_string()) ); \
       throw e; \
    }
 
@@ -434,23 +434,23 @@ namespace fc
    catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
    } catch( fc::exception& er ) { \
-      wlog( "${details}", ("details",er.to_detail_string()) ); \
+      wlog( "{details}", ("details",er.to_detail_string()) ); \
       wdump( __VA_ARGS__ ); \
       FC_RETHROW_EXCEPTION( er, warn, "rethrow", FC_FORMAT_ARG_PARAMS(__VA_ARGS__) ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
-                FC_LOG_MESSAGE( warn, "rethrow ${what}: ", FC_FORMAT_ARG_PARAMS( __VA_ARGS__ )("what",e.what())), \
+                FC_LOG_MESSAGE( warn, "rethrow {what}: ", FC_FORMAT_ARG_PARAMS( __VA_ARGS__ )("what",e.what())), \
                 std::current_exception(), \
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ) ; \
-      wlog( "${details}", ("details",sew.to_detail_string()) ); \
+      wlog( "{details}", ("details",sew.to_detail_string()) ); \
       wdump( __VA_ARGS__ ); \
       throw sew;\
    } catch( ... ) {  \
       fc::unhandled_exception e( \
                 FC_LOG_MESSAGE( warn, "rethrow", FC_FORMAT_ARG_PARAMS( __VA_ARGS__) ), \
                 std::current_exception() ); \
-      wlog( "${details}", ("details",e.to_detail_string()) ); \
+      wlog( "{details}", ("details",e.to_detail_string()) ); \
       wdump( __VA_ARGS__ ); \
       throw e; \
    }
@@ -481,19 +481,19 @@ namespace fc
    catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
    } catch( fc::exception& er ) { \
-      wlog( "${details}", ("details",er.to_detail_string()) ); \
+      wlog( "{details}", ("details",er.to_detail_string()) ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
-                FC_LOG_MESSAGE( warn, "rethrow ${what}: ",FC_FORMAT_ARG_PARAMS( __VA_ARGS__  )("what",e.what()) ), \
+                FC_LOG_MESSAGE( warn, "rethrow {what}: ",FC_FORMAT_ARG_PARAMS( __VA_ARGS__  )("what",e.what()) ), \
                 std::current_exception(), \
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ) ; \
-      wlog( "${details}", ("details",sew.to_detail_string()) ); \
+      wlog( "{details}", ("details",sew.to_detail_string()) ); \
    } catch( ... ) {  \
       fc::unhandled_exception e( \
                 FC_LOG_MESSAGE( warn, "rethrow", FC_FORMAT_ARG_PARAMS( __VA_ARGS__) ), \
                 std::current_exception() ); \
-      wlog( "${details}", ("details",e.to_detail_string()) ); \
+      wlog( "{details}", ("details",e.to_detail_string()) ); \
    }
 
 
@@ -509,7 +509,7 @@ namespace fc
       FC_RETHROW_EXCEPTION( er, LOG_LEVEL, FORMAT, __VA_ARGS__ ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
-                FC_LOG_MESSAGE( LOG_LEVEL, "${what}: " FORMAT,__VA_ARGS__("what",e.what())), \
+                FC_LOG_MESSAGE( LOG_LEVEL, "{what}: " FORMAT,__VA_ARGS__("what",e.what())), \
                 std::current_exception(), \
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ); \
@@ -527,7 +527,7 @@ namespace fc
       FC_RETHROW_EXCEPTION( er, warn, "", FC_FORMAT_ARG_PARAMS(__VA_ARGS__) ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
-                FC_LOG_MESSAGE( warn, "${what}: ",FC_FORMAT_ARG_PARAMS(__VA_ARGS__)("what",e.what())), \
+                FC_LOG_MESSAGE( warn, "{what}: ",FC_FORMAT_ARG_PARAMS(__VA_ARGS__)("what",e.what())), \
                 std::current_exception(), \
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ); \
@@ -541,7 +541,7 @@ namespace fc
 #define FC_CHECK_DEADLINE( DEADLINE, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
     if( DEADLINE < fc::time_point::maximum() && DEADLINE < fc::time_point::now() ) { \
-       auto log_mgs = FC_LOG_MESSAGE( error, "deadline ${d} exceeded by ${t}us ", \
+       auto log_mgs = FC_LOG_MESSAGE( error, "deadline {d} exceeded by {t}us ", \
              FC_FORMAT_ARG_PARAMS(__VA_ARGS__)("d", DEADLINE)("t", fc::time_point::now() - DEADLINE) ); \
        auto msg = log_mgs.get_limited_message(); \
        throw fc::timeout_exception( std::move( log_mgs ), fc::timeout_exception_code, "timeout_exception", std::move( msg ) ); \

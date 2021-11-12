@@ -62,3 +62,18 @@ namespace fc {
 } // namespace fc
 
 FC_REFLECT(fc::crypto::public_key, (_storage) )
+
+#include <fmt/format.h>
+
+namespace fmt {
+template<>
+struct formatter<fc::crypto::public_key> {
+   template<typename ParseContext>
+   constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+   template<typename FormatContext>
+   auto format( const fc::crypto::public_key& v, FormatContext& ctx ) {
+      return format_to( ctx.out(), "{}", v.to_string() );
+   }
+};
+}

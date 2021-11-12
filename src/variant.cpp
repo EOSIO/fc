@@ -414,7 +414,7 @@ uint64_t variant::as_uint64()const
       default:
          FC_THROW_EXCEPTION( bad_cast_exception,"Invalid cast from ${type} to uint64", ("type",get_type()));
    }
-} FC_CAPTURE_AND_RETHROW( (*this) ) }
+} FC_RETHROW_EXCEPTIONS(warn, "this: {this}", ("this", this->as_string() ) ) }
 
 
 double  variant::as_double()const
@@ -922,7 +922,7 @@ string format_string( const string& frmt, const variant_object& args, bool minim
       if( a.is_double()  || b.is_double() ) return a.as_double() + b.as_double();
       if( a.is_int64()   || b.is_int64() )  return a.as_int64() + b.as_int64();
       if( a.is_uint64()  || b.is_uint64() ) return a.as_uint64() + b.as_uint64();
-      FC_ASSERT( false, "invalid operation ${a} + ${b}", ("a",a)("b",b) );
+      FC_ASSERT( false, "invalid operation {a} + {b}", ("a",a.as_string())("b",b.as_string()) );
    }
 
    variant operator - ( const variant& a, const variant& b )
@@ -949,7 +949,7 @@ string format_string( const string& frmt, const variant_object& args, bool minim
       if( a.is_double()  || b.is_double() ) return a.as_double() - b.as_double();
       if( a.is_int64()   || b.is_int64() )  return a.as_int64() - b.as_int64();
       if( a.is_uint64()  || b.is_uint64() ) return a.as_uint64() - b.as_uint64();
-      FC_ASSERT( false, "invalid operation ${a} + ${b}", ("a",a)("b",b) );
+      FC_ASSERT( false, "invalid operation {a} + {b}", ("a",a.as_string())("b",b.as_string()) );
    }
    variant operator * ( const variant& a, const variant& b )
    {
@@ -974,7 +974,7 @@ string format_string( const string& frmt, const variant_object& args, bool minim
          }
          return result;
       }
-      FC_ASSERT( false, "invalid operation ${a} * ${b}", ("a",a)("b",b) );
+      FC_ASSERT( false, "invalid operation {a} * {b}", ("a",a.as_string())("b",b.as_string()) );
    }
    variant operator / ( const variant& a, const variant& b )
    {
@@ -999,6 +999,6 @@ string format_string( const string& frmt, const variant_object& args, bool minim
          }
          return result;
       }
-      FC_ASSERT( false, "invalid operation ${a} / ${b}", ("a",a)("b",b) );
+      FC_ASSERT( false, "invalid operation {a} / {b}", ("a",a.as_string())("b",b.as_string()) );
    }
 } // namespace fc

@@ -155,6 +155,28 @@ namespace std
 
 FC_REFLECT( fc::uint128, (hi)(lo) )
 
+namespace fmt {
+template<>
+struct formatter<fc::uint128> {
+   template<typename ParseContext>
+   constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+   template<typename FormatContext>
+   auto format( const fc::uint128& p, FormatContext& ctx ) {
+      return format_to( ctx.begin(), "{}", (std::string)p );
+   }
+};
+template<>
+struct formatter<unsigned __int128> {
+   template<typename ParseContext>
+   constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+   template<typename FormatContext>
+   auto format( const unsigned __int128& p, FormatContext& ctx ) {
+      return format_to( ctx.out(), "{}", (std::string)fc::uint128(p) );
+   }
+};
+}
 #ifdef _MSC_VER
   #pragma warning (pop)
 #endif ///_MSC_VER

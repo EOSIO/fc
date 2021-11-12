@@ -112,8 +112,8 @@ namespace fc  {
     {
       FC_THROW_EXCEPTION( parse_error_exception, "Couldn't parse uint64_t" );
     }
-    FC_RETHROW_EXCEPTIONS( warn, "${i} => uint64_t", ("i",i) )
-  } FC_CAPTURE_AND_RETHROW( (i) ) }
+    FC_RETHROW_EXCEPTIONS( warn, "{i} => uint64_t", ("i",i) )
+  } FC_RETHROW_EXCEPTIONS( warn, "{i}", ("i",i) ) }
 
   double     to_double( const fc::string& i)
   {

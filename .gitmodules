@@ -4,3 +4,6 @@
 [submodule "include/fc/crypto/webauthn_json"]
 	path = include/fc/crypto/webauthn_json
 	url = https://github.com/Tencent/rapidjson/
+[submodule "vendor/fmt"]
+	path = vendor/fmt
+	url = https://github.com/fmtlib/fmt.git

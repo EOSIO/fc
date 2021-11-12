@@ -217,7 +217,7 @@ namespace fc {
     try {
       boost::filesystem::create_directories(p);
     } catch ( ... ) {
-      FC_THROW( "Unable to create directories ${path}", ("path", p )("inner", fc::except_str() ) );
+      FC_THROW( "Unable to create directories {path}, except {inner}", ("path", p.string() )("inner", fc::except_str() ) );
     }
   }
   bool is_directory( const path& p ) { return boost::filesystem::is_directory(p); }
@@ -239,7 +239,7 @@ namespace fc {
 
       return size;
     } catch ( ... ) {
-      FC_THROW( "Unable to calculate size of directory ${path}", ("path", p )("inner", fc::except_str() ) );
+       FC_THROW( "Unable to create directories {path}, except {inner}", ("path", p.string() )("inner", fc::except_str() ) );
     }
   }
 
@@ -267,14 +267,14 @@ namespace fc {
         #endif
      } catch ( boost::system::system_error& e ) {
      	FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}",
-	         ("srcfile",f)("dstfile",t)("reason",e.what() ) );
+	         ("srcfile",f.string())("dstfile",t.string())("reason",e.what() ) );
      } catch ( ... ) {
-     	FC_THROW( "Copy from ${srcfile} to ${dstfile} failed",
-	         ("srcfile",f)("dstfile",t)("inner", fc::except_str() ) );
+     	FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because {inner}",
+	         ("srcfile",f.string())("dstfile",t.string())("inner", fc::except_str() ) );
      }
      if( ec ) {
         FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}, category: ${cat}",
-              ("srcfile",f)("dstfile",t)("reason", ec.message())("cat", ec.category().name()) );
+              ("srcfile",f.string())("dstfile",t.string())("reason", ec.message())("cat", ec.category().name()) );
      }
   }
   void resize_file( const path& f, size_t t )
@@ -285,12 +285,12 @@ namespace fc {
     catch ( boost::system::system_error& e )
     {
       FC_THROW( "Resize file '${f}' to size ${s} failed: ${reason}",
-                ("f",f)("s",t)( "reason", e.what() ) );
+                ("f",f.string())("s",t)( "reason", e.what() ) );
     }
     catch ( ... )
     {
       FC_THROW( "Resize file '${f}' to size ${s} failed: ${reason}",
-                ("f",f)("s",t)( "reason", fc::except_str() ) );
+                ("f",f.string())("s",t)( "reason", fc::except_str() ) );
     }
   }
 
@@ -316,7 +316,7 @@ namespace fc {
 
     int result = ::chmod( p.string().c_str(), actual_perm );
     if( result != 0 )
-        FC_THROW( "chmod operation failed on ${p}", ("p",p) );
+        FC_THROW( "chmod operation failed on {p}", ("p",p.string()) );
 #endif
     return;
   }
@@ -330,11 +330,11 @@ namespace fc {
              boost::filesystem::remove( boost::filesystem::path(f));
          } catch ( boost::system::system_error& e ) {
              FC_THROW( "Rename from ${srcfile} to ${dstfile} failed because ${reason}",
-                     ("srcfile",f)("dstfile",t)("reason",e.what() ) );
+                     ("srcfile",f.string())("dstfile",t.string())("reason",e.what() ) );
          }
      } catch ( ... ) {
-     	FC_THROW( "Rename from ${srcfile} to ${dstfile} failed",
-	         ("srcfile",f)("dstfile",t)("inner", fc::except_str() ) );
+     	FC_THROW( "Rename from {srcfile} to {dstfile} failed",
+	         ("srcfile",f.string())("dstfile",t.string())("inner", fc::except_str() ) );
      }
   }
   void create_hard_link( const path& f, const path& t ) {
@@ -342,21 +342,21 @@ namespace fc {
         boost::filesystem::create_hard_link( f, t );
      } catch ( ... ) {
          FC_THROW( "Unable to create hard link from '${from}' to '${to}'",
-                          ( "from", f )("to",t)("exception", fc::except_str() ) );
+                          ( "from", f.string() )("to",t.string())("exception", fc::except_str() ) );
      }
   }
   bool remove( const path& f ) {
      try {
         return boost::filesystem::remove( f );
      } catch ( ... ) {
-         FC_THROW( "Unable to remove '${path}'", ( "path", f )("exception", fc::except_str() ) );
+         FC_THROW( "Unable to remove '{path}' because {exception}", ( "path", f.string() )("exception", fc::except_str() ) );
      }
   }
   fc::path canonical( const fc::path& p ) {
      try {
         return boost::filesystem::canonical(p);
      } catch ( ... ) {
-         FC_THROW( "Unable to resolve path '${path}'", ( "path", p )("exception", fc::except_str() ) );
+         FC_THROW( "Unable to resolve path '{path}' because {exception}", ( "path", p.string() )("exception", fc::except_str() ) );
      }
   }
   fc::path absolute( const fc::path& p ) { return boost::filesystem::absolute(p); }

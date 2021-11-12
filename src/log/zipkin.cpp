@@ -278,7 +278,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       auto deadline = fc::time_point::now() + fc::microseconds( timeout_us );
       if( !endpoint ) {
          endpoint = url( zipkin_url );
-         dlog( "connecting to zipkin: ${p}", ("p", *endpoint) );
+         dlog( "connecting to zipkin: ${p}", ("p", (std::string)*endpoint) );
       }
 
       http.post_sync(*endpoint, create_zipkin_variant(std::move(span), service_name, local_endpoint), deadline, fc::json::output_formatting::legacy_generator);

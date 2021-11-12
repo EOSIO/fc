@@ -567,7 +567,7 @@ namespace fc { namespace json_relaxed
                    FC_THROW_EXCEPTION( parse_error_exception, "illegal character '${c}' in number", ( "c", c ) );
            }
        }
-   } FC_CAPTURE_AND_RETHROW( (token) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "token: {token}", ("token", token) ) }
 
    template<typename T, bool strict>
    variant_object objectFromStream( T& in, uint32_t max_depth )
@@ -582,6 +582,7 @@ namespace fc { namespace json_relaxed
                                      ("char",string(&c, &c + 1)) );
          in.get();
          skip_white_space(in);
+         string key;
          while( in.peek() != '}' )
          {
             if( in.peek() == ',' )
@@ -590,7 +591,7 @@ namespace fc { namespace json_relaxed
                continue;
             }
             if( skip_white_space(in) ) continue;
-            string key = json_relaxed::stringFromStream<T, strict>( in );
+            key = json_relaxed::stringFromStream<T, strict>( in );
             skip_white_space(in);
             if( in.peek() != ':' )
             {
@@ -608,7 +609,7 @@ namespace fc { namespace json_relaxed
             in.get();
             return obj;
          }
-         FC_THROW_EXCEPTION( parse_error_exception, "Expected '}' after ${variant}", ("variant", obj ) );
+         FC_THROW_EXCEPTION( parse_error_exception, "Expected '}}' after {key}", ("key", key ) );
       }
       catch( const fc::eof_exception& e )
       {
@@ -643,12 +644,10 @@ namespace fc { namespace json_relaxed
            skip_white_space(in);
         }
         if( in.peek() != ']' )
-           FC_THROW_EXCEPTION( parse_error_exception, "Expected ']' after parsing ${variant}",
-                                    ("variant", ar) );
+           FC_THROW_EXCEPTION( parse_error_exception, "Expected ']' got {peek}", ("peek", in.peek()) );
 
         in.get();
-      } FC_RETHROW_EXCEPTIONS( warn, "Attempting to parse array ${array}",
-                                         ("array", ar ) );
+      } FC_RETHROW_EXCEPTIONS( warn, "Attempting to parse array" );
       return ar;
    }
 
@@ -660,7 +659,7 @@ namespace fc { namespace json_relaxed
        if( strict && !(result.is_int64() || result.is_uint64() || result.is_double()) )
            FC_THROW_EXCEPTION( parse_error_exception, "expected: number" );
        return result;
-   } FC_CAPTURE_AND_RETHROW() }
+   } FC_RETHROW_EXCEPTIONS(warn, "") }
    
    template<typename T, bool strict>
    variant wordFromStream( T& in )

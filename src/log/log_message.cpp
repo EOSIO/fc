@@ -142,8 +142,8 @@ namespace fc
         else if( v.as_string() == "off" ) e = log_level::off;
         else FC_THROW_EXCEPTION( bad_cast_exception, "Failed to cast from Variant to log_level" );
       } FC_RETHROW_EXCEPTIONS( error, 
-                                   "Expected 'all|debug|info|warn|error|off', but got '${variant}'",
-                                   ("variant",v) );
+                                   "Expected 'all|debug|info|warn|error|off', but got '{variant}'",
+                                   ("variant",v.as_string()) );
    }
 
    string log_level::to_string()const {

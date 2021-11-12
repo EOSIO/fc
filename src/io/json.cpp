@@ -179,6 +179,7 @@ namespace fc
                                      "Expected '{', but read '${char}'",
                                      ("char",string(&c, &c + 1)) );
          in.get();
+         string key;
          while( in.peek() != '}' )
          {
             if( in.peek() == ',' )
@@ -187,7 +188,7 @@ namespace fc
                continue;
             }
             if( skip_white_space(in) ) continue;
-            string key = stringFromStream( in );
+            key = stringFromStream( in );
             skip_white_space(in);
             if( in.peek() != ':' )
             {
@@ -205,7 +206,7 @@ namespace fc
             in.get();
             return obj;
          }
-         FC_THROW_EXCEPTION( parse_error_exception, "Expected '}' after ${variant}", ("variant", obj ) );
+         FC_THROW_EXCEPTION( parse_error_exception, "Expected '}}' after value for key {key}", ("key", key ) );
       }
       catch( const fc::eof_exception& e )
       {
@@ -240,12 +241,10 @@ namespace fc
            skip_white_space(in);
         }
         if( in.peek() != ']' )
-           FC_THROW_EXCEPTION( parse_error_exception, "Expected ']' after parsing ${variant}",
-                                    ("variant", ar) );
+           FC_THROW_EXCEPTION( parse_error_exception, "Expected ']' got {peek}", ("peek", in.peek()) );
 
         in.get();
-      } FC_RETHROW_EXCEPTIONS( warn, "Attempting to parse array ${array}",
-                                         ("array", ar ) );
+      } FC_RETHROW_EXCEPTIONS( warn, "Attempting to parse array" );
       return ar;
    }
 
