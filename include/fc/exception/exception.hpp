@@ -477,10 +477,8 @@ namespace fc
       wdump( __VA_ARGS__ ); \
    }
 
-#define FC_LOG_AND_DROP( ... )  \
-   catch( const boost::interprocess::bad_alloc& ) {\
-      throw;\
-   } catch( fc::exception& er ) { \
+#define FC_LOG_AND_DROP_ALL( ... )  \
+   catch( fc::exception& er ) { \
       wlog( "${details}", ("details",er.to_detail_string()) ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
@@ -495,6 +493,12 @@ namespace fc
                 std::current_exception() ); \
       wlog( "${details}", ("details",e.to_detail_string()) ); \
    }
+
+
+#define FC_LOG_AND_DROP( ... )  \
+   catch( const boost::interprocess::bad_alloc& ) {\
+      throw;\
+   } FC_LOG_AND_DROP_ALL(__VA_ARGS__)
 
 
 /**
