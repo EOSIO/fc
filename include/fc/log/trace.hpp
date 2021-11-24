@@ -83,3 +83,4 @@ inline fc::zipkin_span::token fc_get_token(const ::std::optional<::fc::zipkin_sp
    if( (fc::logger::get(DEFAULT_LOGGER)).is_enabled( fc::log_level::info ) ) \
       (fc::logger::get(DEFAULT_LOGGER)).log( FC_LOG_MESSAGE( info, FORMAT " traceID=${_the_trace_id_}", ("_the_trace_id_", TRACE_OR_SPAN->trace_id_string()) __VA_ARGS__ ) ); \
   FC_MULTILINE_MACRO_END
+  
