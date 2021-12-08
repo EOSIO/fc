@@ -515,6 +515,9 @@ uint32_t crc32cSlicingBy8(uint32_t crc, const void* data, size_t length) {
 
 #define CRC32C_POLY 0x1EDC6F41
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-const-variable"
+
 #define CRC32C(c,d) (c=(c>>8)^crc_c[(c^(d))&0xFF])
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Copyright 2001, D. Otis.  Use this program, code or tables    */
@@ -601,6 +604,9 @@ static const uint32_t crc_c[256] = {
          0x79B737BA, 0x8BDCB4B9, 0x988C474D, 0x6AE7C44E,
          0xBE2DA0A5, 0x4C4623A6, 0x5F16D052, 0xAD7D5351,
  };
+
+#pragma GCC diagnostic pop
+
 #if !defined __SSE4_2__ || (defined __SSE4_2__ && !defined __x86_64__)
 
 
