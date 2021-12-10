@@ -170,6 +170,8 @@ namespace fc {
   bool path::is_relative()const { return _p->is_relative(); }
   bool path::is_absolute()const { return _p->is_absolute(); }
 
+  bool path::empty() const { return _p->empty(); }
+
       directory_iterator::directory_iterator( const fc::path& p )
       :_p(p){}
 
@@ -245,7 +247,24 @@ namespace fc {
   void copy( const path& f, const path& t ) {
      boost::system::error_code ec;
      try {
+        #if BOOST_VERSION > 107300
+          if (exists(t)){
+            throw boost::system::system_error(boost::system::errc::make_error_code(boost::system::errc::errc_t::file_exists));
+          }
+          if ( boost::filesystem::is_directory( f ) ) {
+            boost::filesystem::copy(boost::filesystem::path(f), 
+                                    boost::filesystem::path(t), 
+                                    boost::filesystem::copy_options::directories_only, 
+                                    ec );
+          } else {
+            boost::filesystem::copy(boost::filesystem::path(f), 
+                                    boost::filesystem::path(t), 
+                                    boost::filesystem::copy_options::none, 
+                                    ec );
+          }
+        #else
   	      boost::filesystem::copy( boost::filesystem::path(f), boost::filesystem::path(t), ec );
+        #endif
      } catch ( boost::system::system_error& e ) {
      	FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}",
 	         ("srcfile",f)("dstfile",t)("reason",e.what() ) );
@@ -254,8 +273,8 @@ namespace fc {
 	         ("srcfile",f)("dstfile",t)("inner", fc::except_str() ) );
      }
      if( ec ) {
-        FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}",
-              ("srcfile",f)("dstfile",t)("reason", ec.category().name() ) );
+        FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}, category: ${cat}",
+              ("srcfile",f)("dstfile",t)("reason", ec.message())("cat", ec.category().name()) );
      }
   }
   void resize_file( const path& f, size_t t )
@@ -428,7 +447,7 @@ namespace fc {
 
    void temp_file_base::remove()
    {
-      if (_path.valid())
+      if (_path)
       {
          try
          {
@@ -444,7 +463,7 @@ namespace fc {
 
    void temp_file_base::release()
    {
-      _path = fc::optional<fc::path>();
+      _path = std::optional<fc::path>();
    }
 
    const fc::path& home_path()

@@ -16,9 +16,8 @@
 namespace fc {
    class dmlog_appender::impl {
       public:
-         bool is_stopped;
+         bool is_stopped = false;
          boost::asio::io_service* io_service;
-         boost::mutex log_mutex;
    };
 
    dmlog_appender::dmlog_appender( const variant& args )
@@ -37,7 +36,6 @@ namespace fc {
       FILE* out = stdout;
 
       string message = format_string( "DMLOG " + m.get_format() + "\n", m.get_data() );
-      std::unique_lock<boost::mutex> lock(my->log_mutex);
       if (my->is_stopped) {
          // It might happen that `io_server->stop` was called due to printing errors but did not take
          // effect just yet. So if we are stopped, print a line that we are terminated and return.

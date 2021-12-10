@@ -112,7 +112,7 @@ bool operator == ( const ripemd160& h1, const ripemd160& h2 ) {
         memcpy(&bi, ve.data(), fc::min<size_t>(ve.size(),sizeof(bi)) );
     }
     else
-        memset( &bi, char(0), sizeof(bi) );
+        memset( bi._hash, char(0), sizeof(bi._hash) );
   }
 
 } // fc

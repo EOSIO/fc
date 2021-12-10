@@ -21,7 +21,8 @@ namespace fc {
     }
     sha512::operator string()const { return  str(); }
 
-    char* sha512::data()const { return (char*)&_hash[0]; }
+    char* sha512::data() { return (char*)&_hash[0]; }
+    const char* sha512::data()const { return (const char*)&_hash[0]; }
 
 
     struct sha512::encoder::impl {
@@ -99,7 +100,7 @@ namespace fc {
         memcpy(&bi, ve.data(), fc::min<size_t>(ve.size(),sizeof(bi)) );
     }
     else
-        memset( &bi, char(0), sizeof(bi) );
+        memset( bi._hash, char(0), sizeof(bi._hash) );
   }
 
     template<>

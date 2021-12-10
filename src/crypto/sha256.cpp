@@ -28,7 +28,8 @@ namespace fc {
     }
     sha256::operator string()const { return  str(); }
 
-    char* sha256::data()const { return (char*)&_hash[0]; }
+    const char* sha256::data()const { return (const char*)&_hash[0]; }
+    char* sha256::data() { return (char*)&_hash[0]; }
 
 
     struct sha256::encoder::impl {
@@ -214,7 +215,7 @@ namespace fc {
         memcpy(&bi, ve.data(), fc::min<size_t>(ve.size(),sizeof(bi)) );
     }
     else
-        memset( &bi, char(0), sizeof(bi) );
+        memset( bi._hash, char(0), sizeof(bi._hash) );
   }
 
   uint64_t hash64(const char* buf, size_t len)
