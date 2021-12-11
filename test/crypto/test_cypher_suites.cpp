@@ -4,7 +4,11 @@
 #include <fc/crypto/public_key.hpp>
 #include <fc/crypto/private_key.hpp>
 #include <fc/crypto/signature.hpp>
+#include <fc/crypto/elliptic.hpp>
+#include <fc/crypto/elliptic_r1.hpp>
 #include <fc/utility.hpp>
+
+#include <algorithm>
 
 using namespace fc::crypto;
 using namespace fc;
@@ -76,6 +80,34 @@ BOOST_AUTO_TEST_CASE(test_r1_recyle) try {
    std::cout << pub << " -> " << recycled_pub << std::endl;
 
    BOOST_CHECK_EQUAL(pub.to_string(), recycled_pub.to_string());
+} FC_LOG_AND_RETHROW();
+
+BOOST_AUTO_TEST_CASE(test_k1_serialize) try {
+   ecc::public_key_point_data pub_point;
+   auto pub_point_hex = std::string("04ad90e5b6bc86b3ec7fac2c5fbda7423fc8ef0d58df594c773fa05e2c281b2bfe877677c668bd13603944e34f4818ee03cadd81a88542b8b4d5431264180e2c28");
+   from_hex(pub_point_hex, const_cast<char*>(&pub_point.data[0]), pub_point.size());
+
+   ecc::public_key_data pub;
+   auto pub_hex = std::string("02ad90e5b6bc86b3ec7fac2c5fbda7423fc8ef0d58df594c773fa05e2c281b2bfe");
+   from_hex(pub_hex, const_cast<char*>(&pub.data[0]), pub.size());
+   auto uncompressed = ecc::public_key(pub).serialize_ecc_point();
+
+   BOOST_CHECK(std::equal(const_cast<const char*>(pub_point.begin()), const_cast<const char*>(pub_point.end()), uncompressed.begin()));
+
+} FC_LOG_AND_RETHROW();
+
+BOOST_AUTO_TEST_CASE(test_r1_serialize) try {
+   r1::public_key_point_data pub_point;
+   auto pub_point_hex = std::string("04413029cb9a5a4a0b087a9b8a060116d0d32bb22d14aebf7778215744811bb6ce40780d7bb9e2e068879f443e05b21b8fc0b62c9c811008064d988856077e35e7");
+   from_hex(pub_point_hex, const_cast<char*>(&pub_point.data[0]), pub_point.size());
+
+   r1::public_key_data pub;
+   auto pub_hex = std::string("03413029cb9a5a4a0b087a9b8a060116d0d32bb22d14aebf7778215744811bb6ce");
+   from_hex(pub_hex, const_cast<char*>(&pub.data[0]), pub.size());
+   auto uncompressed = r1::public_key(pub).serialize_ecc_point();
+
+   BOOST_CHECK(std::equal(const_cast<const char*>(pub_point.begin()), const_cast<const char*>(pub_point.end()), uncompressed.begin()));
+
 } FC_LOG_AND_RETHROW();
 
 
