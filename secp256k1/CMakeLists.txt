@@ -21,20 +21,21 @@ else()
 endif()
 
 add_library(secp256k1 STATIC
-  upstream/src/secp256k1.c
+  secp256k1/src/secp256k1.c
 )
 
 target_include_directories(secp256k1
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/upstream/
-        ${CMAKE_CURRENT_SOURCE_DIR}/upstream/include
+        secp256k1
+        secp256k1/include
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/upstream/src
-        ${SECP256K1_CONFIG_INC_DIR}
+        secp256k1/src
+        "${SECP256K1_CONFIG_INC_DIR}"
         ${GMP_INCLUDE_DIR}
 )
 
 target_compile_definitions(secp256k1 PRIVATE HAVE_CONFIG_H=1)
+target_compile_options(secp256k1 PRIVATE -w)
 
 target_link_libraries(secp256k1 ${GMP_LIBRARIES})
 install( TARGETS secp256k1 

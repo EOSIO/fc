@@ -458,15 +458,6 @@ namespace fc { namespace crypto { namespace r1 {
        EC_POINT_get_affine_coordinates_GFp( group, pub, self.my->_pub_x.get(), self.my->_pub_y.get(), nullptr );
        */
     }
-    public_key_point_data public_key::serialize_ecc_point()const
-    {
-      public_key_point_data dat;
-      if( !my->_key ) return dat;
-      EC_KEY_set_conv_form( my->_key, POINT_CONVERSION_UNCOMPRESSED );
-      char* front = &dat.data[0];
-      i2o_ECPublicKey( my->_key, (unsigned char**)&front  );
-      return dat;
-    }
 
     public_key::public_key()
     {

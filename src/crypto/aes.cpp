@@ -382,6 +382,8 @@ std::vector<char> aes_load( const fc::path& file, const fc::sha512& key )
    return aes_decrypt( key, cipher );
 } FC_RETHROW_EXCEPTIONS( warn, "{file}", ("file",file.string()) ) }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
 /* This stuff has to go somewhere, I guess this is as good a place as any...
   OpenSSL isn't thread-safe unless you give it access to some mutexes,
   so the CRYPTO_set_id_callback() function needs to be called before there's any
@@ -441,5 +443,5 @@ openssl_thread_config::~openssl_thread_config()
     openssl_mutexes = nullptr;
   }
 }
-
+#endif
 }  // namespace fc

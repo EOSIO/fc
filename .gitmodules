@@ -1,9 +1,9 @@
-[submodule "secp256k1/upstream"]
-	path = secp256k1/upstream
-	url = https://github.com/cryptonomex/secp256k1-zkp.git
 [submodule "include/fc/crypto/webauthn_json"]
 	path = include/fc/crypto/webauthn_json
 	url = https://github.com/Tencent/rapidjson/
 [submodule "vendor/fmt"]
 	path = vendor/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "secp256k1/secp256k1"]
+	path = secp256k1/secp256k1
+	url = https://github.com/bitcoin-core/secp256k1
