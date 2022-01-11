@@ -709,3 +709,18 @@ namespace fc
 FC_REFLECT_TYPENAME( fc::variant )
 FC_REFLECT_ENUM( fc::variant::type_id, (null_type)(int64_type)(uint64_type)(double_type)(bool_type)(string_type)(array_type)(object_type)(blob_type) )
 FC_REFLECT( fc::blob, (data) );
+
+#include <fmt/format.h>
+
+namespace fmt {
+template<>
+struct formatter<fc::variant> {
+   template<typename ParseContext>
+   constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+   template<typename FormatContext>
+   auto format( const fc::variant& v, FormatContext& ctx ) {
+      return format_to( ctx.out(), "{}", v.as_string() );
+   }
+};
+}
