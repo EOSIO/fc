@@ -169,6 +169,10 @@ target_include_directories(fc
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OPENSSL_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../fmt/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../spdlog/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../spdlog/include/sinks
+
   )
 
 # try and make this very clear that this json parser is intended only for webauthn parsing..
@@ -192,7 +196,7 @@ IF(APPLE)
 ENDIF()
 target_link_libraries( fc PUBLIC ${LINK_USR_LOCAL_LIB}
                                  Boost::date_time Boost::filesystem Boost::chrono Boost::iostreams Threads::Threads
-                                 ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${readline_libraries} ${ECC_LIB} ${security_framework} ${corefoundation_framework} )
+                                 ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${readline_libraries} ${ECC_LIB} ${security_framework} ${corefoundation_framework} spdlog fmt)
 
 
 SET(OPENSSL_CONF_TARGET )

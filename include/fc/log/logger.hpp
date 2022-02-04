@@ -3,6 +3,10 @@
 #include <fc/time.hpp>
 #include <fc/log/log_message.hpp>
 
+#include <spdlog/logger.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_sinks.h>
+
 #ifndef DEFAULT_LOGGER
 #define DEFAULT_LOGGER "default"
 #endif
@@ -85,6 +89,9 @@ namespace fc
    if( (LOGGER).is_enabled( fc::log_level::info ) ) \
       (LOGGER).log( FC_LOG_MESSAGE( info, FORMAT, __VA_ARGS__ ) ); \
   FC_MULTILINE_MACRO_END
+
+#define fc_new_ilog( LOGGER, ... ) \
+   SPDLOG_LOGGER_CALL(LOGGER, spdlog::level::info, __VA_ARGS__)
 
 #define fc_wlog( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
