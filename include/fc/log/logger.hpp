@@ -89,6 +89,9 @@ namespace fc
 #define fc_new_dlog( LOGGER, ... ) \
    SPDLOG_LOGGER_DEBUG(LOGGER, __VA_ARGS__)
 
+#define fc_new_dlog_2( LOGGER, FORMAT, ... ) \
+   SPDLOG_LOGGER_DEBUG(LOGGER, FC_FMT( FORMAT, __VA_ARGS__ ))
+
 #define fc_ilog( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (LOGGER).is_enabled( fc::log_level::info ) ) \
