@@ -138,6 +138,32 @@ FC_REFLECT_TYPENAME( fc::time_point )
 FC_REFLECT_TYPENAME( fc::microseconds )
 FC_REFLECT_TYPENAME( fc::time_point_sec )
 
+//#include <fmt/format.h>
+#include <spdlog/fmt/fmt.h>
+
+namespace fmt {
+    template<>
+    struct formatter<fc::time_point> {
+        template<typename ParseContext>
+        constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+        template<typename FormatContext>
+        auto format( const fc::time_point& p, FormatContext& ctx ) {
+           return format_to( ctx.out(), "{}", (std::string)p );
+        }
+    };
+    template<>
+    struct formatter<fc::microseconds> {
+        template<typename ParseContext>
+        constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+        template<typename FormatContext>
+        auto format( const fc::microseconds& p, FormatContext& ctx ) {
+           return format_to( ctx.out(), "{}us", p.count() );
+        }
+    };
+}
+
 #ifdef _MSC_VER
   #pragma warning (pop)
 #endif /// #ifdef _MSC_VER
