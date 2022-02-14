@@ -271,7 +271,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       if( errors < max_consecutive_errors + 5) { // reduce log spam
          wlog("errors=${consecutive_errors} > limit(${max_consecutive_errors}) dropping: ${span}",
               ("consecutive_errors", errors)("max_consecutive_errors", max_consecutive_errors)
-              ("span", create_zipkin_variant(std::move(span), service_name, local_endpoint)));
+              ("span", create_zipkin_variant(std::move(span), service_name, local_endpoint).as_string()));
       }
       ++consecutive_errors;
       return;
@@ -282,7 +282,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       auto deadline = fc::time_point::now() + fc::microseconds( timeout_us );
       if( !endpoint ) {
          endpoint = url( zipkin_url );
-         dlog( "connecting to zipkin: ${p}", ("p", *endpoint) );
+         dlog( "connecting to zipkin: ${p}", ("p", string(*endpoint)) );
       }
 
       zip_span = create_zipkin_variant(std::move(span), service_name, local_endpoint);
@@ -296,13 +296,13 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       return;
    } catch( const fc::exception& e ) {
       wlog( "unable to connect to zipkin: ${u}, error: ${e}, dropping: ${s}",
-            ("u", zipkin_url)("e", e.to_detail_string())("s", zip_span) );
+            ("u", zipkin_url)("e", e.to_detail_string())("s", zip_span.as_string()) );
    } catch( const std::exception& e ) {
       wlog( "unable to connect to zipkin: ${u}, error: ${e}, dropping: ${s}",
-            ("u", zipkin_url)("e", e.what())("s", zip_span) );
+            ("u", zipkin_url)("e", e.what())("s", zip_span.as_string()) );
    } catch( ... ) {
       wlog( "unable to connect to zipkin: ${u}, error: unknown, dropping: ${s}",
-            ("u", zipkin_url)("s", zip_span) );
+            ("u", zipkin_url)("s", zip_span.as_string()) );
    }
    ++consecutive_errors;
    connected = false;

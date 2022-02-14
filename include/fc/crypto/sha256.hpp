@@ -111,6 +111,20 @@ class sha256
 
 } // fc
 
+#include <spdlog/fmt/fmt.h>
+namespace fmt {
+    template<>
+    struct formatter<fc::sha256> {
+        template<typename ParseContext>
+        constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+        template<typename FormatContext>
+        auto format( const fc::sha256& p, FormatContext& ctx ) {
+           return format_to( ctx.out(), "{}", p.str() );
+        }
+    };
+}
+
 namespace std
 {
     template<>

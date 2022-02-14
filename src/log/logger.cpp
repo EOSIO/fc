@@ -12,12 +12,14 @@ namespace fc {
     class logger::impl {
       public:
          impl()
-         :_parent(nullptr),_enabled(true),_additivity(false),_level(log_level::warn){}
+         :_parent(nullptr),_enabled(true),_additivity(false),_level(log_level::warn),
+         _agent_logger(std::make_shared<spdlog::logger>("", std::make_shared<spdlog::sinks::stdout_color_sink_st>())){}
          fc::string       _name;
          logger           _parent;
          bool             _enabled;
          bool             _additivity;
          log_level        _level;
+         std::shared_ptr<spdlog::logger>   _agent_logger;
 
          std::vector<appender::ptr> _appenders;
     };
@@ -98,6 +100,8 @@ namespace fc {
 
     log_level logger::get_log_level()const { return my->_level; }
     logger& logger::set_log_level(log_level ll) { my->_level = ll; return *this; }
+
+    std::shared_ptr<spdlog::logger> logger::get_agent_logger()const { return my->_agent_logger;};
 
     void logger::add_appender( const std::shared_ptr<appender>& a ) {
        my->_appenders.push_back(a);
