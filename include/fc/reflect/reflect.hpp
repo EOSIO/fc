@@ -15,8 +15,9 @@
 #include <boost/preprocessor/stringize.hpp>
 #include <stdint.h>
 #include <string.h>
-
+#include <spdlog/fmt/fmt.h>
 #include <fc/reflect/typename.hpp>
+
 
 namespace fc {
 
@@ -258,6 +259,18 @@ template<> struct get_typename<ENUM>  { static const char* name()  { return BOOS
  *  }\
  */
 
+#define FC_FMT_FORMAT_ARG(r, unused, base) \
+  " " BOOST_PP_STRINGIZE(base) ": {}"
+
+#define FC_FMT_FORMAT( SEQ ) \
+    BOOST_PP_SEQ_FOR_EACH( FC_FMT_FORMAT_ARG, v, SEQ )
+
+#define FC_FMT_FORMAT_V_ARG(r, P, base) \
+  ( P . base )
+
+#define FC_FMT_FORMAT_V( P, SEQ ) \
+    BOOST_PP_SEQ_FOR_EACH( FC_FMT_FORMAT_V_ARG, P, SEQ )
+
 /**
  *  @def FC_REFLECT_DERIVED(TYPE,INHERITS,MEMBERS)
  *
@@ -293,7 +306,19 @@ template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct reflector<TYPE> {\
                    std::is_base_of<fc::reflect_init, TYPE>::value, "must derive from fc::reflect_init" ); \
     static_assert( not std::is_base_of<fc::reflect_init, TYPE>::value || \
                    fc::has_reflector_init<TYPE>::value, "must provide reflector_init() method" ); \
-}; }
+}; }                                                                          \
+namespace fmt { \
+   template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)>  \
+   struct formatter<TYPE> { \
+      template<typename ParseContext> \
+      constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); } \
+      \
+      template<typename FormatContext> \
+      auto format( const TYPE& p, FormatContext& ctx ) { \
+         return format_to( ctx.out(), FC_FMT_FORMAT(MEMBERS) , BOOST_PP_SEQ_ENUM(FC_FMT_FORMAT_V(p, MEMBERS)) ); \
+      } \
+   }; \
+}
 
 #define FC_REFLECT_DERIVED( TYPE, INHERITS, MEMBERS ) \
    FC_REFLECT_DERIVED_TEMPLATE( (), TYPE, INHERITS, MEMBERS )
