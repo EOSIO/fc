@@ -223,6 +223,6 @@ namespace fc {
 
 FC_REFLECT_TYPENAME( fc::crypto::r1::private_key )
 FC_REFLECT_TYPENAME( fc::crypto::r1::public_key )
-FC_REFLECT_DERIVED( fc::crypto::r1::public_key_shim, (fc::crypto::shim<fc::crypto::r1::public_key_data>), BOOST_PP_SEQ_NIL )
-FC_REFLECT_DERIVED( fc::crypto::r1::signature_shim, (fc::crypto::shim<fc::crypto::r1::compact_signature>), BOOST_PP_SEQ_NIL )
-FC_REFLECT_DERIVED( fc::crypto::r1::private_key_shim, (fc::crypto::shim<fc::crypto::r1::private_key_secret>), BOOST_PP_SEQ_NIL )
+FC_REFLECT_DERIVED( fc::crypto::r1::public_key_shim, (fc::crypto::shim<fc::crypto::r1::public_key_data>), BOOST_PP_EMPTY() )
+FC_REFLECT_DERIVED( fc::crypto::r1::signature_shim, (fc::crypto::shim<fc::crypto::r1::compact_signature>), BOOST_PP_EMPTY() )
+FC_REFLECT_DERIVED( fc::crypto::r1::private_key_shim, (fc::crypto::shim<fc::crypto::r1::private_key_secret>), BOOST_PP_EMPTY() )

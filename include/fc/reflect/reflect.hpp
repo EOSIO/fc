@@ -157,7 +157,6 @@ struct reflector_init_visitor {
   visitor.FC_TEMPLATE operator()<member_type,type,&type::elem>( BOOST_PP_STRINGIZE(elem) ); \
 }
 
-
 #define FC_REFLECT_BASE_MEMBER_COUNT( r, OP, elem ) \
   OP fc::reflector<elem>::total_member_count
 
@@ -259,6 +258,8 @@ template<> struct get_typename<ENUM>  { static const char* name()  { return BOOS
  *  }\
  */
 
+#define BOOST_PP_SEQ_ENUM_0
+
 #define FC_FMT_FORMAT_ARG(r, unused, base) \
   " " BOOST_PP_STRINGIZE(base) ": {}"
 
@@ -315,7 +316,7 @@ namespace fmt { \
       \
       template<typename FormatContext> \
       auto format( const TYPE& p, FormatContext& ctx ) { \
-         return format_to( ctx.out(), FC_FMT_FORMAT(MEMBERS) , BOOST_PP_SEQ_ENUM(FC_FMT_FORMAT_V(p, MEMBERS)) ); \
+         return format_to( ctx.out() BOOST_PP_COMMA_IF(BOOST_PP_SEQ_SIZE(MEMBERS)) FC_FMT_FORMAT(MEMBERS) BOOST_PP_COMMA_IF(BOOST_PP_SEQ_SIZE(MEMBERS)) BOOST_PP_SEQ_ENUM(FC_FMT_FORMAT_V(p, MEMBERS)) ); \
       } \
    }; \
 }
@@ -340,7 +341,7 @@ namespace fmt { \
     FC_REFLECT_DERIVED_TEMPLATE( TEMPLATE_ARGS, TYPE, BOOST_PP_SEQ_NIL, MEMBERS )
 
 #define FC_REFLECT_EMPTY( TYPE ) \
-    FC_REFLECT_DERIVED( TYPE, BOOST_PP_SEQ_NIL, BOOST_PP_SEQ_NIL )
+    FC_REFLECT_DERIVED( TYPE, BOOST_PP_EMPTY(), BOOST_PP_EMPTY() )
 
 #define FC_REFLECT_TYPENAME( TYPE ) \
 namespace fc { \

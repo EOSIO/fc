@@ -106,6 +106,7 @@ class signature {
 
       friend struct fc::reflector<signature>;
       friend class public_key;
+      friend struct fmt::formatter<fc::crypto::webauthn::signature>;
    private:
       fc::crypto::r1::compact_signature compact_signature;
       std::vector<uint8_t>              auth_data;

@@ -34,6 +34,8 @@ namespace fc { namespace crypto {
 
          size_t variable_size() const;
 
+         friend struct fmt::formatter<fc::crypto::signature>;
+
       private:
          storage_type _storage;
 

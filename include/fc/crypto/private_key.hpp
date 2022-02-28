@@ -49,6 +49,8 @@ namespace fc { namespace crypto {
          explicit private_key(const string& base58str);
          std::string to_string(const fc::yield_function_t& yield = fc::yield_function_t()) const;
 
+         friend struct fmt::formatter<fc::crypto::private_key>;
+
       private:
          storage_type _storage;
 
