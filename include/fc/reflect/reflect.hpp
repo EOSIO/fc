@@ -267,10 +267,19 @@ template<> struct get_typename<ENUM>  { static const char* name()  { return BOOS
     BOOST_PP_SEQ_FOR_EACH( FC_FMT_FORMAT_ARG, v, SEQ )
 
 #define FC_FMT_FORMAT_V_ARG(r, P, base) \
-  ( P . base )
+  (P.base)
 
 #define FC_FMT_FORMAT_V( P, SEQ ) \
     BOOST_PP_SEQ_FOR_EACH( FC_FMT_FORMAT_V_ARG, P, SEQ )
+
+#define FC_REFLECT_BASE_MEMBER_STR(r, OP, elem) \
+    fc::reflector<elem>::total_format_str OP
+
+#define FC_REFLECT_BASE_MEMBER_V_STR(r, OP, elem) \
+    fc::reflector<elem>::total_args_str OP
+
+
+
 
 /**
  *  @def FC_REFLECT_DERIVED(TYPE,INHERITS,MEMBERS)
@@ -282,7 +291,7 @@ template<> struct get_typename<ENUM>  { static const char* name()  { return BOOS
  *  @param MEMBERS - a sequence of member names.  (field1)(field2)(field3)
  */
 #define FC_REFLECT_DERIVED_TEMPLATE( TEMPLATE_ARGS, TYPE, INHERITS, MEMBERS ) \
-namespace fc {  \
+namespace fc {   \
   template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct get_typename<TYPE>  { static const char* name()  { return BOOST_PP_STRINGIZE(TYPE);  } }; \
 template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct reflector<TYPE> {\
     typedef TYPE type; \
@@ -302,21 +311,46 @@ template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct reflector<TYPE> {\
       local_member_count = 0  BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_MEMBER_COUNT, +, MEMBERS ),\
       total_member_count = local_member_count BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_BASE_MEMBER_COUNT, +, INHERITS )\
     }; \
+    static inline std::string local_format_str = BOOST_PP_IF(BOOST_PP_SEQ_SIZE(MEMBERS), FC_FMT_FORMAT(MEMBERS), ""); \
+    static inline std::string total_format_str = BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_BASE_MEMBER_STR, +, INHERITS ) local_format_str; \
+    static inline std::string local_args_str   = BOOST_PP_STRINGIZE(FC_FMT_FORMAT_V(p, MEMBERS)); \
+    static inline std::string total_args_str   = BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_BASE_MEMBER_V_STR, +, INHERITS ) local_args_str; \
     FC_REFLECT_DERIVED_IMPL_INLINE( TYPE, INHERITS, MEMBERS ) \
     static_assert( not fc::has_reflector_init<TYPE>::value || \
                    std::is_base_of<fc::reflect_init, TYPE>::value, "must derive from fc::reflect_init" ); \
     static_assert( not std::is_base_of<fc::reflect_init, TYPE>::value || \
                    fc::has_reflector_init<TYPE>::value, "must provide reflector_init() method" ); \
-}; }                                                                          \
+}; }   \
 namespace fmt { \
    template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)>  \
    struct formatter<TYPE> { \
       template<typename ParseContext> \
       constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); } \
       \
+      template<typename Vector, std::size_t...I>                              \
+      auto v2t(const Vector& v, std::index_sequence<I...>){                   \
+         return std::forward_as_tuple(v[I]...);                               \
+      }                                                                       \
+      \
       template<typename FormatContext> \
       auto format( const TYPE& p, FormatContext& ctx ) { \
-         return format_to( ctx.out() BOOST_PP_COMMA_IF(BOOST_PP_SEQ_SIZE(MEMBERS)) FC_FMT_FORMAT(MEMBERS) BOOST_PP_COMMA_IF(BOOST_PP_SEQ_SIZE(MEMBERS)) BOOST_PP_SEQ_ENUM(FC_FMT_FORMAT_V(p, MEMBERS)) ); \
+         std::vector<std::string_view> sv; \
+         std::string_view s = fc::reflector<TYPE>::total_args_str;  \
+         std::string_view fmt = fc::reflector<TYPE>::total_format_str; \
+         constexpr auto N = fc::reflector<TYPE>::total_member_count; \
+         size_t l, r; \
+         for ( l = 0; l < fc::reflector<TYPE>::total_args_str.size(); ++l){ \
+            if ( s[l] != '(' ) continue; \
+               for ( r = l; r < s.size(); ++r){ \
+                  if ( s[r] != ')' ) continue; \
+                     sv.push_back(std::string_view(s).substr(l+1,r-l-1)); \
+                     break; \
+               } \
+               l = r; \
+         }  \
+         auto t2 = v2t(sv, std::make_index_sequence<N>{});  \
+         auto t = std::tuple_cat(std::forward_as_tuple(ctx.out(), fmt), t2); \
+         return std::apply([](auto &&... args) { return format_to(args...); }, t); \
       } \
    }; \
 }
