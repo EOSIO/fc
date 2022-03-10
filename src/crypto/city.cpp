@@ -540,9 +540,9 @@ uint128 city_hash128(const char *s, size_t len) {
       CityHash128WithSeed(s, len, uint128(k0, k1));
 }
 
-//#ifdef __SSE4_2__
-//#include <citycrc.h>
-//#include <nmmintrin.h>
+#ifdef __SSE4_2__
+#include <citycrc.h>
+#include <nmmintrin.h>
 
 // Requires len >= 240.
 static void CityHashCrc256Long(const char *s, size_t len,
@@ -678,6 +678,6 @@ uint128 city_hash_crc_128(const char *s, size_t len) {
   }
 }
 
-} // end namespace fc
+#endif
 
-//#endif
+} // end namespace fc
