@@ -262,7 +262,7 @@ template<> struct get_typename<ENUM>  { static const char* name()  { return BOOS
 #define BOOST_PP_SEQ_ENUM_0
 
 #define FC_FMT_FORMAT_ARG(r, unused, base) \
-  " " BOOST_PP_STRINGIZE(base) ": {}"
+   BOOST_PP_STRINGIZE(base) : {}
 
 #define FC_FMT_FORMAT( SEQ ) \
     BOOST_PP_SEQ_FOR_EACH( FC_FMT_FORMAT_ARG, v, SEQ )

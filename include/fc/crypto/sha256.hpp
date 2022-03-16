@@ -120,7 +120,10 @@ namespace fmt {
 
         template<typename FormatContext>
         auto format( const fc::sha256& p, FormatContext& ctx ) {
-           return format_to( ctx.out(), "{}", p.str() );
+           if (p.data())
+              return format_to( ctx.out(), "{}", p.str() );
+           else
+              return format_to( ctx.out(), "{}", "null");
         }
     };
 }
