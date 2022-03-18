@@ -16,7 +16,7 @@ void mock_time_traits::set_now( time_type t ) {
 
 fc::time_point mock_time_traits::fc_now() {
    static const boost::posix_time::ptime epoch( boost::gregorian::date( 1970, 1, 1 ) );
-   return fc::time_point( fc::microseconds( ( epoch - mock_time_traits::now() ).total_microseconds() ) );
+   return fc::time_point( fc::microseconds( ( mock_time_traits::now() - epoch ).total_microseconds() ) );
 }
 
 } //namespace fc
