@@ -3,10 +3,12 @@
 
 namespace fc {
 
-std::optional<mock_time_traits::time_type> mock_time_traits::now_{};
+std::atomic<mock_time_traits::time_type> mock_time_traits::now_{};
+bool mock_time_traits::mock_enabled_ = false;
 
 void mock_time_traits::set_now( time_type t ) {
    now_ = t;
+   if( !mock_enabled_ ) mock_enabled_ = true;
 
    // After modifying the clock, we need to sleep the thread to give the io_service
    // the opportunity to poll and notice the change in clock time.

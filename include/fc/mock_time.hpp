@@ -14,12 +14,14 @@ public:
    typedef source_traits::time_type time_type;
    typedef source_traits::duration_type duration_type;
 
-   // Requires set_now() to be called before now(), only valid if is_set() is true
-   static time_type now() { return *now_; }
+   // Requires set_now() to be called first on main thread before any calls to fc::time_point::now()
+   static time_type now() { return now_.load(); }
 
+   // First call should be on one thread before any calls to fc::time_point::now()
    static void set_now( time_type t );
 
-   static bool is_set() { return now_.has_value(); }
+   // Thread safe only if first call to set_now is before any threads are spawned or memory barrier introduced
+   static bool is_set() { return mock_enabled_; }
 
    static time_type add( time_type t, duration_type d ) { return source_traits::add( t, d ); }
    static duration_type subtract( time_type t1, time_type t2 ) { return source_traits::subtract( t1, t2 ); }
@@ -36,7 +38,8 @@ public:
    static fc::time_point fc_now();
 
 private:
-   static std::optional<time_type> now_;
+   static bool mock_enabled_;
+   static std::atomic<time_type> now_;
 };
 
 typedef boost::asio::basic_deadline_timer<boost::posix_time::ptime, mock_time_traits> mock_deadline_timer;
