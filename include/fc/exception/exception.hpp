@@ -359,17 +359,20 @@ namespace fc
 /**
  *  @brief Checks a condition and throws an assert_exception if the test is FALSE
  */
-#define FC_ASSERT( TEST, ... ) \
+#define FC_ASSERT_1( TEST, ... ) \
   FC_EXPAND_MACRO( \
     FC_MULTILINE_MACRO_BEGIN \
       if( UNLIKELY(!(TEST)) ) \
       {                                                                      \
         if( fc::enable_record_assert_trip )                                  \
            fc::record_assert_trip( __FILE__, __LINE__, #TEST );              \
-        FC_THROW_EXCEPTION( fc::assert_exception, #TEST ": "  __VA_ARGS__ ); \
+        FC_THROW_EXCEPTION( fc::assert_exception, #TEST ": " __VA_ARGS__ );  \
       }                                                                      \
     FC_MULTILINE_MACRO_END \
   )
+
+#define FC_ASSERT_0( TEST ) FC_ASSERT_1( TEST, )
+#define FC_ASSERT(...) SWITCH_MACRO2(FC_ASSERT_0, FC_ASSERT_1, 1, __VA_ARGS__)
 
 #define FC_CAPTURE_AND_THROW( EXCEPTION_TYPE, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
@@ -392,21 +395,26 @@ namespace fc
  *  @param EXCEPTION a class in the Phoenix::Athena::API namespace that inherits
  *  @param format - a const char* string with "${keys}"
  */
-#define FC_THROW_EXCEPTION( EXCEPTION, FORMAT, ... ) \
+#define FC_THROW_EXCEPTION_1( EXCEPTION, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
     throw EXCEPTION( FC_LOG_MESSAGE( error, FORMAT, __VA_ARGS__ ) ); \
   FC_MULTILINE_MACRO_END
 
+#define FC_THROW_EXCEPTION_0(EXCEPTION, FORMAT) FC_THROW_EXCEPTION_1(EXCEPTION, FORMAT,)
+#define FC_THROW_EXCEPTION(...) SWITCH_MACRO1(FC_THROW_EXCEPTION_0, FC_THROW_EXCEPTION_1, 2, __VA_ARGS__)
 
 /**
  *  @def FC_RETHROW_EXCEPTION(ER,LOG_LEVEL,FORMAT,...)
  *  @brief Appends a log_message to the exception ER and rethrows it.
  */
-#define FC_RETHROW_EXCEPTION( ER, LOG_LEVEL, FORMAT, ... ) \
+#define FC_RETHROW_EXCEPTION_1( ER, LOG_LEVEL, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
     ER.append_log( FC_LOG_MESSAGE( LOG_LEVEL, FORMAT, __VA_ARGS__ ) ); \
     throw; \
   FC_MULTILINE_MACRO_END
+
+#define FC_RETHROW_EXCEPTION_0(ER, LOG_LEVEL, FORMAT) FC_RETHROW_EXCEPTION_1(ER, LOG_LEVEL, FORMAT,)
+#define FC_RETHROW_EXCEPTION(...) SWITCH_MACRO1(FC_RETHROW_EXCEPTION_0, FC_RETHROW_EXCEPTION_1, 3, __VA_ARGS__)
 
 #define FC_LOG_AND_RETHROW( )  \
    catch( const boost::interprocess::bad_alloc& ) {\
@@ -506,7 +514,7 @@ namespace fc
  *  @brief  Catchs all exception's, std::exceptions, and ... and rethrows them after
  *   appending the provided log message.
  */
-#define FC_RETHROW_EXCEPTIONS( LOG_LEVEL, FORMAT, ... ) \
+#define FC_RETHROW_EXCEPTIONS_1( LOG_LEVEL, FORMAT, ... ) \
    catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
    } catch( fc::exception& er ) { \
@@ -523,6 +531,9 @@ namespace fc
                 FC_LOG_MESSAGE( LOG_LEVEL, FORMAT,__VA_ARGS__), \
                 std::current_exception() ); \
    }
+
+#define FC_RETHROW_EXCEPTIONS_0( LOG_LEVEL, FORMAT ) FC_RETHROW_EXCEPTIONS_1( LOG_LEVEL, FORMAT, )
+#define FC_RETHROW_EXCEPTIONS(...) SWITCH_MACRO2(FC_RETHROW_EXCEPTIONS_0, FC_RETHROW_EXCEPTIONS_1, 2, __VA_ARGS__)
 
 #define FC_CAPTURE_AND_RETHROW( ... ) \
    catch( const boost::interprocess::bad_alloc& ) {\
@@ -542,7 +553,7 @@ namespace fc
                 std::current_exception() ); \
    }
 
-#define FC_CHECK_DEADLINE( DEADLINE, ... ) \
+#define FC_CHECK_DEADLINE_1( DEADLINE, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
     if( DEADLINE < fc::time_point::maximum() && DEADLINE < fc::time_point::now() ) { \
        auto log_mgs = FC_LOG_MESSAGE( error, "deadline ${d} exceeded by ${t}us ", \
@@ -551,3 +562,6 @@ namespace fc
        throw fc::timeout_exception( std::move( log_mgs ), fc::timeout_exception_code, "timeout_exception", std::move( msg ) ); \
     } \
   FC_MULTILINE_MACRO_END
+
+#define FC_CHECK_DEADLINE_0( DEADLINE ) FC_CHECK_DEADLINE_1( DEADLINE, )
+#define FC_CHECK_DEADLINE(...) SWITCH_MACRO1(FC_CHECK_DEADLINE_0, FC_CHECK_DEADLINE_1, 1, __VA_ARGS__)

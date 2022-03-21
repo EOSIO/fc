@@ -123,7 +123,7 @@ struct reflector_init_visitor {
    // SFINAE if Class not derived from reflect_init
    template<class T>
    typename std::enable_if<not std::is_base_of<fc::reflect_init, T>::value>::type
-   init_imp(T& t) {}
+   init_imp(T&) {}
 
    template<typename T>
    auto reflect_init(T& t) -> decltype(init_imp(t), void()) {
@@ -165,7 +165,7 @@ struct reflector_init_visitor {
 
 #define FC_REFLECT_DERIVED_IMPL_INLINE( TYPE, INHERITS, MEMBERS ) \
 template<typename Visitor>\
-static inline void visit_base( Visitor&& v ) { \
+static inline void visit_base( [[maybe_unused]] Visitor&& v ) { \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_BASE, v, INHERITS ) \
     BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_VISIT_MEMBER, v, MEMBERS ) \
 } \
