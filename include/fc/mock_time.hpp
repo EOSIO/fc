@@ -2,8 +2,6 @@
 
 #include <fc/time.hpp>
 #include <boost/asio/deadline_timer.hpp>
-#include <optional>
-
 
 namespace fc {
 
@@ -15,7 +13,7 @@ public:
    typedef source_traits::duration_type duration_type;
 
    // Requires set_now() to be called first on main thread before any calls to fc::time_point::now()
-   static time_type now() noexcept { return now_.load(); }
+   static time_type now() noexcept;
 
    // First call should be on one thread before any calls to fc::time_point::now()
    static void set_now( time_type t );
@@ -39,7 +37,8 @@ public:
 
 private:
    static bool mock_enabled_;
-   static std::atomic<time_type> now_;
+   static const boost::posix_time::ptime epoch_;
+   static std::atomic<int64_t> now_;
 };
 
 typedef boost::asio::basic_deadline_timer<boost::posix_time::ptime, mock_time_traits> mock_deadline_timer;

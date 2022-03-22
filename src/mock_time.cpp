@@ -3,11 +3,16 @@
 
 namespace fc {
 
-std::atomic<mock_time_traits::time_type> mock_time_traits::now_{};
 bool mock_time_traits::mock_enabled_ = false;
+const boost::posix_time::ptime mock_time_traits::epoch_{ boost::gregorian::date( 1970, 1, 1 ) };
+std::atomic<int64_t> mock_time_traits::now_{};
+
+mock_time_traits::time_type mock_time_traits::now() noexcept {
+   return epoch_ + boost::posix_time::microseconds( now_.load() );
+}
 
 void mock_time_traits::set_now( time_type t ) {
-   now_ = t;
+   now_ = (t - epoch_).total_microseconds();
    if( !mock_enabled_ ) mock_enabled_ = true;
 
    // After modifying the clock, we need to sleep the thread to give the io_service
@@ -17,8 +22,7 @@ void mock_time_traits::set_now( time_type t ) {
 }
 
 fc::time_point mock_time_traits::fc_now() {
-   static const boost::posix_time::ptime epoch( boost::gregorian::date( 1970, 1, 1 ) );
-   return fc::time_point( fc::microseconds( ( mock_time_traits::now() - epoch ).total_microseconds() ) );
+   return fc::time_point( fc::microseconds( ( mock_time_traits::now() - epoch_ ).total_microseconds() ) );
 }
 
 } //namespace fc
