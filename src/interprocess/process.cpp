@@ -48,7 +48,7 @@ class process::impl
     }
     catch(...) 
     {
-      wlog( "caught exception cleaning up process: ${except_str}", ("except_str",fc::except_str()) );
+      wlog( "caught exception cleaning up process: {except_str}", ("except_str",fc::except_str()) );
     }
   }
 

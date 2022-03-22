@@ -90,7 +90,7 @@ namespace fc
         }
         catch (exception& er)
         {
-          ilog("Failed to connect to GNTP service using an endpoint that previously worked: ${error_report}", 
+          ilog("Failed to connect to GNTP service using an endpoint that previously worked: {error_report}",
               ("error_report", er.to_detail_string()));
           sock->close();
           // clear the cached endpoint and fall through to the full connection procedure
@@ -124,7 +124,7 @@ namespace fc
           }
           catch (const exception& er) 
           {
-            ilog("Failed to connect to GNTP service: ${error_reprot}", 
+            ilog("Failed to connect to GNTP service: {error_reprot}",
                   ("error_report", er.to_detail_string()) );
             sock->close();
           }

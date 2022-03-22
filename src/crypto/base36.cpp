@@ -63,7 +63,7 @@ namespace fc
               value = value + (_36.exp(pos) *  fc::bigint(10+*itr - 'A'));
           else
           {
-             wlog("unknown '${char}'", ("char",fc::string(&*itr,1)) );
+             wlog("unknown '{char}'", ("char",fc::string(&*itr,1)) );
           }
           ++pos;
        }

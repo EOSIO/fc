@@ -412,7 +412,7 @@ namespace fc
    catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
    } catch( fc::exception& er ) { \
-      wlog( "${details}", ("details",er.to_detail_string()) ); \
+      wlog( "{details}", ("details",er.to_detail_string()) ); \
       FC_RETHROW_EXCEPTION( er, warn, "rethrow" ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
@@ -420,13 +420,13 @@ namespace fc
                 std::current_exception(), \
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ) ; \
-      wlog( "${details}", ("details",sew.to_detail_string()) ); \
+      wlog( "{details}", ("details",sew.to_detail_string()) ); \
       throw sew;\
    } catch( ... ) {  \
       fc::unhandled_exception e( \
                 FC_LOG_MESSAGE( warn, "rethrow"), \
                 std::current_exception() ); \
-      wlog( "${details}", ("details",e.to_detail_string()) ); \
+      wlog( "{details}", ("details",e.to_detail_string()) ); \
       throw e; \
    }
 
@@ -434,23 +434,23 @@ namespace fc
    catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
    } catch( fc::exception& er ) { \
-      wlog( "${details}", ("details",er.to_detail_string()) ); \
+      wlog( "{details}", ("details",er.to_detail_string()) ); \
       wdump( __VA_ARGS__ ); \
       FC_RETHROW_EXCEPTION( er, warn, "rethrow", FC_FORMAT_ARG_PARAMS(__VA_ARGS__) ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
-                FC_LOG_MESSAGE( warn, "rethrow ${what}: ", FC_FORMAT_ARG_PARAMS( __VA_ARGS__ )("what",e.what())), \
+                FC_LOG_MESSAGE( warn, "rethrow {what}: ", FC_FORMAT_ARG_PARAMS( __VA_ARGS__ )("what",e.what())), \
                 std::current_exception(), \
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ) ; \
-      wlog( "${details}", ("details",sew.to_detail_string()) ); \
+      wlog( "{details}", ("details",sew.to_detail_string()) ); \
       wdump( __VA_ARGS__ ); \
       throw sew;\
    } catch( ... ) {  \
       fc::unhandled_exception e( \
                 FC_LOG_MESSAGE( warn, "rethrow", FC_FORMAT_ARG_PARAMS( __VA_ARGS__) ), \
                 std::current_exception() ); \
-      wlog( "${details}", ("details",e.to_detail_string()) ); \
+      wlog( "{details}", ("details",e.to_detail_string()) ); \
       wdump( __VA_ARGS__ ); \
       throw e; \
    }
@@ -459,7 +459,7 @@ namespace fc
    catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
    } catch( fc::exception& er ) { \
-      wlog( "${details}", ("details",er.to_detail_string()) ); \
+      wlog( "{details}", ("details",er.to_detail_string()) ); \
       wdump( __VA_ARGS__ ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
@@ -467,31 +467,31 @@ namespace fc
                 std::current_exception(), \
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ) ; \
-      wlog( "${details}", ("details",sew.to_detail_string()) ); \
+      wlog( "{details}", ("details",sew.to_detail_string()) ); \
       wdump( __VA_ARGS__ ); \
    } catch( ... ) {  \
       fc::unhandled_exception e( \
                 FC_LOG_MESSAGE( warn, "rethrow", FC_FORMAT_ARG_PARAMS( __VA_ARGS__) ), \
                 std::current_exception() ); \
-      wlog( "${details}", ("details",e.to_detail_string()) ); \
+      wlog( "{details}", ("details",e.to_detail_string()) ); \
       wdump( __VA_ARGS__ ); \
    }
 
 #define FC_LOG_AND_DROP_ALL( ... )  \
    catch( fc::exception& er ) { \
-      wlog( "${details}", ("details",er.to_detail_string()) ); \
+      wlog( "{details}", ("details",er.to_detail_string()) ); \
    } catch( const std::exception& e ) {  \
       fc::std_exception_wrapper sew( \
                 FC_LOG_MESSAGE( warn, "rethrow ${what}: ",FC_FORMAT_ARG_PARAMS( __VA_ARGS__  )("what",e.what()) ), \
                 std::current_exception(), \
                 BOOST_CORE_TYPEID(e).name(), \
                 e.what() ) ; \
-      wlog( "${details}", ("details",sew.to_detail_string()) ); \
+      wlog( "{details}", ("details",sew.to_detail_string()) ); \
    } catch( ... ) {  \
       fc::unhandled_exception e( \
                 FC_LOG_MESSAGE( warn, "rethrow", FC_FORMAT_ARG_PARAMS( __VA_ARGS__) ), \
                 std::current_exception() ); \
-      wlog( "${details}", ("details",e.to_detail_string()) ); \
+      wlog( "{details}", ("details",e.to_detail_string()) ); \
    }
 
 

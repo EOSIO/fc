@@ -160,7 +160,7 @@ namespace fc {
     }
     catch (const std::exception& except)
     {
-      elog("Exception binding outgoing connection to desired local endpoint ${endpoint}: ${what}", ("endpoint", local_endpoint)("what", except.what()));
+      elog("Exception binding outgoing connection to desired local endpoint {endpoint}: {what}", ("endpoint", local_endpoint)("what", except.what()));
       FC_THROW("error binding to ${endpoint}: ${what}", ("endpoint", local_endpoint)("what", except.what()));
     }
   }
@@ -252,7 +252,7 @@ namespace fc {
         } 
         catch ( boost::system::system_error& )
         {
-           wlog( "unexpected exception ${e}", ("e", fc::except_str()) );
+           wlog( "unexpected exception {e}", ("e", fc::except_str()) );
         }
       }
 
