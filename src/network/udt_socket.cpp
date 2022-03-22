@@ -164,9 +164,9 @@ namespace fc {
      } catch ( const boost::interprocess::bad_alloc& ) {
         throw;
      } catch ( const fc::exception& e ) {
-        wlog( "${e}", ("e", e.to_detail_string() ) );
+        wlog( "{e}", ("e", e.to_detail_string() ) );
      } catch ( const std::exception& e ) {
-        wlog( "${e}", ("e", e.what() ) );
+        wlog( "{e}", ("e", e.what() ) );
      }
    }
 
@@ -347,9 +347,9 @@ namespace fc {
      } catch ( const boost::interprocess::bad_alloc& ) {
         throw;
      } catch ( const fc::exception& e ) {
-        wlog( "${e}", ("e", e.to_detail_string() ) );
+        wlog( "{e}", ("e", e.to_detail_string() ) );
      } catch ( const std::exception& e ) {
-        wlog( "${e}", ("e", e.what() ) );
+        wlog( "{e}", ("e", e.what() ) );
      }
   }
 
