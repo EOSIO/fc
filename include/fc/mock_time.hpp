@@ -15,7 +15,7 @@ public:
    typedef source_traits::duration_type duration_type;
 
    // Requires set_now() to be called first on main thread before any calls to fc::time_point::now()
-   static time_type now() { return now_.load(); }
+   static time_type now() noexcept { return now_.load(); }
 
    // First call should be on one thread before any calls to fc::time_point::now()
    static void set_now( time_type t );
