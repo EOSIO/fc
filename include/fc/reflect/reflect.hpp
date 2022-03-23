@@ -187,7 +187,7 @@ static inline void visit( Visitor&& v ) { \
    case enum_type::elem: return fc::string(BOOST_PP_STRINGIZE(elem));
 
 #define FC_REFLECT_ENUM_FROM_STRING( r, enum_type, elem ) \
-  if( strcmp( s, BOOST_PP_STRINGIZE(elem)  ) == 0 ) return enum_type::elem;
+  if( strcmp( s, BOOST_PP_STRINGIZE(elem) ) == 0 ) { return enum_type::elem; }
 #define FC_REFLECT_ENUM_FROM_STRING_CASE( r, enum_type, elem ) \
    case enum_type::elem:
 
