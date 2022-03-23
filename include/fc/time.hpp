@@ -169,7 +169,7 @@ namespace fmt {
 
         template<typename FormatContext>
         auto format( const fc::time_point_sec& p, FormatContext& ctx ) {
-           return format_to( ctx.out(), "{}us", (std::string)p );
+           return format_to( ctx.out(), "{}s", (std::string)p );
         }
     };
 }
