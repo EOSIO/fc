@@ -492,7 +492,7 @@ namespace fc
     *  Escapes Control sequence Introducer 0x9b to \u009b
     *  All other characters unmolested.
     */
-   std::string escape_string( const std::string_view& str, const json::yield_function_t& yield, bool escape_control_chars )
+   std::string escape_string( const std::string_view& str, const fc::optional_delegate<void(size_t)>& yield, bool escape_control_chars )
    {
       string r;
       const auto init_size = str.size();

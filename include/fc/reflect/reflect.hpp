@@ -14,11 +14,9 @@
 #include <boost/preprocessor/seq/seq.hpp>
 #include <boost/preprocessor/stringize.hpp>
 #include <stdint.h>
-//#include <fc/log/logger.hpp>
-#include <spdlog/spdlog.h>
-#include <spdlog/fmt/fmt.h>
-#include <fc/reflect/typename.hpp>
+#include <string.h>
 
+#include <fc/reflect/typename.hpp>
 
 namespace fc {
 
@@ -259,26 +257,6 @@ template<> struct get_typename<ENUM>  { static const char* name()  { return BOOS
  *  }\
  */
 
-#define BOOST_PP_SEQ_ENUM_0
-
-#define FC_FMT_FORMAT_ARG(r, unused, base) \
-   BOOST_PP_STRINGIZE(base):{}
-
-#define FC_FMT_FORMAT( SEQ ) \
-    BOOST_PP_SEQ_FOR_EACH( FC_FMT_FORMAT_ARG, v, SEQ )
-
-#define FC_FMT_FORMAT_V_ARG(r, P, base) \
-   (P.base)
-
-#define FC_FMT_FORMAT_V( P, SEQ ) \
-    BOOST_PP_SEQ_FOR_EACH( FC_FMT_FORMAT_V_ARG, P, SEQ )
-
-#define FC_REFLECT_FMT_BASE(r, x, base) \
-  : fmt::formatter<base>
-
-#define FC_REFLECT_FMT_FORMAT(r, x, base) \
-  fmt::formatter<base>::format(p, ctx);
-
 /**
  *  @def FC_REFLECT_DERIVED(TYPE,INHERITS,MEMBERS)
  *
@@ -314,21 +292,7 @@ template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)> struct reflector<TYPE> {\
                    std::is_base_of<fc::reflect_init, TYPE>::value, "must derive from fc::reflect_init" ); \
     static_assert( not std::is_base_of<fc::reflect_init, TYPE>::value || \
                    fc::has_reflector_init<TYPE>::value, "must provide reflector_init() method" ); \
-}; }   \
-namespace fmt { \
-   template<BOOST_PP_SEQ_ENUM(TEMPLATE_ARGS)>  \
-   struct formatter<TYPE> BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_FMT_BASE, v, INHERITS ) { \
-      template<typename ParseContext> \
-      constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); } \
-      \
-      template<typename FormatContext> \
-      auto format( const TYPE& p, FormatContext& ctx ) { \
-         BOOST_PP_SEQ_FOR_EACH( FC_REFLECT_FMT_FORMAT, ignore, INHERITS )     \
-         return format_to( ctx.out(),  \
-         BOOST_PP_STRINGIZE(FC_FMT_FORMAT(MEMBERS)) BOOST_PP_COMMA_IF(BOOST_PP_SEQ_SIZE(MEMBERS)) BOOST_PP_SEQ_ENUM(FC_FMT_FORMAT_V(p, MEMBERS)) ); \
-      } \
-   }; \
-}
+}; }
 
 #define FC_REFLECT_DERIVED( TYPE, INHERITS, MEMBERS ) \
    FC_REFLECT_DERIVED_TEMPLATE( (), TYPE, INHERITS, MEMBERS )
@@ -350,7 +314,7 @@ namespace fmt { \
     FC_REFLECT_DERIVED_TEMPLATE( TEMPLATE_ARGS, TYPE, BOOST_PP_SEQ_NIL, MEMBERS )
 
 #define FC_REFLECT_EMPTY( TYPE ) \
-    FC_REFLECT_DERIVED( TYPE, BOOST_PP_EMPTY(), BOOST_PP_EMPTY() )
+    FC_REFLECT_DERIVED( TYPE, BOOST_PP_SEQ_NIL, BOOST_PP_SEQ_NIL )
 
 #define FC_REFLECT_TYPENAME( TYPE ) \
 namespace fc { \

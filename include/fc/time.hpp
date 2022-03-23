@@ -131,12 +131,21 @@ namespace fc {
   string get_approximate_relative_time_string(const time_point& event_time,
                                               const time_point& relative_to_time = fc::time_point::now(),
                                               const std::string& ago = " ago");
-}
+
+  namespace to_str {
+     inline std::string to_string( const fc::microseconds& m) {
+        return std::to_string(m.count()) + "us";
+     }
+  }
+
+} // namespace fc
 
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT_TYPENAME( fc::time_point )
 FC_REFLECT_TYPENAME( fc::microseconds )
 FC_REFLECT_TYPENAME( fc::time_point_sec )
+
+
 
 //#include <fmt/format.h>
 #include <spdlog/fmt/fmt.h>
