@@ -83,6 +83,8 @@ namespace fc
          }
    };
 
+   std::string escape_string( const std::string_view& str, const fc::optional_delegate<void(size_t)>& yield, bool escape_control_chars = true );
+
 } // fc
 
 #undef DEFAULT_MAX_RECURSION_DEPTH

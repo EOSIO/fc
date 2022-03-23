@@ -132,12 +132,6 @@ namespace fc {
                                               const time_point& relative_to_time = fc::time_point::now(),
                                               const std::string& ago = " ago");
 
-  namespace to_str {
-     inline std::string to_string( const fc::microseconds& m) {
-        return std::to_string(m.count()) + "us";
-     }
-  }
-
 } // namespace fc
 
 #include <fc/reflect/reflect.hpp>
@@ -178,7 +172,7 @@ namespace fmt {
 
         template<typename FormatContext>
         auto format( const fc::time_point_sec& p, FormatContext& ctx ) {
-           return format_to( ctx.out(), "{}s", (std::string)p );
+           return format_to( ctx.out(), "{}", (std::string)p );
         }
     };
 }

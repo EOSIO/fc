@@ -2,7 +2,6 @@
 #include <fc/string.hpp>
 #include <fc/time.hpp>
 #include <fc/log/log_message.hpp>
-#include <fc/to_string.hpp>
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 
@@ -185,16 +184,3 @@ namespace fc
 # undef dlog
 # define dlog(...) FC_MULTILINE_MACRO_BEGIN FC_MULTILINE_MACRO_END
 #endif
-
-namespace fmt {
-   template<typename T, typename Char>
-   struct formatter<T, Char, typename std::enable_if_t<fc::reflector<std::decay_t<T>>::is_defined::value>> {
-      template<typename ParseContext>
-      constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
-
-      template<typename FormatContext, typename = std::enable_if_t<fc::reflector<std::decay_t<T>>::is_defined::value>>
-      auto format( const T& p, FormatContext& ctx ) {
-         return format_to( ctx.out(), "{}", fc::to_json_string<std::decay_t<T>>(p) );
-      }
-   };
-}

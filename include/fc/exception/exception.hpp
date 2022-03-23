@@ -134,13 +134,6 @@ namespace fc
          std::unique_ptr<detail::exception_impl> my;
    };
 
-   namespace to_str {
-      inline std::string to_string( const fc::exception& e) {
-         const bool escape_control_chars = true;
-         return fc::escape_string( e.to_string(), nullptr, escape_control_chars );
-      }
-   }
-
    void to_variant( const exception& e, variant& v );
    void from_variant( const variant& e, exception& ll );
    typedef std::shared_ptr<exception> exception_ptr;
