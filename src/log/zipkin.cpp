@@ -271,7 +271,7 @@ void zipkin::impl::log( zipkin_span::span_data&& span ) {
       if( errors < max_consecutive_errors + 5) { // reduce log spam
          wlog("errors={consecutive_errors} > limit({max_consecutive_errors}) dropping: {span}",
               ("consecutive_errors", errors)("max_consecutive_errors", max_consecutive_errors)
-              ("span", create_zipkin_variant(std::move(span), service_name, local_endpoint)));
+              ("span", create_zipkin_variant(std::move(span), service_name, local_endpoint).as_string()));
       }
       ++consecutive_errors;
       return;

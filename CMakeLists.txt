@@ -169,6 +169,8 @@ target_include_directories(fc
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OPENSSL_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../spdlog/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../spdlog/include/sinks
   )
 
 # try and make this very clear that this json parser is intended only for webauthn parsing..

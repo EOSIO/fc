@@ -111,6 +111,43 @@ class sha256
 
 } // fc
 
+#include <spdlog/fmt/fmt.h>
+namespace fmt {
+   template<>
+   struct formatter<fc::sha256> {
+      template<typename ParseContext>
+      constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+      template<typename FormatContext>
+      auto format( const fc::sha256& p, FormatContext& ctx ) {
+         if (p.data())
+            return format_to( ctx.out(), "{}", p.str() );
+         else
+            return format_to( ctx.out(), "{}", "null");
+      }
+   };
+   template<typename T>
+   struct formatter<std::vector<T>> {
+      template<typename ParseContext>
+      constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+      template<typename FormatContext>
+      auto format( const std::vector<T>& p, FormatContext& ctx ) {
+         return format_to( ctx.out(), "[{}]", fmt::join(p, ","));
+      }
+   };
+   template<typename K, typename V>
+   struct formatter<std::pair<K, V>>{
+      template<typename ParseContext>
+      constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
+
+      template<typename FormatContext>
+      auto format( const std::pair<K, V>& p, FormatContext& ctx ) {
+         return format_to( ctx.out(), "[{},{}]", p.first, p.second);
+      }
+   };
+}
+
 namespace std
 {
     template<>

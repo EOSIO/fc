@@ -227,4 +227,4 @@ namespace fc {
 
 }
 
-FC_REFLECT_TEMPLATE( (typename T), safe<T>, (value) )
+FC_REFLECT_TEMPLATE( (typename T), fc::safe<T>, (value) )

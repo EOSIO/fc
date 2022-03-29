@@ -3,6 +3,14 @@
 #include <fc/time.hpp>
 #include <fc/log/log_message.hpp>
 
+// define `SPDLOG_ACTIVE_LEVEL` before including spdlog.h as per https://github.com/gabime/spdlog/issues/1268
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/fmt/fmt.h>
+
 #ifndef DEFAULT_LOGGER
 #define DEFAULT_LOGGER "default"
 #endif
@@ -16,9 +24,9 @@ namespace fc
     *
     *
     @code
-      void my_class::func() 
+       void my_class::func()
       {
-         fc_dlog( my_class_logger, "Format four: ${arg}  five: ${five}", ("arg",4)("five",5) );
+         fc_dlog( my_class_logger, "Format four: {arg}  five: {five}", ("arg",4)("five",5) );
       }
     @endcode
     */
@@ -43,6 +51,7 @@ namespace fc
          log_level  get_log_level()const;
          logger&    set_parent( const logger& l );
          logger     get_parent()const;
+         std::shared_ptr<spdlog::logger> get_agent_logger()const;
 
          void  set_name( const fc::string& n );
          const fc::string& name()const;
@@ -77,31 +86,31 @@ namespace fc
 #define fc_dlog( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (LOGGER).is_enabled( fc::log_level::debug ) ) \
-      (LOGGER).log( FC_LOG_MESSAGE( debug, FORMAT, __VA_ARGS__ ) ); \
+      SPDLOG_LOGGER_DEBUG((LOGGER).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
 #define fc_ilog( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (LOGGER).is_enabled( fc::log_level::info ) ) \
-      (LOGGER).log( FC_LOG_MESSAGE( info, FORMAT, __VA_ARGS__ ) ); \
+      SPDLOG_LOGGER_INFO((LOGGER).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
 #define fc_wlog( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (LOGGER).is_enabled( fc::log_level::warn ) ) \
-      (LOGGER).log( FC_LOG_MESSAGE( warn, FORMAT, __VA_ARGS__ ) ); \
+      SPDLOG_LOGGER_WARN((LOGGER).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
 #define fc_elog( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (LOGGER).is_enabled( fc::log_level::error ) ) \
-      (LOGGER).log( FC_LOG_MESSAGE( error, FORMAT, __VA_ARGS__ ) ); \
+      SPDLOG_LOGGER_ERROR((LOGGER).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
 #define dlog( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (fc::logger::get(DEFAULT_LOGGER)).is_enabled( fc::log_level::debug ) ) \
-      (fc::logger::get(DEFAULT_LOGGER)).log( FC_LOG_MESSAGE( debug, FORMAT, __VA_ARGS__ ) ); \
+      SPDLOG_LOGGER_DEBUG((fc::logger::get(DEFAULT_LOGGER)).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
 /**
@@ -118,19 +127,19 @@ namespace fc
 #define ilog( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (fc::logger::get(DEFAULT_LOGGER)).is_enabled( fc::log_level::info ) ) \
-      (fc::logger::get(DEFAULT_LOGGER)).log( FC_LOG_MESSAGE( info, FORMAT, __VA_ARGS__ ) ); \
+      SPDLOG_LOGGER_INFO((fc::logger::get(DEFAULT_LOGGER)).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
 #define wlog( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (fc::logger::get(DEFAULT_LOGGER)).is_enabled( fc::log_level::warn ) ) \
-      (fc::logger::get(DEFAULT_LOGGER)).log( FC_LOG_MESSAGE( warn, FORMAT, __VA_ARGS__ ) ); \
+      SPDLOG_LOGGER_WARN((fc::logger::get(DEFAULT_LOGGER)).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
 #define elog( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (fc::logger::get(DEFAULT_LOGGER)).is_enabled( fc::log_level::error ) ) \
-      (fc::logger::get(DEFAULT_LOGGER)).log( FC_LOG_MESSAGE( error, FORMAT, __VA_ARGS__ ) ); \
+      SPDLOG_LOGGER_ERROR((fc::logger::get(DEFAULT_LOGGER)).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -145,7 +154,7 @@ namespace fc
   BOOST_PP_STRINGIZE(base) ": ${" BOOST_PP_STRINGIZE( base ) "} "
 
 #define FC_FORMAT_ARGS(r, unused, base) \
-  BOOST_PP_LPAREN() BOOST_PP_STRINGIZE(base),fc::variant(base) BOOST_PP_RPAREN()
+  BOOST_PP_LPAREN() BOOST_PP_STRINGIZE(base), base BOOST_PP_RPAREN()
 
 #define FC_FORMAT( SEQ )\
     BOOST_PP_SEQ_FOR_EACH( FC_FORMAT_ARG, v, SEQ ) 
