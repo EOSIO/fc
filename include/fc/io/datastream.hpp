@@ -177,25 +177,25 @@ class datastream<Container, typename std::enable_if_t<(std::is_same_v<std::vecto
 
 
 template<typename ST>
-inline datastream<ST>& operator<<(datastream<ST>& ds, const __int128& d) {
+inline datastream<ST>& operator<<(datastream<ST>& ds, const int128_t& d) {
   ds.write( (const char*)&d, sizeof(d) );
   return ds;
 }
 
 template<typename ST, typename DATA>
-inline datastream<ST>& operator>>(datastream<ST>& ds, __int128& d) {
+inline datastream<ST>& operator>>(datastream<ST>& ds, int128_t& d) {
   ds.read((char*)&d, sizeof(d) );
   return ds;
 }
 
 template<typename ST>
-inline datastream<ST>& operator<<(datastream<ST>& ds, const unsigned __int128& d) {
+inline datastream<ST>& operator<<(datastream<ST>& ds, const uint128_t& d) {
   ds.write( (const char*)&d, sizeof(d) );
   return ds;
 }
 
 template<typename ST, typename DATA>
-inline datastream<ST>& operator>>(datastream<ST>& ds, unsigned __int128& d) {
+inline datastream<ST>& operator>>(datastream<ST>& ds, uint128_t& d) {
   ds.read((char*)&d, sizeof(d) );
   return ds;
 }

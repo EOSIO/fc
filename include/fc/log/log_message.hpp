@@ -166,7 +166,7 @@ namespace fc
 
 } // namespace fc
 
-FC_REFLECT_TYPENAME( fc::log_message );
+FC_REFLECT_TYPENAME( fc::log_message )
 
 #ifndef __func__
 #define __func__ __FUNCTION__
