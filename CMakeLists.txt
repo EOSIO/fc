@@ -60,6 +60,7 @@ set( fc_sources
      src/variant_object.cpp
      src/string.cpp
      src/time.cpp
+     src/mock_time.cpp
      src/utf8.cpp
      src/io/datastream.cpp
      src/io/json.cpp
