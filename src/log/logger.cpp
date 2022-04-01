@@ -13,7 +13,9 @@ namespace fc {
       public:
          impl()
          :_parent(nullptr),_enabled(true),_additivity(false),_level(log_level::warn),
-         _agent_logger(std::make_shared<spdlog::logger>("", std::make_shared<spdlog::sinks::stdout_color_sink_st>())){}
+         _agent_logger(std::make_shared<spdlog::logger>("", std::make_shared<spdlog::sinks::stdout_color_sink_st>())){
+            _agent_logger->set_level(spdlog::level::warn); // change agent logger's default level from `info` to `warn` to make it consistent with associated fc logger
+         }
          fc::string       _name;
          logger           _parent;
          bool             _enabled;
