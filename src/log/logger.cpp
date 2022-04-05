@@ -11,9 +11,13 @@ namespace fc {
 
     class logger::impl {
       public:
-         impl()
-         :_parent(nullptr),_enabled(true),_additivity(false),_level(log_level::warn),
-         _agent_logger(std::make_shared<spdlog::logger>("", std::make_shared<spdlog::sinks::stderr_color_sink_st>())){
+         impl( std::unique_ptr<spdlog::logger> agent_logger = nullptr)
+         :_parent(nullptr),_enabled(true),_additivity(false),_level(log_level::warn)
+         {
+            if (!agent_logger)
+               _agent_logger = std::make_unique<spdlog::logger>("", std::make_shared<spdlog::sinks::stderr_color_sink_st>());
+            else
+               _agent_logger = std::move(agent_logger);
             _agent_logger->set_level(spdlog::level::warn); // change agent logger's default level from `info` to `warn` to make it consistent with associated fc logger
          }
          fc::string       _name;
@@ -21,7 +25,7 @@ namespace fc {
          bool             _enabled;
          bool             _additivity;
          log_level        _level;
-         std::shared_ptr<spdlog::logger> _agent_logger;
+         std::unique_ptr<spdlog::logger> _agent_logger;
 
          std::vector<appender::ptr> _appenders;
     };
@@ -126,7 +130,8 @@ namespace fc {
        return *this;
     }
 
-    std::shared_ptr<spdlog::logger> logger::get_agent_logger()const { return my->_agent_logger;};
+    std::unique_ptr<spdlog::logger>& logger::get_agent_logger()const { return my->_agent_logger;};
+    void logger::set_agent_logger(std::unique_ptr<spdlog::logger> al) { my->_agent_logger = std::move(al); };
     void logger::add_appender( const std::shared_ptr<appender>& a ) {
        my->_appenders.push_back(a);
     }
