@@ -1,4 +1,5 @@
 #include <fc/time.hpp>
+#include <fc/mock_time.hpp>
 #include <fc/variant.hpp>
 #include <boost/chrono/system_clocks.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -12,6 +13,9 @@ namespace fc {
 
   time_point time_point::now()
   {
+     if( UNLIKELY(mock_time_traits::is_set()) ) {
+        return mock_time_traits::fc_now();
+     }
      return time_point( microseconds( bch::duration_cast<bch::microseconds>( bch::system_clock::now().time_since_epoch() ).count() ) );
   }
 
