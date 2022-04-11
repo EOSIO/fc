@@ -6,7 +6,6 @@
 #include <string>
 #include <fc/log/console_appender.hpp>
 #include <fc/log/gelf_appender.hpp>
-#include <fc/log/dmlog_appender.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/exception/exception.hpp>
 
@@ -60,7 +59,6 @@ namespace fc {
       try {
       static bool reg_console_appender = log_config::register_appender<console_appender>( "console" );
       static bool reg_gelf_appender = log_config::register_appender<gelf_appender>( "gelf" );
-      static bool reg_dmlog_appender = log_config::register_appender<dmlog_appender>( "dmlog" );
 
       std::lock_guard g( log_config::get().log_mutex );
       log_config::get().logger_map.clear();
@@ -94,7 +92,7 @@ namespace fc {
             }
          }
       }
-      return reg_console_appender || reg_gelf_appender || reg_dmlog_appender;
+      return reg_console_appender || reg_gelf_appender;
       } catch ( exception& e )
       {
          std::cerr<<e.to_detail_string()<<"\n";

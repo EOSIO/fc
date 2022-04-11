@@ -73,9 +73,8 @@ set( fc_sources
      src/log/log_message.cpp
      src/log/logger.cpp
      src/log/appender.cpp
-     src/log/console_appender.cpp    
-     src/log/dmlog_appender.cpp
-     src/log/logger_config.cpp
+     src/log/console_appender.cpp
+        src/log/logger_config.cpp
      src/crypto/_digest_common.cpp
      src/crypto/openssl.cpp
      src/crypto/aes.cpp
