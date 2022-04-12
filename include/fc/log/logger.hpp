@@ -18,8 +18,6 @@
 namespace fc
 {
 
-   class appender;
-
    /**
     *
     *
@@ -62,7 +60,6 @@ namespace fc
 
       private:
          friend struct log_config;
-         void add_appender( const std::shared_ptr<appender>& a );
 
       private:
          class impl;

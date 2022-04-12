@@ -72,8 +72,6 @@ set( fc_sources
      src/interprocess/mmap_struct.cpp
      src/log/log_message.cpp
      src/log/logger.cpp
-     src/log/appender.cpp
-     src/log/console_appender.cpp
         src/log/logger_config.cpp
      src/crypto/_digest_common.cpp
      src/crypto/openssl.cpp
@@ -110,8 +108,7 @@ set( fc_sources
      src/network/http/http_client.cpp
      src/compress/smaz.cpp
      src/compress/zlib.cpp
-     src/log/gelf_appender.cpp
-     src/log/zipkin.cpp
+        src/log/zipkin.cpp
      )
 
 file( GLOB_RECURSE fc_headers ${CMAKE_CURRENT_SOURCE_DIR} *.hpp *.h )

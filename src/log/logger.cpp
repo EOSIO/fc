@@ -1,6 +1,5 @@
 #include <fc/log/logger.hpp>
 #include <fc/log/log_message.hpp>
-#include <fc/log/appender.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/filesystem.hpp>
 #include <unordered_map>
@@ -26,8 +25,6 @@ namespace fc {
          bool             _additivity;
          log_level        _level;
          std::unique_ptr<spdlog::logger> _agent_logger;
-
-         std::vector<appender::ptr> _appenders;
     };
 
 
@@ -70,18 +67,6 @@ namespace fc {
     void logger::log( log_message m ) {
        std::unique_lock g( log_config::get().log_mutex );
        m.get_context().append_context( my->_name );
-
-       for( auto itr = my->_appenders.begin(); itr != my->_appenders.end(); ++itr ) {
-          try {
-             (*itr)->log( m );
-          } catch( fc::exception& er ) {
-             std::cerr << "ERROR: logger::log fc::exception: " << er.to_detail_string() << std::endl;
-          } catch( const std::exception& e ) {
-             std::cerr << "ERROR: logger::log std::exception: " << e.what() << std::endl;
-          } catch( ... ) {
-             std::cerr << "ERROR: logger::log unknown exception: " << std::endl;
-          }
-       }
 
        if( my->_additivity && my->_parent != nullptr) {
           logger parent = my->_parent;
@@ -132,9 +117,6 @@ namespace fc {
 
     std::unique_ptr<spdlog::logger>& logger::get_agent_logger()const { return my->_agent_logger;};
     void logger::set_agent_logger(std::unique_ptr<spdlog::logger> al) { my->_agent_logger = std::move(al); };
-    void logger::add_appender( const std::shared_ptr<appender>& a ) {
-       my->_appenders.push_back(a);
-    }
 
    bool configure_logging( const logging_config& cfg );
    bool do_default_config      = configure_logging( logging_config::default_config() );
