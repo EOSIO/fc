@@ -11,7 +11,7 @@ namespace fc {
     class logger::impl {
       public:
          impl( std::unique_ptr<spdlog::logger> agent_logger = nullptr)
-         :_parent(nullptr),_enabled(true),_additivity(false),_level(log_level::warn)
+         :_enabled(true),_level(log_level::warn)
          {
             if (!agent_logger)
                _agent_logger = std::make_unique<spdlog::logger>("", std::make_shared<spdlog::sinks::stderr_color_sink_st>());
@@ -20,9 +20,7 @@ namespace fc {
             _agent_logger->set_level(spdlog::level::warn); // change agent logger's default level from `info` to `warn` to make it consistent with associated fc logger
          }
          fc::string       _name;
-         logger           _parent;
          bool             _enabled;
-         bool             _additivity;
          log_level        _level;
          std::unique_ptr<spdlog::logger> _agent_logger;
     };
@@ -37,7 +35,6 @@ namespace fc {
     :my( new impl() )
     {
        my->_name = name;
-       my->_parent = parent;
     }
 
 
@@ -67,12 +64,6 @@ namespace fc {
     void logger::log( log_message m ) {
        std::unique_lock g( log_config::get().log_mutex );
        m.get_context().append_context( my->_name );
-
-       if( my->_additivity && my->_parent != nullptr) {
-          logger parent = my->_parent;
-          g.unlock();
-          parent.log( m );
-       }
     }
 
     void logger::set_name( const fc::string& n ) { my->_name = n; }
@@ -85,9 +76,6 @@ namespace fc {
     void logger::update( const fc::string& name, logger& log ) {
        log_config::update_logger( name, log );
     }
-
-    logger  logger::get_parent()const { return my->_parent; }
-    logger& logger::set_parent(const logger& p) { my->_parent = p; return *this; }
 
     log_level logger::get_log_level()const { return my->_level; }
     logger& logger::set_log_level(log_level ll) {

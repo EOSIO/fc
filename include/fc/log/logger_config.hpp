@@ -9,14 +9,11 @@ namespace fc {
    class path;
 
    struct logger_config {
-      logger_config(const fc::string& name = ""):name(name),enabled(true),additivity(false){}
+      logger_config(const fc::string& name = ""):name(name),enabled(true){}
       string                           name;
-      ostring                          parent;
       /// if not set, then parents level is used.
       std::optional<log_level>         level;
       bool                             enabled;
-      /// if any appenders are sepecified, then parent's appenders are not set.
-      bool                             additivity;
    };
 
    struct logging_config {
@@ -50,5 +47,5 @@ namespace fc {
 }
 
 #include <fc/reflect/reflect.hpp>
-FC_REFLECT( fc::logger_config, (name)(parent)(level)(enabled)(additivity) )
+FC_REFLECT( fc::logger_config, (name)(level)(enabled) )
 FC_REFLECT( fc::logging_config, (includes)(loggers) )

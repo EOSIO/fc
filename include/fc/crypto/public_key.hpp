@@ -61,24 +61,4 @@ namespace fc {
    void from_variant(const variant& var, crypto::public_key& vo);
 } // namespace fc
 
-namespace fmt {
-   template<>
-   struct formatter<fc::crypto::public_key::storage_type> {
-      template<typename ParseContext>
-      constexpr auto parse( ParseContext& ctx ) { return ctx.begin(); }
-
-      template<typename FormatContext>
-      auto format( const fc::crypto::public_key::storage_type& p, FormatContext& ctx ) {
-         std::visit([&](auto&& arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, fc::ecc::public_key_shim> || std::is_same_v<T, fc::crypto::r1::public_key_shim>)
-              fmt::formatter<T>().format(arg, ctx);
-            else if constexpr( std::is_same_v<T, fc::crypto::webauthn::public_key> )
-               format_to( ctx.out(), ""); //TODO: log contents?
-        }, p);
-        return format_to( ctx.out(), "");
-      }
-   };
-}
-
 FC_REFLECT(fc::crypto::public_key, (_storage) )

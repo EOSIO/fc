@@ -47,8 +47,6 @@ namespace fc
 
          logger&    set_log_level( log_level e );
          log_level  get_log_level()const;
-         logger&    set_parent( const logger& l );
-         logger     get_parent()const;
          std::unique_ptr<spdlog::logger>& get_agent_logger()const;
          void set_agent_logger(std::unique_ptr<spdlog::logger> al);
 
