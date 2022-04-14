@@ -157,7 +157,7 @@ namespace fmt {
 
         template<typename FormatContext>
         auto format( const fc::microseconds& p, FormatContext& ctx ) {
-           return format_to( ctx.out(), "{}us", p.count() );
+           return format_to( ctx.out(), "{}", p.count() );
         }
     };
     template<>

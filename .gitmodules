@@ -4,3 +4,6 @@
 [submodule "secp256k1/secp256k1"]
 	path = secp256k1/secp256k1
 	url = https://github.com/bitcoin-core/secp256k1
+[submodule "spdlog"]
+	path = spdlog
+	url = https://github.com/gabime/spdlog
