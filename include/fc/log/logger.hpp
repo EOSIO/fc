@@ -5,6 +5,7 @@
 
 // define `SPDLOG_ACTIVE_LEVEL` before including spdlog.h as per https://github.com/gabime/spdlog/issues/1268
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#define SPDLOG_LEVEL_NAMES { "trace", "debug", "info", "warn", "error", "crit", "off" }
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_sinks.h>

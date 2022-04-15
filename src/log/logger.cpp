@@ -5,18 +5,45 @@
 #include <unordered_map>
 #include <string>
 #include <fc/log/logger_config.hpp>
+#include <spdlog/pattern_formatter.h>
 
 namespace fc {
+
+   class thread_name_formatter_flag : public spdlog::custom_flag_formatter
+   {
+      public:
+         void format(const spdlog::details::log_msg &, const std::tm &, spdlog::memory_buf_t &dest) override
+         {
+            std::string some_txt = fc::get_thread_name();
+            dest.append(some_txt.data(), some_txt.data() + some_txt.size());
+         }
+
+         std::unique_ptr<custom_flag_formatter> clone() const override
+         {
+            return spdlog::details::make_unique<thread_name_formatter_flag>();
+         }
+   };
 
     class logger::impl {
       public:
          impl( std::unique_ptr<spdlog::logger> agent_logger = nullptr)
          :_enabled(true),_level(log_level::warn)
          {
-            if (!agent_logger)
-               _agent_logger = std::make_unique<spdlog::logger>("", std::make_shared<spdlog::sinks::stderr_color_sink_st>());
-            else
+            if (!agent_logger) {
+               auto sink = std::make_shared<spdlog::sinks::stderr_color_sink_st>();
+               sink->set_color(spdlog::level::debug, sink->green);
+               sink->set_color(spdlog::level::info, sink->reset);
+               sink->set_color(spdlog::level::warn, sink->yellow);
+               sink->set_color(spdlog::level::err, sink->red);
+               _agent_logger = std::make_unique<spdlog::logger>( "", sink );
+            }
+            else {
                _agent_logger = std::move(agent_logger);
+            }
+
+            auto formatter = std::make_unique<spdlog::pattern_formatter>(spdlog::pattern_time_type::utc);
+            formatter->add_flag<thread_name_formatter_flag>('k').set_pattern("%^%-5l %Y-%m-%dT%T.%f %-9!k %20!s:%-5# %-20!!] %v%$");
+            _agent_logger->set_formatter(std::move(formatter));
             _agent_logger->set_level(spdlog::level::warn); // change agent logger's default level from `info` to `warn` to make it consistent with associated fc logger
          }
          fc::string       _name;
