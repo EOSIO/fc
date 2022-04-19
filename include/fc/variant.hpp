@@ -12,6 +12,7 @@
 
 #include <fc/string.hpp>
 #include <fc/time.hpp>
+#include <fc/reflect/typename.hpp>
 #include <fc/container/deque_fwd.hpp>
 #include <fc/container/flat_fwd.hpp>
 #include <boost/multi_index_container_fwd.hpp>
@@ -95,10 +96,10 @@ namespace fc
    void to_variant( const int32_t& var,  fc::variant& vo );
    void from_variant( const fc::variant& var,  int32_t& vo );
 
-   void to_variant( const unsigned __int128& var,  fc::variant& vo );
-   void from_variant( const fc::variant& var,  unsigned __int128& vo );
-   void to_variant( const __int128& var,  fc::variant& vo );
-   void from_variant( const fc::variant& var,  __int128& vo );
+   void to_variant( const uint128_t& var,  fc::variant& vo );
+   void from_variant( const fc::variant& var,  uint128_t& vo );
+   void to_variant( const int128_t& var,  fc::variant& vo );
+   void from_variant( const fc::variant& var,  int128_t& vo );
 
    void to_variant( const variant_object& var,  fc::variant& vo );
    void from_variant( const fc::variant& var,  variant_object& vo );
@@ -708,4 +709,4 @@ namespace fc
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT_TYPENAME( fc::variant )
 FC_REFLECT_ENUM( fc::variant::type_id, (null_type)(int64_type)(uint64_type)(double_type)(bool_type)(string_type)(array_type)(object_type)(blob_type) )
-FC_REFLECT( fc::blob, (data) );
+FC_REFLECT( fc::blob, (data) )

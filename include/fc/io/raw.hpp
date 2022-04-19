@@ -258,12 +258,12 @@ namespace fc {
     void unpack( Stream& s, fc::safe<T>& v ) { fc::raw::unpack( s, v.value ); }
 
     template<typename Stream, typename T, unsigned int S, typename Align>
-    void pack( Stream& s, const fc::fwd<T,S,Align>& v ) {
+    void pack( Stream&, const fc::fwd<T,S,Align>& v ) {
        fc::raw::pack( *v );
     }
 
     template<typename Stream, typename T, unsigned int S, typename Align>
-    void unpack( Stream& s, fc::fwd<T,S,Align>& v ) {
+    void unpack( Stream&, fc::fwd<T,S,Align>& v ) {
        fc::raw::unpack( *v );
     }
 
@@ -343,7 +343,7 @@ namespace fc {
         :c(_c),s(_s){}
 
         template<typename T, typename C, T(C::*p)>
-        void operator()( const char* name )const {
+        void operator()( const char* )const {
           fc::raw::pack( s, c.*p );
         }
         private:
