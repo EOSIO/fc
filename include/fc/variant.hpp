@@ -390,7 +390,7 @@ namespace fc
    template<typename T>
    void from_variant( const variant& var,  std::optional<T>& vo )
    {
-      if( var.is_null() ) vo = std::optional<T>();
+      if( var.is_null() ) vo.reset();
       else
       {
           vo = T();
