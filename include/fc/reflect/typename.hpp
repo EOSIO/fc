@@ -14,6 +14,9 @@ namespace fc {
   class exception;
   namespace ip { class address; }
 
+  __extension__ typedef __int128 int128_t;
+  __extension__ typedef unsigned __int128 uint128_t;
+
   template<typename... T> struct get_typename;
   template<> struct get_typename<int8_t>   { static const char* name()  { return "int8_t";   } };
   template<> struct get_typename<uint8_t>  { static const char* name()  { return "uint8_t";  } };
@@ -23,8 +26,8 @@ namespace fc {
   template<> struct get_typename<uint32_t> { static const char* name()  { return "uint32_t"; } };
   template<> struct get_typename<int64_t>  { static const char* name()  { return "int64_t";  } };
   template<> struct get_typename<uint64_t> { static const char* name()  { return "uint64_t"; } };
-  template<> struct get_typename<__int128>          { static const char* name()  { return "int128_t";  } };
-  template<> struct get_typename<unsigned __int128> { static const char* name()  { return "uint128_t"; } };
+  template<> struct get_typename<int128_t>   { static const char* name()  { return "int128_t";  } };
+  template<> struct get_typename<uint128_t>  { static const char* name()  { return "uint128_t"; } };
 
   template<> struct get_typename<double>   { static const char* name()  { return "double";   } };
   template<> struct get_typename<float>    { static const char* name()  { return "float";    } };

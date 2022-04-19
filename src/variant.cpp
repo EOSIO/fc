@@ -630,31 +630,31 @@ void from_variant( const variant& var,  int32_t& vo )
    vo = static_cast<int32_t>(var.as_int64());
 }
 
-void to_variant( const unsigned __int128& var,  variant& vo )  {
+void to_variant( const uint128_t& var,  variant& vo )  {
    vo = boost::multiprecision::uint128_t( var ).str();
 }
 
-void from_variant( const variant& var,  unsigned __int128& vo )
+void from_variant( const variant& var,  uint128_t& vo )
 {
    if( var.is_uint64() ) {
       vo = var.as_uint64();
    } else if( var.is_string() ) {
-      vo = static_cast<unsigned __int128>( boost::multiprecision::uint128_t(var.as_string()) );
+      vo = static_cast<uint128_t>( boost::multiprecision::uint128_t(var.as_string()) );
    } else {
       FC_THROW_EXCEPTION( bad_cast_exception, "Cannot convert variant of type '${type}' into a uint128_t", ("type", var.get_type()) );
    }
 }
 
-void to_variant( const __int128& var,  variant& vo )  {
+void to_variant( const int128_t& var,  variant& vo )  {
    vo = boost::multiprecision::int128_t( var ).str();
 }
 
-void from_variant( const variant& var,  __int128& vo )
+void from_variant( const variant& var,  int128_t& vo )
 {
    if( var.is_int64() ) {
       vo = var.as_int64();
    } else if( var.is_string() ) {
-      vo = static_cast<__int128>( boost::multiprecision::int128_t(var.as_string()) );
+      vo = static_cast<int128_t>( boost::multiprecision::int128_t(var.as_string()) );
    } else {
       FC_THROW_EXCEPTION( bad_cast_exception, "Cannot convert variant of type '${type}' into a int128_t", ("type", var.get_type()) );
    }
