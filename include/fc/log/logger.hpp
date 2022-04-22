@@ -10,6 +10,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/daily_file_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/fmt/fmt.h>
 
 #ifndef DEFAULT_LOGGER
@@ -18,6 +20,9 @@
 
 namespace fc
 {
+   #ifndef DEFAULT_PATTERN
+   #define DEFAULT_PATTERN "%^%-5l %Y-%m-%dT%T.%f %-9!k %20!s:%-5# %-20!!] %v%$"
+   #endif
 
    /**
     *
@@ -49,7 +54,7 @@ namespace fc
          logger&    set_log_level( log_level e );
          log_level  get_log_level()const;
          std::unique_ptr<spdlog::logger>& get_agent_logger()const;
-         void set_agent_logger(std::unique_ptr<spdlog::logger> al);
+         void update_agent_logger(std::unique_ptr<spdlog::logger>&& al);
 
          void  set_name( const fc::string& n );
          const fc::string& name()const;
@@ -59,6 +64,8 @@ namespace fc
 
       private:
          friend struct log_config;
+         void add_sink(const std::shared_ptr<spdlog::sinks::sink>& s);
+         std::vector<std::shared_ptr<spdlog::sinks::sink>>& get_sinks() const;
 
       private:
          class impl;
@@ -148,7 +155,7 @@ namespace fc
 
 
 #define FC_FORMAT_ARG(r, unused, base) \
-  BOOST_PP_STRINGIZE(base) ": ${" BOOST_PP_STRINGIZE( base ) "} "
+  BOOST_PP_STRINGIZE(base) ": {" BOOST_PP_STRINGIZE( base ) "} "
 
 #define FC_FORMAT_ARGS(r, unused, base) \
   BOOST_PP_LPAREN() BOOST_PP_STRINGIZE(base), base BOOST_PP_RPAREN()

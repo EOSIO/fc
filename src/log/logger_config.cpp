@@ -41,17 +41,55 @@ namespace fc {
 
    bool log_config::configure_logging( const logging_config& cfg ) {
       try {
-      std::lock_guard g( log_config::get().log_mutex );
-      log_config::get().logger_map.clear();
+         std::lock_guard g( log_config::get().log_mutex );
+         log_config::get().logger_map.clear();
+         log_config::get().sink_map.clear();
 
-      for( size_t i = 0; i < cfg.loggers.size(); ++i ) {
-         auto lgr = log_config::get().logger_map[cfg.loggers[i].name];
-         lgr.set_name(cfg.loggers[i].name);
-         if( cfg.loggers[i].level ) lgr.set_log_level( *cfg.loggers[i].level );
-      }
-      return true;
-      } catch ( exception& e )
-      {
+         for ( size_t i = 0; i < cfg.sinks.size(); ++i ) {
+            // create sink
+            if (cfg.sinks[i].type == "stderr_color_sink_st") {
+               auto config = cfg.sinks[i].args.as<sink::stderr_color_sink_st_config>();
+               auto sink = std::make_shared<spdlog::sinks::stderr_color_sink_st>();
+               for (auto& it : config.level_colors) {
+                  if (it.color == "yellow")
+                     sink->set_color(spdlog::level::from_str(it.level), sink->yellow);
+                  else if (it.color == "red")
+                     sink->set_color(spdlog::level::from_str(it.level), sink->red);
+                  else if (it.color == "green")
+                     sink->set_color(spdlog::level::from_str(it.level), sink->green);
+                  else
+                     sink->set_color(spdlog::level::from_str(it.level), sink->reset);
+               }
+               log_config::get().sink_map[cfg.sinks[i].name] = sink;
+            } else if (cfg.sinks[i].type == "daily_file_sink_mt") {
+               auto config = cfg.sinks[i].args.as<sink::daily_file_sink_mt_config>();
+               auto sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
+                       config.base_filename, config.rotation_hour, config.rotation_minute, config.truncate, config.max_files);
+               log_config::get().sink_map[cfg.sinks[i].name] = sink;
+            } else if (cfg.sinks[i].type == "rotating_file_sink_mt") {
+               auto config = cfg.sinks[i].args.as<sink::rotating_file_sink_mt_config>();
+               auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                       config.base_filename, config.max_size*1024*1024, config.max_files);
+               log_config::get().sink_map[cfg.sinks[i].name] = sink;
+            }
+         }
+
+         for( size_t i = 0; i < cfg.loggers.size(); ++i ) {
+            auto lgr = log_config::get().logger_map[cfg.loggers[i].name];
+            lgr.set_name(cfg.loggers[i].name);
+            if( cfg.loggers[i].level ) lgr.set_log_level( *cfg.loggers[i].level );
+
+            for (auto s = cfg.loggers[i].sinks.begin(); s != cfg.loggers[i].sinks.end(); ++s) {
+               auto sink_it = log_config::get().sink_map.find(*s);
+               if (sink_it != log_config::get().sink_map.end() ) {
+                  lgr.add_sink(sink_it->second);
+               }
+            }
+            if (cfg.loggers[i].sinks.size() > 0)
+               lgr.update_agent_logger(std::make_unique<spdlog::logger>("", lgr.get_sinks().begin(), lgr.get_sinks().end()));
+         }
+         return true;
+      } catch ( exception& e ) {
          std::cerr<<e.to_detail_string()<<"\n";
       }
       return false;
