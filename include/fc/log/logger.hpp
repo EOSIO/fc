@@ -87,17 +87,25 @@ namespace fc
 # define FC_MULTILINE_MACRO_END  } while (0)
 #endif
 
-#define fc_dlog( LOGGER, FORMAT, ... ) \
+#define fc_dlog_1( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (LOGGER).is_enabled( fc::log_level::debug ) ) \
       SPDLOG_LOGGER_DEBUG((LOGGER).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
-#define fc_ilog( LOGGER, FORMAT, ... ) \
+#define fc_dlog_0( LOGGER, FORMAT ) fc_dlog_1( LOGGER, FORMAT, )
+#define fc_dlog(...) SWITCH_MACRO1(fc_dlog_0, fc_dlog_1, 2, __VA_ARGS__)
+
+#define fc_ilog_1( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (LOGGER).is_enabled( fc::log_level::info ) ) \
       SPDLOG_LOGGER_INFO((LOGGER).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
+
+// this is to deal with -Wgnu-zero-variadic-macro-arguments
+#define fc_ilog_0( LOGGER, FORMAT ) fc_ilog_1( LOGGER, FORMAT, )
+#define fc_ilog(...) SWITCH_MACRO1(fc_ilog_0, fc_ilog_1, 2, __VA_ARGS__)
+
 
 #define fc_wlog( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
@@ -105,11 +113,14 @@ namespace fc
       SPDLOG_LOGGER_WARN((LOGGER).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
-#define fc_elog( LOGGER, FORMAT, ... ) \
+#define fc_elog_1( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (LOGGER).is_enabled( fc::log_level::error ) ) \
       SPDLOG_LOGGER_ERROR((LOGGER).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
+
+#define fc_elog_0( LOGGER, FORMAT ) fc_elog_1(LOGGER, FORMAT,)
+#define fc_elog(...) SWITCH_MACRO1(fc_elog_0, fc_elog_1, 2, __VA_ARGS__)
 
 #define dlog( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
@@ -128,23 +139,33 @@ namespace fc
   FC_MULTILINE_MACRO_END
 
 
-#define ilog( FORMAT, ... ) \
+#define ilog_1( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (fc::logger::get(DEFAULT_LOGGER)).is_enabled( fc::log_level::info ) ) \
       SPDLOG_LOGGER_INFO((fc::logger::get(DEFAULT_LOGGER)).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
-#define wlog( FORMAT, ... ) \
+#define ilog_0(FORMAT) ilog_1(FORMAT,)
+#define ilog(...) SWITCH_MACRO1(ilog_0, ilog_1, 1, __VA_ARGS__)
+
+#define wlog_1( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (fc::logger::get(DEFAULT_LOGGER)).is_enabled( fc::log_level::warn ) ) \
       SPDLOG_LOGGER_WARN((fc::logger::get(DEFAULT_LOGGER)).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
 
-#define elog( FORMAT, ... ) \
+#define wlog_0(FORMAT) wlog_1(FORMAT,)
+#define wlog(...) SWITCH_MACRO1(wlog_0, wlog_1, 1, __VA_ARGS__)
+
+#define elog_1( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (fc::logger::get(DEFAULT_LOGGER)).is_enabled( fc::log_level::error ) ) \
       SPDLOG_LOGGER_ERROR((fc::logger::get(DEFAULT_LOGGER)).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
+
+// this is to deal with -Wgnu-zero-variadic-macro-arguments
+#define elog_0(FORMAT) elog_1(FORMAT,)
+#define elog(...) SWITCH_MACRO1(elog_0, elog_1, 1, __VA_ARGS__)
 
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/enum.hpp>

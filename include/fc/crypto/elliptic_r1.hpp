@@ -155,7 +155,7 @@ namespace fc {
         using signature_type = signature_shim;
         using public_key_type = public_key_shim;
 
-        signature_type sign( const sha256& digest, bool require_canonical = true ) const
+        signature_type sign( const sha256& digest, [[maybe_unused]] bool require_canonical = true ) const
         {
            return signature_type(private_key::regenerate(_data).sign_compact(digest));
         }
