@@ -106,12 +106,14 @@ namespace fc
 #define fc_ilog_0( LOGGER, FORMAT ) fc_ilog_1( LOGGER, FORMAT, )
 #define fc_ilog(...) SWITCH_MACRO1(fc_ilog_0, fc_ilog_1, 2, __VA_ARGS__)
 
-
-#define fc_wlog( LOGGER, FORMAT, ... ) \
+#define fc_wlog_1( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (LOGGER).is_enabled( fc::log_level::warn ) ) \
       SPDLOG_LOGGER_WARN((LOGGER).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
+
+#define fc_wlog_0( LOGGER, FORMAT ) fc_wlog_1( LOGGER, FORMAT, )
+#define fc_wlog(...) SWITCH_MACRO1(fc_wlog_0, fc_wlog_1, 2, __VA_ARGS__)
 
 #define fc_elog_1( LOGGER, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
@@ -122,11 +124,14 @@ namespace fc
 #define fc_elog_0( LOGGER, FORMAT ) fc_elog_1(LOGGER, FORMAT,)
 #define fc_elog(...) SWITCH_MACRO1(fc_elog_0, fc_elog_1, 2, __VA_ARGS__)
 
-#define dlog( FORMAT, ... ) \
+#define dlog_1( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \
    if( (fc::logger::get(DEFAULT_LOGGER)).is_enabled( fc::log_level::debug ) ) \
       SPDLOG_LOGGER_DEBUG((fc::logger::get(DEFAULT_LOGGER)).get_agent_logger(), FC_FMT( FORMAT, __VA_ARGS__ )); \
   FC_MULTILINE_MACRO_END
+
+#define dlog_0(FORMAT) dlog_1(FORMAT,)
+#define dlog(...) SWITCH_MACRO1(dlog_0, dlog_1, 1, __VA_ARGS__)
 
 /**
  * Sends the log message to a special 'user' log stream designed for messages that
@@ -137,7 +142,6 @@ namespace fc
    if( (fc::logger::get("user")).is_enabled( fc::log_level::debug ) ) \
       (fc::logger::get("user")).log( FC_LOG_MESSAGE( debug, FORMAT, __VA_ARGS__ ) ); \
   FC_MULTILINE_MACRO_END
-
 
 #define ilog_1( FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \

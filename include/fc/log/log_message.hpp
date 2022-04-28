@@ -10,6 +10,8 @@
 #include <spdlog/fmt/fmt.h>
 
 // get number of arguments with __NARG__
+// It will not be able to detect an empty argument list. This is due to a fundamental difference between C and its preprocessor.
+// For C a parenthesis () is empty and contains no argument. For the preprocessor it contains just one argument, and this argument is the empty token.
 #define __NARG__(...)  __NARG_I_(__VA_ARGS__,__RSEQ_N())
 #define __NARG_I_(...) __ARG_N(__VA_ARGS__)
 #define __ARG_N( \
@@ -182,11 +184,9 @@ FC_REFLECT_TYPENAME( fc::log_message )
 #define FC_LOG_CONTEXT(LOG_LEVEL) \
    fc::log_context( fc::log_level::LOG_LEVEL, __FILE__, __LINE__, __func__ )
 
-#define FC_NARGS(...) __FC_NARGS(0, ## __VA_ARGS__, 9,8,7,6,5,4,3,2,1,0)
-#define __FC_NARGS(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,N,...) N
 
-#define FC_FMT( FORMAT, ... ) \
-   fmt::format( FORMAT BOOST_PP_IF(FC_NARGS(__VA_ARGS__), BOOST_PP_COMMA, BOOST_PP_EMPTY)() FC_ADD_FMT_ARGS( __VA_ARGS__ ) )
+#define FC_FMT(FORMAT, ...) \
+      fmt::format( FORMAT FC_ADD_FMT_ARGS( __VA_ARGS__ ) )
 
 #define FC_ADD_FMT_ARGS(SEQ)           \
    BOOST_PP_SEQ_FOR_EACH_I(            \
@@ -195,7 +195,7 @@ FC_REFLECT_TYPENAME( fc::log_message )
    )
 
 #define FC_ADD_FMT_ARG( r, data, index, elem )      \
-   BOOST_PP_COMMA_IF(index) fmt::arg(BOOST_PP_TUPLE_ENUM(elem))
+   , fmt::arg(BOOST_PP_TUPLE_ENUM(elem))
 
 /**
  * @def FC_LOG_MESSAGE(LOG_LEVEL,FORMAT,...)
