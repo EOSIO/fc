@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <fc/string.hpp>
+#include <fc/filesystem.hpp>
 
 #ifdef _MSC_VER
   #pragma warning (push)
@@ -147,7 +148,13 @@ namespace fmt {
 
         template<typename FormatContext>
         auto format( const fc::time_point& p, FormatContext& ctx ) {
-           return format_to( ctx.out(), "{}", (std::string)p );
+           try {
+              return format_to( ctx.out(), "{}", (std::string)p );
+           } catch (...) {
+              int line = __LINE__;
+              std::string file = __FILE__;
+              return format_to(ctx.out(), "{}", "< error formatting " + fc::path(file).filename().generic_string() + ":" + std::to_string(line) + " >");
+           }
         }
     };
     template<>
@@ -167,7 +174,13 @@ namespace fmt {
 
         template<typename FormatContext>
         auto format( const fc::time_point_sec& p, FormatContext& ctx ) {
-           return format_to( ctx.out(), "{}", (std::string)p );
+           try {
+              return format_to( ctx.out(), "{}", (std::string)p );
+           } catch (...) {
+              int line = __LINE__;
+              std::string file = __FILE__;
+              return format_to(ctx.out(), "{}", "< error formatting " + fc::path(file).filename().generic_string() + ":" + std::to_string(line) + " >");
+           }
         }
     };
 }
